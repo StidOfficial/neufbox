@@ -1,5 +1,7 @@
 #!/bin/sh
 
+lock /var/lock/reset-factory.lock
+
 # user notification
 ledctl red blinks
 ledctl blue off
@@ -17,3 +19,5 @@ ifconfig wl0.1 down 2>&1 > /dev/null
 
 # reboot
 busybox reboot -f
+
+lock -u /var/lock/reset-factory.lock

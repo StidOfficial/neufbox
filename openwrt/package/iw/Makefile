@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
-PKG_VERSION:=0.9.13
+PKG_VERSION:=0.9.21
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://wireless.kernel.org/download/iw/
-PKG_MD5SUM:=cf9121abb4ffe6dce1691e2ec97d5b2b
+PKG_MD5SUM:=726db5f1fd6bc316434414770513ef81
 PKG_BUILD_DEPENDS:=mac80211
 
 include $(INCLUDE_DIR)/package.mk
@@ -23,7 +23,7 @@ define Package/iw
   CATEGORY:=Network
   TITLE:=cfg80211 interface configuration utility
   URL:=http://wireless.kernel.org/en/users/Documentation/iw
-  DEPENDS:=@!TARGET_avr32 @!TARGET_etrax +libnl-tiny
+  DEPENDS:= +libnl-tiny @(!(TARGET_avr32||TARGET_etrax)||BROKEN)
 endef
 
 define Build/Configure
@@ -48,11 +48,9 @@ MAKE_FLAGS += \
 	LIBS="-lm -lnl-tiny" \
 	V=1
 
-ifneq ($(CONFIG_LINUX_2_6),)
-  define Package/iw/install
+define Package/iw/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/iw $(1)/usr/sbin/
-  endef
-endif
+endef
 
 $(eval $(call BuildPackage,iw))

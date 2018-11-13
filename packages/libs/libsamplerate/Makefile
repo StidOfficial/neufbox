@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libsamplerate
-PKG_VERSION:=0.1.3
-PKG_RELEASE:=2
+PKG_VERSION:=0.1.7
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.mega-nerd.com/SRC/
-PKG_MD5SUM:=3f91af22a6c4135485594d0d2c91d45d
+PKG_MD5SUM:=ad093e60ec44f0a60de8e29983ddbc0f
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool autoreconf
+PKG_REMOVE_FILES:=autogen.sh
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -36,12 +39,6 @@ TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
 	--disable-fftw \
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)

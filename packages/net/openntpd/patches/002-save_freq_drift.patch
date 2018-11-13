@@ -4,7 +4,7 @@
  #define	NTPD_USER	"_ntp"
  #endif
  #define	CONFFILE	SYSCONFDIR "/ntpd.conf"
-+#define DRIFTFILE	"/var/ntpd.drift"
++#define DRIFTFILE	"/var/db/ntpd.drift"
  
  #define	READ_BUF_SIZE		4096
  

@@ -12,11 +12,11 @@ PKG_VERSION:=2.22.0
 PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNOME/$(PKG_NAME)/2.22
-PKG_MD5SUM:=504877a973f6abc0788283232cd703c
+PKG_MD5SUM:=504877a973f6abc0788283232cd703cb
 PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
-include $(if $(DUMP),,$(STAGING_DIR)/mk/python-package.mk)
+$(call include_mk, python-package.mk)
 
 PKG_INSTALL=1
 
@@ -44,7 +44,7 @@ define Package/python-rsvg
 endef
 
 define Package/python-wnck
-	$(call Package/python-gnome-desktop/Default,libwnck,+libwnck)
+	$(call Package/python-gnome-desktop/Default,libwnck,+PACKAGE_python-wnck:libwnck)
 endef
 
 define Build/Configure
@@ -54,28 +54,26 @@ define Build/Configure
 	)
 endef
 
-define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/share/pygtk/2.0/defs
-	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)/usr/share/pygtk/2.0/defs/* \
-		$(1)/usr/share/pygtk/2.0/defs
+MAKE_INSTALL_FLAGS += \
+	PYGTK_DEFSDIR="$(PKG_INSTALL_DIR)/usr/share/pygtk/2.0/defs"
 
+define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
-	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/* \
-		$(1)/usr/lib/pkgconfig
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/*.pc \
+		$(1)/usr/lib/pkgconfig/
 
 	$(INSTALL_DIR) $(1)$(PYTHON_PKG_DIR)/gtk-2.0
-	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)/gtk-2.0/*.{so,la} \
-		$(1)$(PYTHON_PKG_DIR)/gtk-2.0
+	$(CP) \
+		$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)/gtk-2.0/*.{a,la,so} \
+		$(1)$(PYTHON_PKG_DIR)/gtk-2.0/
 endef
 
 define Package/python-gnome-desktop/install/Default
 	$(INSTALL_DIR) $(1)$(PYTHON_PKG_DIR)/gtk-2.0
-	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)/gtk-2.0/$(2).{so,a} \
-		$(1)$(PYTHON_PKG_DIR)/gtk-2.0
+	$(CP) \
+		$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)/gtk-2.0/$(2).so \
+		$(1)$(PYTHON_PKG_DIR)/gtk-2.0/
 endef
 
 define Package/python-rsvg/install

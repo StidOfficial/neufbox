@@ -30,8 +30,10 @@ else
     KERNEL_CROSS?=$(TARGET_CROSS)
   endif
 
-  PATCH_DIR ?= ./patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
-  FILES_DIR ?= $(foreach dir,$(wildcard ./files ./files-$(KERNEL_PATCHVER)),"$(dir)")
+  ifeq ($(TARGET_BUILD),1)
+    PATCH_DIR ?= ./patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
+    FILES_DIR ?= $(foreach dir,$(wildcard ./files ./files-$(KERNEL_PATCHVER)),"$(dir)")
+  endif
   KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
   LINUX_DIR ?= $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
@@ -42,7 +44,9 @@ else
 
   LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
   TESTING:=$(if $(findstring -rc,$(LINUX_VERSION)),/testing,)
-  LINUX_SITE:=@KERNEL/linux/kernel/v$(KERNEL)$(TESTING) \
+  ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE)),)
+    LINUX_SITE:=@KERNEL/linux/kernel/v$(KERNEL)$(TESTING)
+  endif
 
   ifneq ($(TARGET_BUILD),1)
     PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
@@ -68,6 +72,9 @@ define ModuleAutoLoad
 	add_module() { \
 		mkdir -p $(2)/etc/modules.d; \
 		( \
+			[ "$$$$$$$$3" = "1" ] && { \
+				echo '# May be required for rootfs' ; \
+			} ; \
 			for mod in $$$$$$$$2; do \
 				getvar mod; \
 			done \
@@ -77,6 +84,7 @@ define ModuleAutoLoad
 	$(3) \
 	if [ -n "$$$$$$$$modules" ]; then \
 		mkdir -p $(2)/etc/modules.d; \
+		mkdir -p $(2)/CONTROL; \
 		echo "#!/bin/sh" > $(2)/CONTROL/postinst; \
 		echo "[ -z \"\$$$$$$$$IPKG_INSTROOT\" ] || exit 0" >> $(2)/CONTROL/postinst; \
 		echo ". /etc/functions.sh" >> $(2)/CONTROL/postinst; \
@@ -101,18 +109,18 @@ define KernelPackage
   $(eval $(call KernelPackage/Defaults))
   $(eval $(call KernelPackage/$(1)))
   $(eval $(call KernelPackage/$(1)/$(KERNEL)))
-  $(eval $(call KernelPackage/$(1)/$(BOARD)-$(KERNEL)))
+  $(eval $(call KernelPackage/$(1)/$(BOARD)))
 
   define Package/kmod-$(1)
     TITLE:=$(TITLE)
     SECTION:=kernel
     CATEGORY:=Kernel modules
     DESCRIPTION:=$(DESCRIPTION)
-    EXTRA_DEPENDS:=kernel (=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))
-    VERSION:=$(LINUX_VERSION)$(if $(PKG_VERSION),+$(PKG_VERSION))-$(BOARD)-$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
+    EXTRA_DEPENDS:=kernel (=$(LINUX_VERSION)-$(LINUX_RELEASE))
+    VERSION:=$(LINUX_VERSION)$(if $(PKG_VERSION),+$(PKG_VERSION))-$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(KERNEL))
-    $(call KernelPackage/$(1)/$(BOARD)-$(KERNEL))
+    $(call KernelPackage/$(1)/$(BOARD))
   endef
 
   ifdef KernelPackage/$(1)/description
@@ -151,7 +159,7 @@ $(call KernelPackage/$(1)/config)
 endef
 
 define AutoLoad
-  add_module $(1) "$(2)";
+  add_module $(1) "$(2)" $(3);
 endef
 
 ifdef DUMP

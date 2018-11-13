@@ -1,12 +1,17 @@
-obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o
-obj-y		+= dev-uart.o
-obj-y		+= dev-pcmcia.o
-obj-y		+= dev-usb-ohci.o
-obj-y		+= dev-usb-ehci.o
-obj-y		+= dev-usb-udc.o
-obj-y		+= dev-enet.o
-obj-y		+= dev-wdt.o
-obj-y		+= dev-spi.o
+obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
+		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-uart.o dev-wdt.o \
+		   dev-usb-ohci.o dev-usb-ehci.o dev-usb-udc.o dev-spi.o
 obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
+obj-$(CONFIG_BCM63XX_PCIE)	+= pcie.o
+obj-$(CONFIG_BCM63XX_WLAN)	+= dev-wlan.o
+obj-$(CONFIG_BCM63XX_FAP)	+= dev-fap.o
+obj-$(CONFIG_BOARD_NEUFBOX4)	+= pcmcia.o
+obj-$(CONFIG_BOARD_NEUFBOX6)	+= dev-tdm.o
+obj-$(CONFIG_BOARD_NEUFBOX6)	+= dev-si32176.o
+obj-$(CONFIG_BOARD_NEUFBOX6)	+= dev-hsspi.o
+obj-$(CONFIG_BOARD_NEUFBOX4)	+= bcm-api.o
+obj-y		+= c++-support.o
 
 obj-y		+= boards/
+
+EXTRA_CFLAGS += -Werror

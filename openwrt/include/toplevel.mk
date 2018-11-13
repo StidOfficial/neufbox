@@ -6,7 +6,7 @@
 # See /LICENSE for more information.
 #
 
-RELEASE:=Kamikaze
+RELEASE:=Backfire
 SHELL:=/usr/bin/env bash
 PREP_MK= OPENWRT_BUILD= QUIET=0
 
@@ -29,6 +29,9 @@ export DYLD_LIBRARY_PATH:=$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(STAG
 # prevent perforce from messing with the patch utility
 unexport P4PORT P4USER P4CONFIG P4CLIENT
 
+# prevent user defaults for quilt from interfering
+unexport QUILT_PATCHES QUILT_PATCH_OPTS
+
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 
@@ -39,11 +42,13 @@ endif
 SCAN_COOKIE?=$(shell echo $$$$)
 export SCAN_COOKIE
 
+SUBMAKE:=umask 022; $(SUBMAKE)
+
 prepare-mk: FORCE ;
 
 prepare-tmpinfo: FORCE
 	mkdir -p tmp/info
-	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk" SCAN_DEPTH=5 SCAN_EXTRA=""
+	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk $(TOPDIR)/overlay/*/*.mk" SCAN_DEPTH=5 SCAN_EXTRA=""
 	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk $(TOPDIR)/include/target.mk" SCAN_DEPTH=2 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1"
 	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
@@ -136,7 +141,7 @@ docs/clean: FORCE
 	@$(_SINGLE)$(SUBMAKE) -C docs clean
 
 distclean:
-	rm -rf tmp build_dir staging_dir dl .config* feeds package/feeds package/openwrt-packages bin
+	rm -rf tmp build_dir staging_dir dl .config* feeds package/feeds package/openwrt-packages bin logs
 	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)

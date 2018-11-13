@@ -1,6 +1,5 @@
-diff -pNur linux-2.6.21.7/include/linux/if_arp.h linux-2.6.21.7/include/linux/if_arp.h
---- linux-2.6.21.7/include/linux/if_arp.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/if_arp.h	2008-06-25 18:34:06.000000000 +0200
+--- a/include/linux/if_arp.h
++++ b/include/linux/if_arp.h
 @@ -40,6 +40,10 @@
  #define ARPHRD_METRICOM	23		/* Metricom STRIP (new IANA id)	*/
  #define	ARPHRD_IEEE1394	24		/* IEEE 1394 IPv4 - RFC 2734	*/
@@ -12,9 +11,8 @@ diff -pNur linux-2.6.21.7/include/linux/if_arp.h linux-2.6.21.7/include/linux/if
  #define ARPHRD_INFINIBAND 32		/* InfiniBand			*/
  
  /* Dummy types for non ARP hardware */
-diff -pNur linux-2.6.21.7/include/linux/if_ether.h linux-2.6.21.7/include/linux/if_ether.h
---- linux-2.6.21.7/include/linux/if_ether.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/if_ether.h	2008-06-25 18:34:10.000000000 +0200
+--- a/include/linux/if_ether.h
++++ b/include/linux/if_ether.h
 @@ -75,6 +75,8 @@
  #define ETH_P_AOE	0x88A2		/* ATA over Ethernet		*/
  #define ETH_P_TIPC	0x88CA		/* TIPC 			*/
@@ -24,10 +22,9 @@ diff -pNur linux-2.6.21.7/include/linux/if_ether.h linux-2.6.21.7/include/linux/
  /*
   *	Non DIX types. Won't clash for 1500 types.
   */
-diff -pNur linux-2.6.21.7/include/linux/if.h linux-2.6.21.7/include/linux/if.h
---- linux-2.6.21.7/include/linux/if.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/if.h	2008-06-25 18:34:10.000000000 +0200
-@@ -61,6 +61,12 @@
+--- a/include/linux/if.h
++++ b/include/linux/if.h
+@@ -61,6 +61,13 @@
  #define IFF_MASTER_ALB	0x10		/* bonding master, balance-alb.	*/
  #define IFF_BONDING	0x20		/* bonding master or slave	*/
  #define IFF_SLAVE_NEEDARP 0x40		/* need ARPs for validation	*/
@@ -36,13 +33,13 @@ diff -pNur linux-2.6.21.7/include/linux/if.h linux-2.6.21.7/include/linux/if.h
 +#define IFF_RSMUX      0x200             /* smux real interface          */
 +#define IFF_OSMUX      0x400             /* smux overlay interface       */
 +#define IFF_WANDEV   0x800               /* avoid WAN bridge traffic leaking */
++#define IFF_WLANDEV    0x80000           /* WLAN Interface */
 +#endif
  
  #define IF_GET_IFACE	0x0001		/* for querying only */
  #define IF_GET_PROTO	0x0002
-diff -pNur linux-2.6.21.7/include/linux/if_vlan.h linux-2.6.21.7/include/linux/if_vlan.h
---- linux-2.6.21.7/include/linux/if_vlan.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/if_vlan.h	2008-06-25 18:34:10.000000000 +0200
+--- a/include/linux/if_vlan.h
++++ b/include/linux/if_vlan.h
 @@ -136,6 +136,9 @@ struct vlan_dev_info {
  	unsigned long cnt_inc_headroom_on_tx; /* How many times did we have to grow the skb on TX. */
  	unsigned long cnt_encap_on_xmit;      /* How many times did we have to encapsulate the skb on TX. */
@@ -74,9 +71,8 @@ diff -pNur linux-2.6.21.7/include/linux/if_vlan.h linux-2.6.21.7/include/linux/i
          } u;
  
  	short vlan_qos;   
-diff --exclude=.svn -pNur linux-2.6.21.7/net/8021q/vlan.c linux-2.6.21.7/net/8021q/vlan.c
---- linux-2.6.21.7/net/8021q/vlan.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/8021q/vlan.c	2008-10-13 18:23:39.000000000 +0200
+--- a/net/8021q/vlan.c
++++ b/net/8021q/vlan.c
 @@ -526,6 +526,9 @@ static struct net_device *register_vlan_
  	VLAN_DEV_INFO(new_dev)->real_dev = real_dev;
  	VLAN_DEV_INFO(new_dev)->dent = NULL;
@@ -101,9 +97,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/8021q/vlan.c linux-2.6.21.7/net/802
  	case SET_VLAN_FLAG_CMD:
  		if (!capable(CAP_NET_ADMIN))
  			return -EPERM;
-diff --exclude=.svn -pNur linux-2.6.21.7/net/8021q/vlan_dev.c linux-2.6.21.7/net/8021q/vlan_dev.c
---- linux-2.6.21.7/net/8021q/vlan_dev.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/8021q/vlan_dev.c	2008-10-13 18:23:39.000000000 +0200
+--- a/net/8021q/vlan_dev.c
++++ b/net/8021q/vlan_dev.c
 @@ -37,6 +37,12 @@
  #include <linux/if_vlan.h>
  #include <net/ip.h>
@@ -178,7 +173,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/8021q/vlan_dev.c linux-2.6.21.7/net
  /*
   *	Create the VLAN header for an arbitrary protocol layer
   *
-@@ -364,7 +410,20 @@ int vlan_dev_hard_header(struct sk_buff 
+@@ -364,7 +410,20 @@ int vlan_dev_hard_header(struct sk_buff
  		 * VLAN ID	 12 bits (low bits)
  		 *
  		 */
@@ -199,7 +194,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/8021q/vlan_dev.c linux-2.6.21.7/net
  		veth_TCI |= vlan_dev_get_egress_qos_mask(dev, skb);
  
  		vhdr->h_vlan_TCI = htons(veth_TCI);
-@@ -437,6 +496,112 @@ int vlan_dev_hard_header(struct sk_buff 
+@@ -437,6 +496,112 @@ int vlan_dev_hard_header(struct sk_buff
  	return rc;
  }
  
@@ -418,9 +413,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/8021q/vlan_dev.c linux-2.6.21.7/net
  static inline int vlan_dmi_equals(struct dev_mc_list *dmi1,
  				  struct dev_mc_list *dmi2)
  {
-diff --exclude=.svn -pNur linux-2.6.21.7/net/sched/Makefile linux-2.6.21.7/net/sched/Makefile
---- linux-2.6.21.7/net/sched/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/sched/Makefile	2008-10-13 18:23:39.000000000 +0200
+--- a/net/sched/Makefile
++++ b/net/sched/Makefile
 @@ -2,6 +2,10 @@
  # Makefile for the Linux Traffic Control Unit.
  #
@@ -432,10 +426,9 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/sched/Makefile linux-2.6.21.7/net/s
  obj-y	:= sch_generic.o
  
  obj-$(CONFIG_NET_SCHED)		+= sch_api.o sch_blackhole.o
-diff --exclude=.svn -pNur linux-2.6.21.7/net/sched/sch_generic.c linux-2.6.21.7/net/sched/sch_generic.c
---- linux-2.6.21.7/net/sched/sch_generic.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/sched/sch_generic.c	2008-10-13 18:23:39.000000000 +0200
-@@ -607,6 +607,14 @@ void dev_shutdown(struct net_device *dev
+--- a/net/sched/sch_generic.c
++++ b/net/sched/sch_generic.c
+@@ -610,6 +610,14 @@ void dev_shutdown(struct net_device *dev
  #endif
  	BUG_TRAP(!timer_pending(&dev->watchdog_timer));
  	qdisc_unlock_tree(dev);
@@ -450,9 +443,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/sched/sch_generic.c linux-2.6.21.7/
  }
  
  EXPORT_SYMBOL(netif_carrier_on);
-diff --exclude=.svn -pNur linux-2.6.21.7/net/sched/sch_htb.c linux-2.6.21.7/net/sched/sch_htb.c
---- linux-2.6.21.7/net/sched/sch_htb.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/sched/sch_htb.c	2008-10-14 09:36:11.000000000 +0200
+--- a/net/sched/sch_htb.c
++++ b/net/sched/sch_htb.c
 @@ -53,6 +53,9 @@
  #include <net/sock.h>
  #include <net/pkt_sched.h>
@@ -473,9 +465,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/sched/sch_htb.c linux-2.6.21.7/net/
  				goto fin;
  			}
  		}
-diff --exclude=.svn -pNur linux-2.6.21.7/net/socket.c linux-2.6.21.7/net/socket.c
---- linux-2.6.21.7/net/socket.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/socket.c	2008-10-13 18:23:39.000000000 +0200
+--- a/net/socket.c
++++ b/net/socket.c
 @@ -782,6 +782,20 @@ void vlan_ioctl_set(int (*hook) (void __
  
  EXPORT_SYMBOL(vlan_ioctl_set);
@@ -515,7 +506,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/socket.c linux-2.6.21.7/net/socket.
  		case SIOCADDDLCI:
  		case SIOCDELDLCI:
  			err = -ENOPKG;
-@@ -1061,33 +1086,37 @@ static int __sock_create(int family, int
+@@ -1061,13 +1086,17 @@ static int __sock_create(int family, int
  	   deadlock in module load.
  	 */
  	if (family == PF_INET && type == SOCK_PACKET) {
@@ -534,32 +525,3 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/socket.c linux-2.6.21.7/net/socket.
  	}
  
  	err = security_socket_create(family, type, protocol, kern);
- 	if (err)
- 		return err;
--
--	/*
--	 *	Allocate the socket and allow the family to set things up. if
--	 *	the protocol is 0, the family is instructed to select an appropriate
--	 *	default.
--	 */
-+
-+	/*
-+	 *	Allocate the socket and allow the family to set things up. if
-+	 *	the protocol is 0, the family is instructed to select an appropriate
-+	 *	default.
-+	 */
- 	sock = sock_alloc();
- 	if (!sock) {
- 		if (net_ratelimit())
--			printk(KERN_WARNING "socket: no more sockets\n");
-+			printk(KERN_WARNING "socket: no more sockets\n");
- 		return -ENFILE;	/* Not exactly a match, but its the
--				   closest posix thing */
-+				   closest posix thing */
- 	}
- 
--	sock->type = type;
-+	sock->type = type;
- 
- #if defined(CONFIG_KMOD)
- 	/* Attempt to load a protocol module if the find failed.

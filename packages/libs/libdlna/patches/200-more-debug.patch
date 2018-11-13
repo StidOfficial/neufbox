@@ -19,7 +19,7 @@ diff -pruN libdlna-0.2.3.orig/src/profiles.c libdlna-0.2.3/src/profiles.c
    {
      if (dlna->verbosity)
 -      fprintf (stderr, "can't open file: %s\n", filename);
-+	    fprintf (stderr, "can't open file: %s (AVERROR= %d - %s)\n", filename, err, strerror(-err));
++      fprintf (stderr, "can't open file: %s (AVERROR= %d - %s)\n", filename, err, strerror(-err));
      return NULL;
    }
  

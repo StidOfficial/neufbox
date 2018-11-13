@@ -1,7 +1,6 @@
-diff -ruN samba-2.0.10-old/source/Makefile.in samba-2.0.10-new/source/Makefile.in
---- samba-2.0.10-old/source/Makefile.in	2005-08-22 03:03:17.000000000 +0200
-+++ samba-2.0.10-new/source/Makefile.in	2005-08-22 03:08:23.000000000 +0200
-@@ -31,6 +31,8 @@
+--- a/source/Makefile.in
++++ b/source/Makefile.in
+@@ -31,6 +31,8 @@ VARDIR = @localstatedir@
  MANDIR = @mandir@
  SAMBABOOK = @sambabook@
  
@@ -10,7 +9,7 @@ diff -ruN samba-2.0.10-old/source/Makefile.in samba-2.0.10-new/source/Makefile.i
  # The permissions to give the executables
  INSTALLPERMS = 0755
  
-@@ -39,9 +41,9 @@
+@@ -39,9 +41,9 @@ INSTALLPERMS = 0755
  # or in smb.conf (see smb.conf(5))
  SMBLOGFILE = $(VARDIR)/smb
  NMBLOGFILE = $(VARDIR)/nmb

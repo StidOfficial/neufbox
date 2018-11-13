@@ -538,9 +538,9 @@
 +module_exit(fini);
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -801,5 +801,22 @@ config IP_NF_TARGET_SET
- 	  To compile it as a module, choose M here.  If unsure, say N.
- 
+@@ -663,5 +663,22 @@ config IP_NF_ARP_MANGLE
+ 	  Allows altering the ARP packet payload: source and destination
+ 	  hardware and network addresses.
  
 +config IP_NF_TARGET_ROUTE
 +	tristate  'ROUTE target support'
@@ -563,8 +563,8 @@
  
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -101,6 +101,7 @@ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_EC
- obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
+@@ -99,6 +99,7 @@ obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TO
+ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
 +obj-$(CONFIG_IP_NF_TARGET_ROUTE) += ipt_ROUTE.o
@@ -916,7 +916,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv6/netfilter/Kconfig
 +++ b/net/ipv6/netfilter/Kconfig
-@@ -209,5 +209,18 @@ config IP6_NF_RAW
+@@ -200,5 +200,18 @@ config IP6_NF_RAW
  	  If you want to compile it as a module, say M here and read
  	  <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -937,7 +937,7 @@
  
 --- a/net/ipv6/netfilter/Makefile
 +++ b/net/ipv6/netfilter/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_
+@@ -19,6 +19,7 @@ obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_
  obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
  obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
  obj-$(CONFIG_IP6_NF_TARGET_REJECT) += ip6t_REJECT.o

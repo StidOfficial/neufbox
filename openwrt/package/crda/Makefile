@@ -9,18 +9,19 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=crda
-PKG_RELEASE:=1
-PKG_VERSION:=1.0.2
+PKG_RELEASE:=2
+PKG_VERSION:=1.1.0
 PKG_SOURCE_URL:=http://wireless.kernel.org/download/crda
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=1f9854a77c7d92671b8bc8a502716a5b
+PKG_MD5SUM:=6004584d2e39e899f7642b141dd72028
 PKG_BUILD_DEPENDS:=mac80211
 
 PKG_REGULATORY_NAME:=regulatory
-PKG_REGULATORY_VERSION:=2009.04.17
-PKG_REGULATORY_SOURCE_URL:=http://wireless.kernel.org/download/wireless-regdb/regulatory.bins
+PKG_REGULATORY_VERSION:=2010.11.17
+PKG_REGULATORY_SOURCE_URL:=http://mirror2.openwrt.org/sources
+#PKG_REGULATORY_SOURCE_URL:=http://wireless.kernel.org/download/wireless-regdb/regulatory.bins
 PKG_REGULATORY_SOURCE:=$(PKG_REGULATORY_VERSION)-$(PKG_REGULATORY_NAME).bin
-PKG_REGULATORY_MD5SUM:=2d7d99b79062b8f2edfbd72222fdfe08
+PKG_REGULATORY_MD5SUM:=4a497f045d93a8d5b135f4d2816faa83
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -28,7 +29,7 @@ define Package/crda
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Central Regulatory Domain Agent (CRDA)
-  DEPENDS:=@LINUX_2_6 +hotplug2 +kmod-mac80211 +libnl-tiny
+  DEPENDS:=@LINUX_2_6 +hotplug2 +libnl-tiny
   URL:=http://wireless.kernel.org/en/developers/Regulatory/CRDA
 endef
 

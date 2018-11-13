@@ -1,16 +1,15 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# $Id: Makefile 14803 2009-03-09 05:50:38Z marek $
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=batmand
-PKG_REV:=1249
+PKG_REV:=1439
 PKG_VERSION:=r$(PKG_REV)
 PKG_RELEASE:=1
 PKG_EXTRA_CFLAGS=-DDEBUG_MALLOC -DMEMORY_USAGE -DPROFILE_DATA -DREVISION_VERSION=\"\ rv$(PKG_REV)\"
@@ -18,7 +17,7 @@ PKG_EXTRA_CFLAGS=-DDEBUG_MALLOC -DMEMORY_USAGE -DPROFILE_DATA -DREVISION_VERSION
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_SUBDIR:=$(if $(PKG_BRANCH),$(PKG_BRANCH),$(PKG_NAME))-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://downloads.open-mesh.net/svn/batman/trunk/
+PKG_SOURCE_URL:=http://downloads.open-mesh.org/svn/batman/trunk/
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
 
@@ -27,7 +26,7 @@ PKG_KMOD_BUILD_DIR:=$(PKG_BUILD_DIR)/batman/linux/modules
 include $(INCLUDE_DIR)/package.mk
 
 define Package/batmand/Default
-  URL:=http://www.open-mesh.net/
+  URL:=http://www.open-mesh.org/
   MAINTAINER:=Marek Lindner <lindner_marek@yahoo.de>
 endef
 
@@ -105,15 +104,15 @@ MAKE_BATGAT_ARGS += \
 define Build/Configure
 endef
 
-ifneq ($(DEVEL_CONFIG)$(CONFIG_PACKAGE_batmand),)
+ifneq ($(DEVELOPER)$(CONFIG_PACKAGE_batmand),)
 	BUILD_BATMAND := $(MAKE) -C $(PKG_BUILD_DIR)/batman $(MAKE_BATMAND_ARGS)
 endif
 
-ifneq ($(CONFIG_DEVEL)$(CONFIG_PACKAGE_vis),)
+ifneq ($(DEVELOPER)$(CONFIG_PACKAGE_vis),)
 	BUILD_VIS := $(MAKE) -C $(PKG_BUILD_DIR)/vis $(MAKE_VIS_ARGS)
 endif
 	
-ifneq ($(CONFIG_DEVEL)$(CONFIG_PACKAGE_kmod-batgat),)
+ifneq ($(DEVELOPER)$(CONFIG_PACKAGE_kmod-batgat),)
 	BUILD_BATGAT := $(MAKE) -C "$(LINUX_DIR)" $(MAKE_BATGAT_ARGS)
 endif
 	        

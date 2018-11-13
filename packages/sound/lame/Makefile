@@ -9,11 +9,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lame
-PKG_VERSION:=398
-PKG_RELEASE:=2
+PKG_VERSION:=398-2
+PKG_RELEASE:=3
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/lame
-PKG_MD5SUM:=f44b9f8e1b5d8835d0a77f9cc9cedd1c
+PKG_MD5SUM:=719dae0ee675d0c16e0e89952930ed35
 PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
@@ -24,6 +24,7 @@ define Package/lame/Default
   SECTION:=sound
   CATEGORY:=Sound
   URL:=http://sourceforge.net/projects/lame
+  DEPENDS:=@BUILD_PATENTED
 endef
 
 define Package/lame
@@ -39,12 +40,18 @@ endef
 define Package/lame-lib
 $(call Package/lame/Default)
   TITLE:=lame-lib
-  DEPENDS:=lame
 endef
 
 define Package/lame-lib/description
 lame mp3 encoder libs
 endef
+
+define Build/Configure
+	$(call Build/Configure/Default, \
+	--disable-nasm \
+	)
+endef
+
 
 define Package/lame/install
 	$(INSTALL_DIR) $(1)/usr/bin

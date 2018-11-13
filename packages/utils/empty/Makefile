@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=empty
-PKG_VERSION:=0.6.15b
+PKG_VERSION:=0.6.18b
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=@SF/empty
-PKG_MD5SUM:=e56d0d81e5e40b1c41c4b9ed74a1edd8
+PKG_MD5SUM:=2cf5e1b8ff58c41b63738bdc7c24fbc2
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -33,9 +33,9 @@ define Package/empty/description
  programming tools.
 endef
 
-define Package/empty/install	
+define Package/empty/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,empty))

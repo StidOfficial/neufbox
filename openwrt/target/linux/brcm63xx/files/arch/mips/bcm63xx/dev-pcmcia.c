@@ -19,8 +19,7 @@
 static struct resource pcmcia_resources[] = {
 	/* pcmcia registers */
 	{
-		.start		= -1, /* filled at runtime */
-		.end		= -1, /* filled at runtime */
+		/* start & end filled at runtime */
 		.flags		= IORESOURCE_MEM,
 	},
 
@@ -43,7 +42,7 @@ static struct resource pcmcia_resources[] = {
 
 	/* PCMCIA irq */
 	{
-		.start		= -1, /* filled at runtime */
+		/* start filled at runtime */
 		.flags		= IORESOURCE_IRQ,
 	},
 
@@ -80,16 +79,26 @@ static int __init config_pcmcia_cs(unsigned int cs,
 	return ret;
 }
 
-static const __initdata unsigned int pcmcia_cs[3][3] = {
-	/* cs, base address, size */
-	{ MPI_CS_PCMCIA_COMMON, BCM_PCMCIA_COMMON_BASE_PA,
-	  BCM_PCMCIA_COMMON_SIZE },
-
-	{ MPI_CS_PCMCIA_ATTR, BCM_PCMCIA_ATTR_BASE_PA,
-	  BCM_PCMCIA_ATTR_SIZE },
-
-	{ MPI_CS_PCMCIA_IO, BCM_PCMCIA_IO_BASE_PA,
-	  BCM_PCMCIA_IO_SIZE },
+static const __initdata struct {
+	unsigned int	cs;
+	unsigned int	base;
+	unsigned int	size;
+} pcmcia_cs[3] = {
+	{
+		.cs	= MPI_CS_PCMCIA_COMMON,
+		.base	= BCM_PCMCIA_COMMON_BASE_PA,
+		.size	= BCM_PCMCIA_COMMON_SIZE
+	},
+	{
+		.cs	= MPI_CS_PCMCIA_ATTR,
+		.base	= BCM_PCMCIA_ATTR_BASE_PA,
+		.size	= BCM_PCMCIA_ATTR_SIZE
+	},
+	{
+		.cs	= MPI_CS_PCMCIA_IO,
+		.base	= BCM_PCMCIA_IO_BASE_PA,
+		.size	= BCM_PCMCIA_IO_SIZE
+	},
 };
 
 int __init bcm63xx_pcmcia_register(void)
@@ -106,7 +115,7 @@ int __init bcm63xx_pcmcia_register(void)
 		break;
 
 	case BCM6358_CPU_ID:
-		pd.ready_gpio = 22;
+		pd.ready_gpio = 18;
 		break;
 
 	default:
@@ -114,15 +123,15 @@ int __init bcm63xx_pcmcia_register(void)
 	}
 
 	pcmcia_resources[0].start = bcm63xx_regset_address(RSET_PCMCIA);
-	pcmcia_resources[0].end = pcmcia_resources[0].start;
-	pcmcia_resources[0].end += RSET_PCMCIA_SIZE - 1;
+	pcmcia_resources[0].end = pcmcia_resources[0].start +
+		RSET_PCMCIA_SIZE - 1;
 	pcmcia_resources[4].start = bcm63xx_get_irq_number(IRQ_PCMCIA);
 
 	/* configure pcmcia chip selects */
 	for (i = 0; i < 3; i++) {
-		ret = config_pcmcia_cs(pcmcia_cs[i][0],
-				       pcmcia_cs[i][1],
-				       pcmcia_cs[i][2]);
+		ret = config_pcmcia_cs(pcmcia_cs[i].cs,
+				       pcmcia_cs[i].base,
+				       pcmcia_cs[i].size);
 		if (ret)
 			goto out_err;
 	}
@@ -130,6 +139,6 @@ int __init bcm63xx_pcmcia_register(void)
 	return platform_device_register(&bcm63xx_pcmcia_device);
 
 out_err:
-	printk(KERN_ERR "unable to set pcmcia chip select");
+	printk(KERN_ERR "unable to set pcmcia chip select\n");
 	return ret;
 }

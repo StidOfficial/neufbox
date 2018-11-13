@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,19 +8,22 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libupnp
-PKG_VERSION:=1.6.6
+PKG_VERSION:=1.6.8
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/pupnp
-PKG_MD5SUM:=8918dcf7428cd119d0c8275765ff2833
+PKG_MD5SUM:=7e162895b9d0f9efcccd07973012cdff
+
+PKG_FIXUP:=libtool
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libupnp/Default
   SECTION:=libs
   CATEGORY:=Libraries
-  URL:=http://upnp.sourceforge.net/
+  URL:=http://pupnp.sourceforge.net/
 endef
 
 define Package/libupnp
@@ -31,11 +34,10 @@ define Package/libupnp
 endef
 
 define Package/libupnp/description
-        The portable SDK for UPnP Devices (libupnp) provides developers with an
-	API and open source code for building control points, devices, and
-	bridges that are compliant with Version 1.0 of the  Universal Plug and
-	Play Device Architecture Specification and support several operating
-	systems like Linux, *BSD, Solaris and others.
+The portable SDK for UPnP Devices (libupnp) provides developers with an API and
+open source code for building control points, devices, and bridges that are
+compliant with Version 1.0 of the  Universal Plug and Play Device Architecture
+Specification.
 endef
 
 define Package/libupnp-sample
@@ -45,8 +47,7 @@ define Package/libupnp-sample
 endef
 
 define Package/libupnp-sample/description
-	TVcontrolpoint & tvdevice sample applications
-	run inside /etc/upnp-tvdevice/
+TVcontrolpoint & tvdevice sample applications run inside /etc/upnp-tvdevice/
 endef
 
 define Build/Configure
@@ -58,27 +59,21 @@ endef
 
 TARGET_CFLAGS += $(FPIC)
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CCOPT="$(TARGET_CFLAGS)" \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-	$(MAKE) -C $(PKG_BUILD_DIR)/upnp/sample/ upnp_tv_device upnp_tv_ctrlpt
-endef
-
 define Build/Compile/libupnp-sample
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CCOPT="$(TARGET_CFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		check
+	$(MAKE) -C $(PKG_BUILD_DIR)/upnp/sample \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		upnp_tv_device upnp_tv_ctrlpt
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/upnp $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ixml,threadutil,upnp}.{a,so*} $(1)/usr/lib/
-	mkdir -p $(1)/usr/lib/pkgconfig
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ixml,threadutil,upnp}.{a,so*,la} $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libupnp.pc $(1)/usr/lib/pkgconfig/
 endef
 

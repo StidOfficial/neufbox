@@ -3,9 +3,17 @@
 include /lib/network
 
 addif() {
+	# Ensure that ipv6 is loaded, autoloading happens later but ipv6 might be
+	# required now for interface setup.
+	[ -d /proc/sys/net/ipv6 ] || {
+		grep -q '^ipv6' /etc/modules.d/* && insmod ipv6
+	}
+
 	# PPP devices are configured by pppd, no need to run setup_interface here
 	case "$INTERFACE" in
-		ppp*) return 0;;
+		ppp*|3g-*) return 0;;
+		ath*) return 0;;
+		wlan*) return 0;;
 	esac
 
 	scan_interfaces
@@ -38,7 +46,7 @@ delif() {
 	for ifc in $interfaces; do
 		config_get iftype "$ifc" type
 		config_get ifs "$ifc" device
-		confdevs="$(uci get network.$ifc.ifname)"
+		confdevs="$(uci_get network.$ifc.ifname)"
 		for dev in $ifs; do
 			[ "${dev%%\.*}" = "$INTERFACE" ] && {
 				list_contains confdevs "$dev" || list_remove ifs "$dev"

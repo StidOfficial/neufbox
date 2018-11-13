@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2008-2009 OpenWrt.org
+#
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,21 +8,22 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=freeradius2
-PKG_VERSION:=2.1.4
+PKG_VERSION:=2.1.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=freeradius-server-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.freeradius.org/pub/freeradius/
-PKG_MD5SUM:=ba1fd573222ed5c8bead1cce1383a7a9
+PKG_MD5SUM:=8ea2bd39460a06212decf2c14fdf3fb8
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/freeradius-server-$(PKG_VERSION)
+PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/freeradius2/Default
   SECTION:=net
   CATEGORY:=Network
-  URL:=http://www.freeradius2.org/
+  URL:=http://freeradius.org/
 endef
 
 define Package/freeradius2
@@ -128,6 +129,16 @@ endef
 
 define Package/freeradius2-mod-expiration/conffiles
 /etc/freeradius2/modules/expiration
+endef
+
+define Package/freeradius2-mod-always
+  $(call Package/freeradius2/Default)
+  DEPENDS:=freeradius2
+  TITLE:=Always module
+endef
+
+define Package/freeradius2-mod-always/conffiles
+/etc/freeradius2/modules/always
 endef
 
 define Package/freeradius2-mod-expr
@@ -253,13 +264,15 @@ endef
 
 define Package/freeradius2-mod-sql-mysql
   $(call Package/freeradius2/Default)
-  DEPENDS:=freeradius2-mod-sql +libmysqlclient
+  DEPENDS:=freeradius2-mod-sql \
+  	+PACKAGE_freeradius2-mod-sql-mysql:libmysqlclient_r
   TITLE:=MySQL module
 endef
 
 define Package/freeradius2-mod-sql-pgsql
   $(call Package/freeradius2/Default)
-  DEPENDS:=freeradius2-mod-sql +libpq
+  DEPENDS:=freeradius2-mod-sql \
+  	+PACKAGE_freeradius2-mod-sql-pgsql:libpq
   TITLE:=PostgreSQL module
 endef
 
@@ -295,6 +308,8 @@ CONFIGURE_ARGS+= \
 	--with-threads \
 	--with-openssl-includes="$(STAGING_DIR)/usr/include" \
 	--with-openssl-libraries="$(STAGING_DIR)/usr/lib" \
+	--with-system-libtool \
+	--with-system-libltdl \
 	--enable-strict-dependencies \
 	--with-raddbdir=/etc/freeradius2 \
 	--with-radacctdir=/var/db/radacct \
@@ -424,6 +439,12 @@ else
   CONFIGURE_ARGS+= --without-rlm_expiration
 endif
 
+ifneq ($(SDK)$(CONFIG_PACKAGE_freeradius2-mod-always),)
+  CONFIGURE_ARGS+= --with-rlm_always
+else
+  CONFIGURE_ARGS+= --without-rlm_always
+endif
+
 CONFIGURE_VARS+= \
 	LDFLAGS="$$$$LDFLAGS" \
 	LIBS="$(CONFIGURE_LIBS)" \
@@ -441,6 +462,7 @@ define Package/freeradius2/install
 	$(INSTALL_DIR) $(1)/etc/freeradius2
 	$(INSTALL_DIR) $(1)/etc/freeradius2/modules
 	$(INSTALL_DIR) $(1)/etc/freeradius2/sites
+	chmod 771 $(1)/etc/freeradius2
 	for f in clients.conf dictionary radiusd.conf policy.conf; do \
 		$(CP) $(PKG_INSTALL_DIR)/etc/freeradius2/$$$${f} $(1)/etc/freeradius2/ ; \
 	done
@@ -454,6 +476,8 @@ define Package/freeradius2/install
 	done
 	$(INSTALL_DIR) $(1)/usr/lib/freeradius2
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/freeradius2/libfreeradius-radius{,-*}.so $(1)/usr/lib/freeradius2
+	ln -s freeradius2/libfreeradius-radius-$(PKG_VERSION).so $(1)/usr/lib/
+	ln -s freeradius2/libfreeradius-eap-$(PKG_VERSION).so $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/radiusd $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/init.d
@@ -461,17 +485,13 @@ define Package/freeradius2/install
 endef
 
 define Package/freeradius2-democerts/install
-	$(INSTALL_DIR) $(1)/etc/freeradius2
-	$(CP) $(PKG_INSTALL_DIR)/etc/freeradius2/certs $(1)/etc/freeradius2/
-	rm -rf $(1)/etc/freeradius2/certs/README
-	rm -rf $(1)/etc/freeradius2/certs/new*
-	rm -rf $(1)/etc/freeradius2/certs/demoCA/index*
-	rm -rf $(1)/etc/freeradius2/certs/demoCA/serial*
-	rm -rf $(1)/etc/freeradius2/certs/bootstrap
-	rm -rf $(1)/etc/freeradius2/certs/Makefile
-	rm -rf $(1)/etc/freeradius2/certs/ca.cnf
-	rm -rf $(1)/etc/freeradius2/certs/client.cnf
-	rm -rf $(1)/etc/freeradius2/certs/server.cnf
+	$(INSTALL_DIR) $(1)/etc/freeradius2/certs
+	$(CP) \
+		$(PKG_BUILD_DIR)/raddb/certs/ca.pem \
+		$(PKG_BUILD_DIR)/raddb/certs/dh \
+		$(PKG_BUILD_DIR)/raddb/certs/random \
+		$(PKG_BUILD_DIR)/raddb/certs/server.pem \
+		$(1)/etc/freeradius2/certs/
 endef
 
 define Package/freeradius2-utils/install
@@ -525,4 +545,5 @@ $(eval $(call BuildPlugin,freeradius2-mod-logintime,rlm_logintime,modules/logint
 $(eval $(call BuildPlugin,freeradius2-mod-expr,rlm_expr,modules/expr,modules,))
 $(eval $(call BuildPlugin,freeradius2-mod-attr-filter,rlm_attr_filter,modules/attr_filter attrs attrs.access_reject attrs.accounting_response attrs.pre-proxy,modules,,))
 $(eval $(call BuildPlugin,freeradius2-mod-expiration,rlm_expiration,modules/expiration,modules,))
+$(eval $(call BuildPlugin,freeradius2-mod-always,rlm_always,modules/always,modules,))
 $(eval $(call BuildPackage,freeradius2-utils))

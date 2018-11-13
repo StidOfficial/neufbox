@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,13 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pciutils
-PKG_VERSION:=3.1.2
-PKG_RELEASE:=1
+PKG_VERSION:=3.1.7
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.kernel.org/pub/software/utils/pciutils/ \
-	ftp://atrey.karlin.mff.cuni.cz/pub/linux/pci
-PKG_MD5SUM:=46387fd7a18c33fbb5311fdb3ab9ea12
+PKG_SOURCE_URL:=@KERNEL/software/utils/pciutils
+PKG_MD5SUM:=35222edb86b50a6641352c66fe829b2e
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,6 +24,7 @@ define Package/pciutils
   CATEGORY:=Utilities
   TITLE:=Linux PCI Utilities
   URL:=http://mj.ucw.cz/pciutils.shtml
+  DEPENDS:=+zlib
 endef
 
 define Package/pciutils/description
@@ -32,14 +34,15 @@ endef
 
 define Package/pciutils/postinst
 #!/bin/sh
-$${IPKG_INSTROOT}/usr/sbin/update-pciids.sh
+(cd $${PKG_ROOT}/usr/share; $${PKG_ROOT}/usr/sbin/update-pciids)
+exit 0
 endef
 
 MAKE_FLAGS += \
-	CFLAGS="$(TARGET_CFLAGS)" \
-	IDSDIR="/usr/share" \
+	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include" \
+	PREFIX="/usr" \
 	HOST="$(GNU_TARGET_NAME)" \
-	ZLIB="no" \
+	ZLIB="yes" \
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib
@@ -51,9 +54,9 @@ endef
 
 define Package/pciutils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/{lspci,setpci,update-pciids.sh} $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{lspci,setpci,update-pciids} $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/share
-	$(CP) $(PKG_BUILD_DIR)/pci.ids $(1)/usr/share/
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/pci.ids.gz $(1)/usr/share/
 endef
 
 $(eval $(call BuildPackage,pciutils))

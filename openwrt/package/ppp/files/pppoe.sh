@@ -1,5 +1,5 @@
-scan_pppoe() {
-	scan_ppp "$@"
+stop_interface_pppoe() {
+	stop_interface_ppp "$1"
 }
 
 setup_interface_pppoe() {
@@ -9,11 +9,6 @@ setup_interface_pppoe() {
 	for module in slhc ppp_generic pppox pppoe; do
 		/sbin/insmod $module 2>&- >&-
 	done
-
-	# make sure the network state references the correct ifname
-	scan_ppp "$config"
-	config_get ifname "$config" ifname
-	set_interface_ifname "$config" "$ifname"
 
 	config_get mtu "$config" mtu
 	mtu=${mtu:-1492}

@@ -1,5 +1,5 @@
---- linux-2.6.21.7/fs/splice.c	2008-09-11 09:55:08.000000000 +0200
-+++ linux-2.6.21.7/fs/splice.c	2008-09-11 09:56:57.000000000 +0200
+--- a/fs/splice.c
++++ b/fs/splice.c
 @@ -1171,7 +1171,7 @@ static int get_iovec_page_array(const st
  		if (unlikely(!len))
  			break;
@@ -9,8 +9,8 @@
  			break;
  
  		/*
---- linux-2.6.21.7/mm/memory.c	2008-09-11 11:10:20.000000000 +0200
-+++ linux-2.6.21.7/mm/memory.c	2008-09-11 11:10:45.000000000 +0200
+--- a/mm/memory.c
++++ b/mm/memory.c
 @@ -983,6 +983,9 @@ int get_user_pages(struct task_struct *t
  	int i;
  	unsigned int vm_flags;

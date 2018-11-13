@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,16 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnet
 PKG_VERSION:=1.1.2.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME).tar.gz
 PKG_SOURCE_URL:=http://www.packetfactory.net/libnet/dist/
 PKG_MD5SUM:=be845c41170d72c7db524f3411b50256
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/libnet
+
+PKG_FIXUP:=libtool autoreconf
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -42,7 +45,7 @@ CONFIGURE_ARGS += \
 CONFIGURE_VARS += \
 	ac_cv_libnet_endianess=$(ENDIANESS) \
 	ac_libnet_have_pf_packet=yes \
-	LL_INT_TYPE=linux
+	LL_INT_TYPE=libnet_link_linux
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); touch \
@@ -55,20 +58,12 @@ define Build/Configure
 	$(call Build/Configure/Default)
 endef
 
-define Build/Compile
-	# pass CFLAGS again to override -O2 set by configure
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
-
 define Build/InstallDev
-	mkdir -p $(1)/usr/lib/libnet-1.1.x/bin
+	$(INSTALL_DIR) $(1)/usr/lib/libnet-1.1.x/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/libnet-config $(1)/usr/lib/libnet-1.1.x/bin/
-	mkdir -p $(1)/usr/lib/libnet-1.1.x/include
+	$(INSTALL_DIR) $(1)/usr/lib/libnet-1.1.x/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/libnet* $(1)/usr/lib/libnet-1.1.x/include/
-	mkdir -p $(1)/usr/lib/libnet-1.1.x/lib
+	$(INSTALL_DIR) $(1)/usr/lib/libnet-1.1.x/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnet.{a,so*} $(1)/usr/lib/libnet-1.1.x/lib/
 endef
 

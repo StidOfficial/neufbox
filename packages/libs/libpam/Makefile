@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpam
-PKG_VERSION:=0.99.6.3
+PKG_VERSION:=1.1.3
 PKG_RELEASE:=1
 
-PKG_SOURCE:=Linux-PAM-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.kernel.org/pub/linux/libs/pam/pre/library/
-PKG_MD5SUM:=0f17f7105faa82a51dfbeb6b08a1ca29
+PKG_SOURCE:=Linux-PAM-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=@KERNEL/linux/libs/pam/library
+PKG_MD5SUM:=6db7fcb5db6253350e3a4648ceac40e7
+PKG_INSTALL:=1
+PKG_FIXUP:=libtool
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/Linux-PAM-$(PKG_VERSION)
 
@@ -35,6 +37,7 @@ endef
 TARGET_CFLAGS += $(FPIC)
 
 define Build/Configure
+	(cd $(PKG_BUILD_DIR); autoreconf -v -f --install || exit 1)
 	$(call Build/Configure/Default, \
 		--enable-shared \
 		--enable-static \
@@ -47,16 +50,12 @@ define Build/Configure
 	)
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
+
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/lib $(1)/lib
-	mkdir -p $(1)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/lib/* $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/lib
+	$(INSTALL_DIR) $(1)/usr/include
+	$(CP) $(PKG_INSTALL_DIR)/lib/* $(1)/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include
 endef
 

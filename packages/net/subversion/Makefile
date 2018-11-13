@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=subversion
-PKG_VERSION:=1.5.2
-PKG_RELEASE:=3
+PKG_VERSION:=1.6.15
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://subversion.tigris.org/downloads/
-PKG_MD5SUM:=8321d0e1964846090f0174cb6bb18838
+PKG_SOURCE_URL:=http://subversion.tigris.org/downloads
+PKG_MD5SUM:=113fca1d9e4aa389d7dc2b210010fa69
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_REMOVE_FILES:=autogen.sh build/libtool.m4
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,9 +24,9 @@ define Package/subversion/Default
   SECTION:=net
   CATEGORY:=Network
   TITLE:=A compelling replacement for CVS
-  DEPENDS:=+zlib +libneon +libintl +libapr +libaprutil +libpthread
-  URL:=http://subversion.tigris.org/
-  SUBMENU:=subversion
+  DEPENDS:=+zlib +libneon +libintl +libaprutil
+  URL:=http://subversion.apache.org/
+  SUBMENU:=Version Control Systems
 endef
 
 define Package/subversion/Default/description
@@ -68,10 +69,14 @@ define Package/subversion-server/description
   This package contains the subversion server.
 endef
 
+define Package/subversion-server/conffiles
+/etc/config/subversion
+endef
+
 CONFIGURE_ARGS += \
 	--with-apr="$(STAGING_DIR)/usr/bin/apr-1-config" \
 	--with-apr-util="$(STAGING_DIR)/usr/bin/apu-1-config" \
-	--with-neon="$(STAGING_DIR)/usr/include/neon" \
+	--with-neon="$(STAGING_DIR)/usr" \
 	--disable-mod-activation \
 	--without-ruby-sitedir \
 	--without-swig \
@@ -81,7 +86,6 @@ CONFIGURE_ARGS += \
 	--with-ssl \
 	--disable-neon-version-check \
 	--with-apxs=no \
-	--with-apache=no \
 	--without-sasl \
 
 CONFIGURE_VARS += \
@@ -92,7 +96,9 @@ CONFIGURE_VARS += \
 	CPPFLAGS="$(TARGET_CPPFLAGS) -I$(STAGING_DIR)/usr/lib/libintl/include" \
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" all local-install
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all local-install
 endef
 
 define Package/subversion-libs/install
@@ -109,7 +115,7 @@ define Package/subversion-server/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/svn{look,admin,dumpfilter,serve} $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/subversion.config $(1)/etc/config/subversion
+	$(INSTALL_CONF) ./files/subversion.config $(1)/etc/config/subversion
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/subversion.init $(1)/etc/init.d/subversion
 endef

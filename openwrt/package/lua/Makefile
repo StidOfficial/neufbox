@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lua
 PKG_VERSION:=5.1.4
-PKG_RELEASE:=3
+PKG_RELEASE:=7
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
@@ -18,7 +18,10 @@ PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
 	http://www.tecgraf.puc-rio.br/lua/ftp/
 PKG_MD5SUM:=d0870f2de55d59c1c8419f36e8fac150
 
+HOST_PATCH_DIR := ./patches-host
+
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/lua/Default
   SUBMENU:=Lua
@@ -83,7 +86,7 @@ endef
 define Build/Configure
 endef
 
-TARGET_CFLAGS += -DLUA_USE_LINUX $(FPIC)
+TARGET_CFLAGS += -DLUA_USE_LINUX $(FPIC) -std=gnu99
 
 ifneq ($(CONFIG_USE_EGLIBC),)
   ifeq ($(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),)
@@ -105,6 +108,32 @@ define Build/Compile
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		INSTALL_TOP="$(PKG_INSTALL_DIR)/usr" \
+		install
+endef
+
+define Host/Configure
+	$(SED) 's,"/usr/local/","$(STAGING_DIR_HOST)/",' $(HOST_BUILD_DIR)/src/luaconf.h
+endef
+
+ifeq ($(HOST_OS),Darwin)
+	LUA_OS:=macosx
+else
+	ifeq ($(HOST_OS),FreeBSD)
+		LUA_OS:=freebsd
+	else
+		LUA_OS:=linux
+	endif
+endif
+
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR) \
+		CC="$(HOSTCC) -std=gnu99" \
+		$(LUA_OS)
+endef
+
+define Host/Install
+	$(MAKE) -C $(HOST_BUILD_DIR) \
+		INSTALL_TOP="$(STAGING_DIR_HOST)" \
 		install
 endef
 
@@ -145,3 +174,5 @@ $(eval $(call BuildPackage,liblua))
 $(eval $(call BuildPackage,lua))
 $(eval $(call BuildPackage,luac))
 $(eval $(call BuildPackage,lua-examples))
+$(eval $(call HostBuild))
+

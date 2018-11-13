@@ -115,13 +115,13 @@ GENERIC_FILES_DIR := $(foreach dir,$(wildcard $(GENERIC_PLATFORM_DIR)/files $(GE
 
 GENERIC_LINUX_CONFIG?=$(firstword $(wildcard $(GENERIC_PLATFORM_DIR)/config-$(KERNEL_PATCHVER) $(GENERIC_PLATFORM_DIR)/config-default))
 LINUX_CONFIG?=$(firstword $(wildcard $(foreach subdir,$(PLATFORM_DIR) $(PLATFORM_SUBDIR),$(subdir)/config-$(KERNEL_PATCHVER) $(subdir)/config-default)) $(PLATFORM_DIR)/config-$(KERNEL_PATCHVER))
-LINUX_SUBCONFIG?=$(firstword $(wildcard $(PLATFORM_SUBDIR)/config-$(KERNEL_PATCHVER) $(PLATFORM_SUBDIR)/config-default))
+LINUX_SUBCONFIG?=$(if $(SHARED_LINUX_CONFIG),,$(firstword $(wildcard $(PLATFORM_SUBDIR)/config-$(KERNEL_PATCHVER) $(PLATFORM_SUBDIR)/config-default)))
 ifeq ($(LINUX_CONFIG),$(LINUX_SUBCONFIG))
   LINUX_SUBCONFIG:=
 endif
 LINUX_CONFCMD=$(if $(LINUX_CONFIG), \
-	$(if $(GENERIC_LINUX_CONFIG),,$(error The generic kernel config for your kernel version is mising)) \
-	$(if $(LINUX_CONFIG),,$(error The target kernel config for your kernel version is mising)) \
+	$(if $(GENERIC_LINUX_CONFIG),,$(error The generic kernel config for your kernel version is missing)) \
+	$(if $(LINUX_CONFIG),,$(error The target kernel config for your kernel version is missing)) \
 	$(SCRIPT_DIR)/kconfig.pl \
 		+ $(GENERIC_LINUX_CONFIG) \
 		$(if $(LINUX_SUBCONFIG),+ $(LINUX_CONFIG) $(LINUX_SUBCONFIG),$(LINUX_CONFIG)), \
@@ -144,8 +144,13 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_PCI),)
       FEATURES += pci
     endif
+    ifneq ($(CONFIG_PCIEPORTBUS),)
+      FEATURES += pcie
+    endif
     ifneq ($(CONFIG_USB)$(CONFIG_USB_SUPPORT),)
-      FEATURES += usb
+      ifneq ($(CONFIG_USB_ARCH_HAS_HCD)$(CONFIG_USB_EHCI_HCD),)
+        FEATURES += usb
+      endif
     endif
     ifneq ($(CONFIG_PCMCIA)$(CONFIG_PCCARD),)
       FEATURES += pcmcia
@@ -159,6 +164,7 @@ ifeq ($(DUMP),1)
   endif
   DEFAULT_CFLAGS_i386=-O2 -pipe -march=i486 -funit-at-a-time
   DEFAULT_CFLAGS_x86_64=-O2 -pipe -march=athlon64 -funit-at-a-time
+  DEFAULT_CFLAGS_m68k=-Os -pipe -mcfv4e -funit-at-a-time
   DEFAULT_CFLAGS_mips=-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time
   DEFAULT_CFLAGS_mipsel=$(DEFAULT_CFLAGS_mips)
   DEFAULT_CFLAGS_mips64=-Os -pipe -mips64 -mtune=mips64 -mabi=64 -funit-at-a-time
@@ -174,9 +180,10 @@ define BuildTargets/DumpCurrent
 	@echo 'Target: $(TARGETID)'; \
 	 echo 'Target-Board: $(BOARD)'; \
 	 echo 'Target-Kernel: $(KERNEL)'; \
-	 echo 'Target-Name: $(BOARDNAME)$(if $(SUBTARGETS),, [$(KERNEL)])$(if $(SUBTARGETS),$(if $(SUBTARGET), [$(KERNEL)]))'; \
+	 echo 'Target-Name: $(BOARDNAME)$(if $(SUBTARGETS),$(if $(SUBTARGET),))'; \
 	 echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'; \
 	 echo 'Target-Arch: $(ARCH)'; \
+	 echo 'Target-Arch-Packages: $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD))'; \
 	 echo 'Target-Features: $(FEATURES)'; \
 	 echo 'Target-Depends: $(DEPENDS)'; \
 	 echo 'Target-Optimization: $(if $(CFLAGS),$(CFLAGS),$(DEFAULT_CFLAGS))'; \

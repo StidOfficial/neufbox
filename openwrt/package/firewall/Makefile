@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=firewall
 
 PKG_VERSION:=1
-PKG_RELEASE:=3
+PKG_RELEASE:=20
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -18,11 +18,12 @@ define Package/firewall
   CATEGORY:=Base system
   URL:=http://openwrt.org/
   TITLE:=OpenWrt firewall
-  DEPENDS:=+iptables-mod-conntrack +iptables-mod-nat
+  DEPENDS:=+iptables +iptables-mod-conntrack +iptables-mod-nat
+  PKGARCH:=all
 endef
 
 define Package/firewall/description
- uci based firewall for openwrt
+ UCI based firewall for OpenWrt
 endef
 
 define Build/Compile
@@ -31,6 +32,7 @@ endef
 
 define Package/firewall/conffiles
 /etc/config/firewall
+/etc/firewall.user
 endef
 
 define Package/firewall/install
@@ -42,6 +44,8 @@ define Package/firewall/install
 	$(INSTALL_BIN) ./files/firewall.init $(1)/etc/init.d/firewall
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/20-firewall $(1)/etc/hotplug.d/iface
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall
+	$(INSTALL_DATA) ./files/reflection.hotplug $(1)/etc/hotplug.d/firewall/10-nat-reflection
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) ./files/firewall.user $(1)/etc
 endef

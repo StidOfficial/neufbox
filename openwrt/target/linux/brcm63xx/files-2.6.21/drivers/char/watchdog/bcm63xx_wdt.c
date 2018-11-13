@@ -10,87 +10,96 @@
  *  2 of the License, or (at your option) any later version.
  */
 
-#include <linux/module.h>
-#include <linux/types.h>
-#include <linux/kernel.h>
+#include <linux/errno.h>
 #include <linux/fs.h>
-#include <linux/mm.h>
-#include <linux/miscdevice.h>
-#include <linux/watchdog.h>
-#include <linux/reboot.h>
-#include <linux/smp_lock.h>
 #include <linux/init.h>
-#include <linux/platform_device.h>
+#include <linux/kernel.h>
+#include <linux/miscdevice.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
+#include <linux/types.h>
 #include <linux/uaccess.h>
-#include <linux/irq.h>
+#include <linux/watchdog.h>
 #include <linux/clk.h>
+#include <linux/interrupt.h>
+#include <linux/ptrace.h>
+#include <linux/mm.h>
+#include <linux/resource.h>
+#include <linux/platform_device.h>
 
 #include <bcm63xx_cpu.h>
 #include <bcm63xx_io.h>
 #include <bcm63xx_regs.h>
+#include <bcm63xx_timer.h>
 
 #define PFX KBUILD_MODNAME
 
-#define WDT_INTERVAL	(40)    /* in seconds */
+#define WDT_DEFAULT_TIME	40      /* seconds */
+#define WDT_MAX_TIME		40     /* seconds */
 
 static struct {
 	void __iomem *regs;
-	int running;
-	int queue;
 	unsigned long inuse;
 } bcm63xx_wdt_device;
 
-static int ticks = WDT_INTERVAL;
-
 static int expect_close;
-static int timeout;
 
+static int wdt_time = WDT_DEFAULT_TIME;
 static int nowayout = WATCHDOG_NOWAYOUT;
 module_param(nowayout, int, 0);
 MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started (default="
 	__MODULE_STRING(WATCHDOG_NOWAYOUT) ")");
 
-
-static void bcm63xx_wdt_toggle(void)
+/* HW functions */
+static void bcm63xx_wdt_hw_start(void)
 {
 	bcm_writel(WDT_START_1, bcm63xx_wdt_device.regs + WDT_CTL_REG);
 	bcm_writel(WDT_START_2, bcm63xx_wdt_device.regs + WDT_CTL_REG);
 }
 
-static void bcm63xx_wdt_start(void)
+static void bcm63xx_wdt_hw_stop(void)
 {
-	if (!bcm63xx_wdt_device.inuse) {
-		bcm63xx_wdt_toggle();
-	}
-
-	bcm63xx_wdt_device.running++;
+	bcm_writel(WDT_STOP_1, bcm63xx_wdt_device.regs + WDT_CTL_REG);
+	bcm_writel(WDT_STOP_2, bcm63xx_wdt_device.regs + WDT_CTL_REG);
 }
 
-static void bcm63xx_wdt_stop(void)
-{
-	if (bcm63xx_wdt_device.running) {
-		bcm_writel(WDT_STOP_1, bcm63xx_wdt_device.regs + WDT_CTL_REG);
-		bcm_writel(WDT_STOP_2, bcm63xx_wdt_device.regs + WDT_CTL_REG);
-
-		bcm63xx_wdt_device.running = 0;
-	}
-}
-
-static void bcm63xx_wdt_set(int new_timeout)
-{
-	struct clk *clk;
-
-	clk = clk_get(NULL, "periph");
-	new_timeout *= clk_get_rate(clk);
-	bcm_writel(new_timeout, bcm63xx_wdt_device.regs + WDT_DEFVAL_REG);
-}
-
-static void bcm63xx_wdt_interrupt(void)
+static void bcm63xx_wdt_isr(void *data)
 {
 	struct pt_regs *regs = get_irq_regs();
 
-	show_registers(regs);
-	panic("WTD: trigger reboot!\n");
+	printk("====================[ WDT: start here ]====================\n");
+	show_mem();
+	die(PFX " fire", regs);
+}
+
+
+static void bcm63xx_wdt_pet(void)
+{
+	bcm63xx_wdt_hw_start();
+}
+
+static void bcm63xx_wdt_start(void)
+{
+	bcm63xx_wdt_pet();
+}
+
+static void bcm63xx_wdt_pause(void)
+{
+	bcm63xx_wdt_hw_stop();
+}
+
+static int bcm63xx_wdt_settimeout(int new_time)
+{
+	struct clk *clk;
+
+	if ((new_time <= 0) || (new_time > WDT_MAX_TIME))
+		return -EINVAL;
+
+	clk = clk_get(NULL, "periph");
+	new_time *= clk_get_rate(clk);
+	bcm_writel(new_time, bcm63xx_wdt_device.regs + WDT_DEFVAL_REG);
+
+	return 0;
 }
 
 static int bcm63xx_wdt_open(struct inode *inode, struct file *file)
@@ -98,23 +107,21 @@ static int bcm63xx_wdt_open(struct inode *inode, struct file *file)
 	if (test_and_set_bit(0, &bcm63xx_wdt_device.inuse))
 		return -EBUSY;
 
-	if (nowayout)
-		__module_get(THIS_MODULE);
-
+	bcm63xx_wdt_start();
 	return nonseekable_open(inode, file);
 }
 
 static int bcm63xx_wdt_release(struct inode *inode, struct file *file)
 {
-	if (expect_close && nowayout == 0) {
-		bcm63xx_wdt_stop();
-		printk(KERN_INFO PFX ": disabling watchdog timer\n");
-		module_put(THIS_MODULE);
-	} else
+	if ((expect_close == 42) && (nowayout == 0))
+		bcm63xx_wdt_pause();
+	else {
 		printk(KERN_CRIT PFX
-			": device closed unexpectedly. WDT will not stop !\n");
-
+			": Unexpected close, not stopping watchdog!\n");
+		bcm63xx_wdt_start();
+	}
 	clear_bit(0, &bcm63xx_wdt_device.inuse);
+	expect_close = 0;
 	return 0;
 }
 
@@ -133,73 +140,76 @@ static ssize_t bcm63xx_wdt_write(struct file *file, const char *data,
 				if (get_user(c, data + i))
 					return -EFAULT;
 				if (c == 'V')
-					expect_close = 1;
+					expect_close = 42;
 			}
 		}
-		bcm63xx_wdt_toggle();
-		return len;
+		bcm63xx_wdt_pet();
 	}
-	return 0;
+	return len;
 }
+
+static struct watchdog_info bcm63xx_wdt_info = {
+	.identity       = PFX,
+	.options        = WDIOF_SETTIMEOUT |
+				WDIOF_KEEPALIVEPING |
+				WDIOF_MAGICCLOSE,
+};
+
 
 static long bcm63xx_wdt_ioctl(struct file *file, unsigned int cmd,
 				unsigned long arg)
 {
 	void __user *argp = (void __user *)arg;
-	int new_timeout;
-	unsigned int value;
-	static struct watchdog_info ident = {
-		.options =		WDIOF_SETTIMEOUT |
-					WDIOF_KEEPALIVEPING |
-					WDIOF_MAGICCLOSE,
-		.identity =		"BCM63xx Watchdog",
-	};
+	int __user *p = argp;
+	int new_value, retval = -EINVAL;
+
 	switch (cmd) {
-	case WDIOC_KEEPALIVE:
-		bcm63xx_wdt_toggle();
-		break;
+	case WDIOC_GETSUPPORT:
+		return copy_to_user(argp, &bcm63xx_wdt_info,
+			sizeof(bcm63xx_wdt_info)) ? -EFAULT : 0;
+
 	case WDIOC_GETSTATUS:
 	case WDIOC_GETBOOTSTATUS:
-		value = bcm_readl(bcm63xx_wdt_device.regs + WDT_DEFVAL_REG);
-		if (copy_to_user(argp, &value, sizeof(int)))
-			return -EFAULT;
-		break;
-	case WDIOC_GETSUPPORT:
-		if (copy_to_user(argp, &ident, sizeof(ident)))
-			return -EFAULT;
-		break;
+		return put_user(0, p);
+
 	case WDIOC_SETOPTIONS:
-		if (copy_from_user(&value, argp, sizeof(int)))
+		if (get_user(new_value, p))
 			return -EFAULT;
-		switch (value) {
-		case WDIOS_ENABLECARD:
-			bcm63xx_wdt_start();
-			break;
-		case WDIOS_DISABLECARD:
-			bcm63xx_wdt_stop();
-		default:
-			return -EINVAL;
+
+		if (new_value & WDIOS_DISABLECARD) {
+			bcm63xx_wdt_pause();
+			retval = 0;
 		}
-		break;
+		if (new_value & WDIOS_ENABLECARD) {
+			bcm63xx_wdt_start();
+			retval = 0;
+		}
+
+		return retval;
+
+	case WDIOC_KEEPALIVE:
+		bcm63xx_wdt_pet();
+		return 0;
+
 	case WDIOC_SETTIMEOUT:
-		if (copy_from_user(&new_timeout, argp, sizeof(int)))
+		if (get_user(new_value, p))
 			return -EFAULT;
-		if (new_timeout < 5)
+
+		if (bcm63xx_wdt_settimeout(new_value))
 			return -EINVAL;
-		if (new_timeout > 40)
-			return -EINVAL;
-		bcm63xx_wdt_set(new_timeout);
-		bcm63xx_wdt_toggle();
+
+		bcm63xx_wdt_pet();
+
 	case WDIOC_GETTIMEOUT:
-		return copy_to_user(argp, &timeout, sizeof(int));
+		return put_user(wdt_time, p);
+
 	default:
 		return -ENOTTY;
-	}
 
-	return 0;
+	}
 }
 
-static struct file_operations bcm63xx_wdt_fops = {
+static const struct file_operations bcm63xx_wdt_fops = {
 	.owner		= THIS_MODULE,
 	.llseek		= no_llseek,
 	.write		= bcm63xx_wdt_write,
@@ -214,67 +224,77 @@ static struct miscdevice bcm63xx_wdt_miscdev = {
 	.fops	= &bcm63xx_wdt_fops,
 };
 
-static int bcm63xx_wdt_probe(struct platform_device *pdev)
+
+static int __devinit bcm63xx_wdt_probe(struct platform_device *pdev)
 {
 	int ret;
 	struct resource *r;
 
 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!r) {
-		printk(KERN_ERR PFX 
-			"failed to retrieve resources\n");
+		dev_err(&pdev->dev, "failed to get resources\n");
 		return -ENODEV;
 	}
 
 	bcm63xx_wdt_device.regs = ioremap_nocache(r->start, r->end - r->start);
 	if (!bcm63xx_wdt_device.regs) {
-		printk(KERN_ERR PFX
-			"failed to remap I/O resources\n");
+		dev_err(&pdev->dev, "failed to remap I/O resources\n");
 		return -ENXIO;
+	}
+
+	ret = bcm63xx_timer_register(TIMER_WDT_ID, bcm63xx_wdt_isr, NULL);
+	if (ret < 0) {
+		dev_err(&pdev->dev, "failed to register wdt timer isr\n");
+		goto unmap;
+	}
+
+	if (bcm63xx_wdt_settimeout(wdt_time)) {
+		bcm63xx_wdt_settimeout(WDT_DEFAULT_TIME);
+		dev_info(&pdev->dev,
+			": wdt_time value must be 1 <= wdt_time <= 256, using %d\n",
+			wdt_time);
 	}
 
 	ret = misc_register(&bcm63xx_wdt_miscdev);
 	if (ret < 0) {
-		printk(KERN_ERR PFX
-			"failed to register watchdog device\n");
-		goto unmap;
+		dev_err(&pdev->dev, "failed to register watchdog device\n");
+		goto unregister_timer;
 	}
 
-	bcm63xx_timer_register(TIMER_WDT_ID, bcm63xx_wdt_interrupt, NULL);
-	bcm63xx_wdt_device.queue = 0;
-
-	clear_bit(0, &bcm63xx_wdt_device.inuse);
-
-	bcm63xx_wdt_set(ticks);
-	bcm63xx_wdt_start();
-	
-	printk(KERN_INFO PFX " started, timer margin: %d sec\n", ticks);
+	dev_info(&pdev->dev, " started, timer margin: %d sec\n",
+						wdt_time);
 
 	return 0;
 
+unregister_timer:
+	bcm63xx_timer_unregister(TIMER_WDT_ID);
 unmap:
 	iounmap(bcm63xx_wdt_device.regs);
 	return ret;
 }
 
-static int bcm63xx_wdt_remove(struct platform_device *pdev)
+static int __devexit bcm63xx_wdt_remove(struct platform_device *pdev)
 {
-	if (bcm63xx_wdt_device.queue) {
-		bcm63xx_wdt_device.queue = 0;
-	}
+	if (!nowayout)
+		bcm63xx_wdt_pause();
 
-	bcm63xx_timer_unregister(TIMER_WDT_ID);
 	misc_deregister(&bcm63xx_wdt_miscdev);
-
+	bcm63xx_timer_unregister(TIMER_WDT_ID);
 	iounmap(bcm63xx_wdt_device.regs);
-
 	return 0;
+}
+
+static void bcm63xx_wdt_shutdown(struct platform_device *pdev)
+{
+	bcm63xx_wdt_pause();
 }
 
 static struct platform_driver bcm63xx_wdt = {
 	.probe	= bcm63xx_wdt_probe,
-	.remove = bcm63xx_wdt_remove,
+	.remove = __devexit_p(bcm63xx_wdt_remove),
+	.shutdown = bcm63xx_wdt_shutdown,
 	.driver = {
+		.owner = THIS_MODULE,
 		.name = "bcm63xx-wdt",
 	}
 };

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2005-2009 OpenWrt.org
+# Copyright (C) 2005-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libgcrypt
-PKG_VERSION:=1.4.4
+PKG_VERSION:=1.4.5
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.gnupg.org/gcrypt/libgcrypt/
-PKG_MD5SUM:=34105aa927e23c217741966496b97e67
+PKG_MD5SUM:=cc2017ad09b4543f8b3b5e9a53cfd89d
 
-PKG_FIXUP:=libtool
+PKG_FIXUP:=libtool no-autoreconf
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -38,9 +40,7 @@ define Package/libgcrypt/description
  RC2, SEED, Camellia, CRC, MD4, TIGER-192, Whirlpool, ElGamal, ECC).
 endef
 
-TARGET_CFLAGS += $(FPIC)
-
-CONFIGURE_ARGS+= \
+CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
 	--disable-asm \
@@ -49,14 +49,10 @@ CONFIGURE_ARGS+= \
 	--enable-ciphers="arcfour des aes" \
 	--enable-pubkey-ciphers="rsa dsa" \
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
+TARGET_CFLAGS += $(FPIC)
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/bin $(2)/bin $(1)/usr/include $(1)/usr/lib $(1)/usr/share/aclocal
+	$(INSTALL_DIR) $(1)/usr/bin $(2)/bin $(1)/usr/include $(1)/usr/lib $(1)/usr/share/aclocal
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/libgcrypt-config $(1)/usr/bin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/gcrypt*.h $(1)/usr/include/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgcrypt.{la,a,so*} $(1)/usr/lib/

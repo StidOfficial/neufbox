@@ -1,7 +1,6 @@
-diff -ruN samba-2.0.10/source/lib/charcnv.c samba-2.2.10/source/lib/charcnv.c
---- samba-2.0.10/source/lib/charcnv.c	2000-03-16 17:59:14.000000000 -0500
-+++ samba-2.2.10/source/lib/charcnv.c	2004-07-21 11:04:42.000000000 -0400
-@@ -191,6 +191,39 @@
+--- a/source/lib/charcnv.c
++++ b/source/lib/charcnv.c
+@@ -191,6 +191,39 @@ update_map("\360\217\361\237\362\220\363
  update_map("\370\234\371\233\372\207\373\230\374\235\375\231\376\227\377\232");
  }
  
@@ -41,7 +40,7 @@ diff -ruN samba-2.0.10/source/lib/charcnv.c samba-2.2.10/source/lib/charcnv.c
  
  /* Init for ROMAN-8 (HP-UX) */
  
-@@ -275,6 +308,10 @@
+@@ -275,6 +308,10 @@ void interpret_character_set(char *str,
          init_iso8859_7();
      } else if (strequal (str, "koi8-r")) {
          init_koi8_r();

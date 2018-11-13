@@ -21,15 +21,18 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_python-rrd \
 	CONFIG_PACKAGE_rrdcgi \
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
--include $(if $(DUMP),,$(STAGING_DIR)/mk/python-package.mk)
+$(call include_mk, python-package.mk)
 
 define Package/rrdtool/Default
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Round Robin Database (RRD)
+  URL:=http://oss.oetiker.ch/rrdtool/
 endef
 
 define Package/librrd
@@ -95,15 +98,14 @@ endif
 
 define Build/Compile
 	$(if $(Build/Compile/PyMod),,@echo Python packaging code not found.; false)
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" all install
+	$(call Build/Compile/Default)
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/rrd.h $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librrd.{a,so*} $(1)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librrd_th.{a,so*} $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/lib/rrdtool-1.2/include
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/rrd.h $(1)/usr/lib/rrdtool-1.2/include/
+	$(INSTALL_DIR) $(1)/usr/lib/rrdtool-1.2/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librrd{,_th}.{a,so*} $(1)/usr/lib/rrdtool-1.2/lib/
 endef
 
 define Package/librrd/install

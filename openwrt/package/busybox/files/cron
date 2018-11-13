@@ -3,10 +3,10 @@
 START=50
 
 start () {
-	loglevel=$(/sbin/uci get "system.@system[0].cronloglevel" 2>/dev/null)
+	loglevel=$(uci_get "system.@system[0].cronloglevel")
 	[ -z "$(ls /etc/crontabs/)" ] && exit 1
 	mkdir -p /var/spool/cron
-	[ -L /var/spool/cron/crontabs ] || ln -s /etc/crontabs /var/spool/cron/crontabs
+	ln -s /etc/crontabs /var/spool/cron/ 2>/dev/null
 	crond -c /etc/crontabs -l ${loglevel:-5}
 }
 

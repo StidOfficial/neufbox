@@ -1,7 +1,6 @@
-diff -ruN samba-2.0.10.orig/source/include/smb.h samba-2.0.10/source/include/smb.h
---- samba-2.0.10.orig/source/include/smb.h	2006-03-06 22:25:08.000000000 +0100
-+++ samba-2.0.10/source/include/smb.h	2006-03-06 22:25:53.000000000 +0100
-@@ -272,6 +272,7 @@
+--- a/source/include/smb.h
++++ b/source/include/smb.h
+@@ -272,6 +272,7 @@ implemented */
  #define ERRlock 33 /* Lock request conflicts with existing lock */
  #define ERRunsup 50 /* Request unsupported, returned by Win 95, RJS 20Jun98 */
  #define ERRfilexists 80 /* File in operation already exists */
@@ -9,7 +8,7 @@ diff -ruN samba-2.0.10.orig/source/include/smb.h samba-2.0.10/source/include/smb
  #define ERRcannotopen 110 /* Cannot open the file specified */
  #define ERRunknownlevel 124
  #define ERRrename 183
-@@ -1911,4 +1912,7 @@
+@@ -1911,4 +1912,7 @@ struct nmb_name {
  
  #define SAFE_NETBIOS_CHARS ". -_"
  
@@ -17,16 +16,14 @@ diff -ruN samba-2.0.10.orig/source/include/smb.h samba-2.0.10/source/include/smb
 +#define SAFE_FREE(x) do { if ((x) != NULL) {free((x)); (x)=NULL;} } while(0)
 +#endif
  #endif /* _SMB_H */
-diff -ruN samba-2.0.10.orig/source/include/version.h samba-2.0.10/source/include/version.h
---- samba-2.0.10.orig/source/include/version.h	2001-06-23 15:23:59.000000000 +0200
-+++ samba-2.0.10/source/include/version.h	2006-03-06 22:25:53.000000000 +0100
+--- a/source/include/version.h
++++ b/source/include/version.h
 @@ -1 +1 @@
 -#define VERSION "2.0.10"
 +#define VERSION "2.0.10-security-rollup"
-diff -ruN samba-2.0.10.orig/source/smbd/filename.c samba-2.0.10/source/smbd/filename.c
---- samba-2.0.10.orig/source/smbd/filename.c	2000-03-16 23:59:44.000000000 +0100
-+++ samba-2.0.10/source/smbd/filename.c	2006-03-06 22:25:53.000000000 +0100
-@@ -172,7 +172,7 @@
+--- a/source/smbd/filename.c
++++ b/source/smbd/filename.c
+@@ -172,7 +172,7 @@ static void stat_cache_add( char *full_o
     * StrnCpy always null terminates.
     */
  
@@ -35,10 +32,9 @@ diff -ruN samba-2.0.10.orig/source/smbd/filename.c samba-2.0.10/source/smbd/file
    if(!case_sensitive)
      strupper( orig_name );
  
-diff -ruN samba-2.0.10.orig/source/smbd/ipc.c samba-2.0.10/source/smbd/ipc.c
---- samba-2.0.10.orig/source/smbd/ipc.c	2006-03-06 22:25:08.000000000 +0100
-+++ samba-2.0.10/source/smbd/ipc.c	2006-03-06 22:25:53.000000000 +0100
-@@ -3556,18 +3556,18 @@
+--- a/source/smbd/ipc.c
++++ b/source/smbd/ipc.c
+@@ -3556,18 +3556,18 @@ int reply_trans(connection_struct *conn,
  	uint16 *setup=NULL;
  	int outsize = 0;
  	uint16 vuid = SVAL(inbuf,smb_uid);
@@ -67,7 +63,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/ipc.c samba-2.0.10/source/smbd/ipc.c
  
  	memset(name, '\0',sizeof(name));
  	fstrcpy(name,smb_buf(inbuf));
-@@ -3578,26 +3578,44 @@
+@@ -3578,26 +3578,44 @@ int reply_trans(connection_struct *conn,
    
  	if (tdscnt)  {
  		if((data = (char *)malloc(tdscnt)) == NULL) {
@@ -117,7 +113,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/ipc.c samba-2.0.10/source/smbd/ipc.c
  		for (i=0;i<suwcnt;i++)
  			setup[i] = SVAL(inbuf,smb_vwv14+i*SIZEOFWORD);
  	}
-@@ -3614,7 +3632,7 @@
+@@ -3614,7 +3632,7 @@ int reply_trans(connection_struct *conn,
  	/* receive the rest of the trans packet */
  	while (pscnt < tpscnt || dscnt < tdscnt) {
  		BOOL ret;
@@ -126,7 +122,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/ipc.c samba-2.0.10/source/smbd/ipc.c
        
  		ret = receive_next_smb(inbuf,bufsize,SMB_SECONDARY_WAIT);
  
-@@ -3625,19 +3643,19 @@
+@@ -3625,19 +3643,19 @@ int reply_trans(connection_struct *conn,
  				DEBUG(0,("reply_trans: %s in getting secondary trans response.\n",
  					 (smb_read_error == READ_ERROR) ? "error" : "timeout" ));
  			}
@@ -154,7 +150,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/ipc.c samba-2.0.10/source/smbd/ipc.c
  
  		pcnt = SVAL(inbuf,smb_vwv2);
  		poff = SVAL(inbuf,smb_vwv3);
-@@ -3650,17 +3668,36 @@
+@@ -3650,17 +3668,36 @@ int reply_trans(connection_struct *conn,
  		pscnt += pcnt;
  		dscnt += dcnt;
  		
@@ -198,7 +194,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/ipc.c samba-2.0.10/source/smbd/ipc.c
  	DEBUG(3,("trans <%s> data=%d params=%d setup=%d\n",
  		 name,tdscnt,tpscnt,suwcnt));
  	
-@@ -3700,4 +3737,12 @@
+@@ -3700,4 +3737,12 @@ int reply_trans(connection_struct *conn,
  		return(ERROR(ERRSRV,ERRnosupport));
  	
  	return(outsize);
@@ -211,10 +207,9 @@ diff -ruN samba-2.0.10.orig/source/smbd/ipc.c samba-2.0.10/source/smbd/ipc.c
 +	SAFE_FREE(setup);
 +	return(ERROR(ERRSRV,ERRerror));
  }
-diff -ruN samba-2.0.10.orig/source/smbd/nttrans.c samba-2.0.10/source/smbd/nttrans.c
---- samba-2.0.10.orig/source/smbd/nttrans.c	2000-04-24 19:27:30.000000000 +0200
-+++ samba-2.0.10/source/smbd/nttrans.c	2006-03-06 22:25:53.000000000 +0100
-@@ -2575,11 +2575,14 @@
+--- a/source/smbd/nttrans.c
++++ b/source/smbd/nttrans.c
+@@ -2575,11 +2575,14 @@ due to being in oplock break state.\n" )
      params = (char *)malloc(total_parameter_count);
    if (total_data_count > 0)
      data = (char *)malloc(total_data_count);
@@ -231,7 +226,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/nttrans.c samba-2.0.10/source/smbd/nttra
    }
  
    /* Copy the param and data bytes sent with this request into
-@@ -2588,64 +2591,112 @@
+@@ -2588,64 +2591,112 @@ due to being in oplock break state.\n" )
    num_data_sofar = data_count;
  
    if (parameter_count > total_parameter_count || data_count > total_data_count)
@@ -378,7 +373,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/nttrans.c samba-2.0.10/source/smbd/nttra
      }
    }
  
-@@ -2714,4 +2765,10 @@
+@@ -2714,4 +2765,10 @@ due to being in oplock break state.\n" )
    return outsize; /* If a correct response was needed the call_nt_transact_xxxx 
  		     calls have already sent it. If outsize != -1 then it is
  		     returning an error packet. */
@@ -389,10 +384,9 @@ diff -ruN samba-2.0.10.orig/source/smbd/nttrans.c samba-2.0.10/source/smbd/nttra
 +  SAFE_FREE(setup);
 +  return ERROR(ERRDOS,ERRinvalidparam);
  }
-diff -ruN samba-2.0.10.orig/source/smbd/password.c samba-2.0.10/source/smbd/password.c
---- samba-2.0.10.orig/source/smbd/password.c	2006-03-06 22:25:08.000000000 +0100
-+++ samba-2.0.10/source/smbd/password.c	2006-03-06 22:25:53.000000000 +0100
-@@ -770,7 +770,7 @@
+--- a/source/smbd/password.c
++++ b/source/smbd/password.c
+@@ -770,7 +770,7 @@ BOOL authorise_login(int snum,char *user
        if (!ok && lp_username(snum)) {
  	char *auser;
  	pstring user_list;
@@ -401,10 +395,9 @@ diff -ruN samba-2.0.10.orig/source/smbd/password.c samba-2.0.10/source/smbd/pass
  
  	pstring_sub(user_list,"%S",lp_servicename(snum));
  	  
-diff -ruN samba-2.0.10.orig/source/smbd/reply.c samba-2.0.10/source/smbd/reply.c
---- samba-2.0.10.orig/source/smbd/reply.c	2006-03-06 22:25:08.000000000 +0100
-+++ samba-2.0.10/source/smbd/reply.c	2006-03-06 22:25:53.000000000 +0100
-@@ -1413,6 +1413,9 @@
+--- a/source/smbd/reply.c
++++ b/source/smbd/reply.c
+@@ -1413,6 +1413,9 @@ int reply_search(connection_struct *conn
  
          for (i=numentries;(i<maxentries) && !finished;i++)
          {
@@ -414,7 +407,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/reply.c samba-2.0.10/source/smbd/reply.c
            finished = 
              !get_dir_entry(conn,mask,dirtype,fname,&size,&mode,&date,check_descend);
            if (!finished)
-@@ -3122,6 +3125,9 @@
+@@ -3122,6 +3125,9 @@ int reply_printqueue(connection_struct *
      
  
  		for (i=first;i<first+num_to_get;i++) {
@@ -424,10 +417,9 @@ diff -ruN samba-2.0.10.orig/source/smbd/reply.c samba-2.0.10/source/smbd/reply.c
  			put_dos_date2(p,0,queue[i].time);
  			CVAL(p,4) = (queue[i].status==LPQ_PRINTING?2:3);
  			SSVAL(p,5,printjob_encode(SNUM(conn), 
-diff -ruN samba-2.0.10.orig/source/smbd/trans2.c samba-2.0.10/source/smbd/trans2.c
---- samba-2.0.10.orig/source/smbd/trans2.c	2000-04-24 19:27:31.000000000 +0200
-+++ samba-2.0.10/source/smbd/trans2.c	2006-03-06 22:25:53.000000000 +0100
-@@ -201,7 +201,6 @@
+--- a/source/smbd/trans2.c
++++ b/source/smbd/trans2.c
+@@ -201,7 +201,6 @@ static int call_trans2open(connection_st
    int16 open_ofun = SVAL(params,12);
    int32 open_size = IVAL(params,14);
    char *pname = &params[28];
@@ -435,7 +427,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/trans2.c samba-2.0.10/source/smbd/trans2
  
    pstring fname;
    mode_t unixmode;
-@@ -213,7 +212,7 @@
+@@ -213,7 +212,7 @@ static int call_trans2open(connection_st
    BOOL bad_path = False;
    files_struct *fsp;
  
@@ -444,7 +436,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/trans2.c samba-2.0.10/source/smbd/trans2
  
    DEBUG(3,("trans2open %s mode=%d attr=%d ofun=%d size=%d\n",
  	   fname,open_mode, open_attr, open_ofun, open_size));
-@@ -2185,7 +2184,7 @@
+@@ -2185,7 +2184,7 @@ int reply_trans2(connection_struct *conn
  	unsigned int suwcnt = SVAL(inbuf, smb_suwcnt);
  	unsigned int tran_call = SVAL(inbuf, smb_setup0);
  	char *params = NULL, *data = NULL;
@@ -453,7 +445,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/trans2.c samba-2.0.10/source/smbd/trans2
  
  	if(global_oplock_break && (tran_call == TRANSACT2_OPEN)) {
  		/* Queue this open message as we are the process of an
-@@ -2203,8 +2202,9 @@
+@@ -2203,8 +2202,9 @@ int reply_trans2(connection_struct *conn
  	/* All trans2 messages we handle have smb_sucnt == 1 - ensure this
  	   is so as a sanity check */
  	if (suwcnt != 1) {
@@ -465,7 +457,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/trans2.c samba-2.0.10/source/smbd/trans2
  	}
      
  	/* Allocate the space for the maximum needed parameters and data */
-@@ -2215,11 +2215,9 @@
+@@ -2215,11 +2215,9 @@ int reply_trans2(connection_struct *conn
    
  	if ((total_params && !params)  || (total_data && !data)) {
  		DEBUG(2,("Out of memory in reply_trans2\n"));
@@ -480,7 +472,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/trans2.c samba-2.0.10/source/smbd/trans2
  	}
  
  	/* Copy the param and data bytes sent with this request into
-@@ -2230,20 +2228,37 @@
+@@ -2230,20 +2228,37 @@ int reply_trans2(connection_struct *conn
  	if (num_params > total_params || num_data > total_data)
  		exit_server("invalid params in reply_trans2");
  
@@ -523,7 +515,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/trans2.c samba-2.0.10/source/smbd/trans2
  
  			ret = receive_next_smb(inbuf,bufsize,SMB_SECONDARY_WAIT);
  			
-@@ -2255,26 +2270,55 @@
+@@ -2255,26 +2270,55 @@ int reply_trans2(connection_struct *conn
  				else
  					DEBUG(0,("reply_trans2: %s in getting secondary trans2 response.\n",
  						 (smb_read_error == READ_ERROR) ? "error" : "timeout" ));
@@ -593,7 +585,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/trans2.c samba-2.0.10/source/smbd/trans2
  		}
  	}
  	
-@@ -2367,4 +2411,10 @@
+@@ -2367,4 +2411,10 @@ int reply_trans2(connection_struct *conn
  	return outsize; /* If a correct response was needed the
  			   call_trans2xxx calls have already sent
  			   it. If outsize != -1 then it is returning */

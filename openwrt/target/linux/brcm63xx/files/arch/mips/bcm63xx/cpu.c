@@ -4,12 +4,14 @@
  * for more details.
  *
  * Copyright (C) 2008 Maxime Bizon <mbizon@freebox.fr>
- *		 2009 Florian Fainelli <florian@openwrt.org>
+ * Copyright (C) 2009 Florian Fainelli <florian@openwrt.org>
  */
 
+#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/cpu.h>
+#include <asm/cpu-info.h>
 #include <bcm63xx_cpu.h>
 #include <bcm63xx_regs.h>
 #include <bcm63xx_io.h>
@@ -21,9 +23,6 @@ EXPORT_SYMBOL(bcm63xx_regs_base);
 const int *bcm63xx_irqs;
 EXPORT_SYMBOL(bcm63xx_irqs);
 
-const unsigned long *bcm63xx_regs_spi;
-EXPORT_SYMBOL(bcm63xx_regs_spi);
-
 static u16 bcm63xx_cpu_id;
 static u16 bcm63xx_cpu_rev;
 static unsigned int bcm63xx_cpu_freq;
@@ -32,16 +31,28 @@ static unsigned int bcm63xx_memory_size;
 /*
  * 6338 register sets and irqs
  */
-
 static const unsigned long bcm96338_regs_base[] = {
+	[RSET_DSL_LMEM]		= BCM_6338_DSL_LMEM_BASE,
 	[RSET_PERF]		= BCM_6338_PERF_BASE,
 	[RSET_TIMER]		= BCM_6338_TIMER_BASE,
 	[RSET_WDT]		= BCM_6338_WDT_BASE,
-	[RSET_UDC0]		= BCM_6338_UDC0_BASE,
 	[RSET_UART0]		= BCM_6338_UART0_BASE,
+	[RSET_UART1]		= BCM_6338_UART1_BASE,
 	[RSET_GPIO]		= BCM_6338_GPIO_BASE,
 	[RSET_SPI]		= BCM_6338_SPI_BASE,
+	[RSET_OHCI0]		= BCM_6338_OHCI0_BASE,
+	[RSET_OHCI_PRIV]	= BCM_6338_OHCI_PRIV_BASE,
+	[RSET_USBH_PRIV]	= BCM_6338_USBH_PRIV_BASE,
+	[RSET_UDC0]		= BCM_6338_UDC0_BASE,
+	[RSET_MPI]		= BCM_6338_MPI_BASE,
+	[RSET_PCMCIA]		= BCM_6338_PCMCIA_BASE,
+	[RSET_SDRAM]		= BCM_6338_SDRAM_BASE,
+	[RSET_DSL]		= BCM_6338_DSL_BASE,
+	[RSET_ENET0]		= BCM_6338_ENET0_BASE,
+	[RSET_ENET1]		= BCM_6338_ENET1_BASE,
+	[RSET_ENETDMA]		= BCM_6338_ENETDMA_BASE,
 	[RSET_MEMC]		= BCM_6338_MEMC_BASE,
+	[RSET_DDR]		= BCM_6338_DDR_BASE,
 };
 
 static const int bcm96338_irqs[] = {
@@ -49,38 +60,38 @@ static const int bcm96338_irqs[] = {
 	[IRQ_SPI]		= BCM_6338_SPI_IRQ,
 	[IRQ_UART0]		= BCM_6338_UART0_IRQ,
 	[IRQ_DSL]		= BCM_6338_DSL_IRQ,
-	[IRQ_UDC0]		= BCM_6338_UDC0_IRQ,
 	[IRQ_ENET0]		= BCM_6338_ENET0_IRQ,
 	[IRQ_ENET_PHY]		= BCM_6338_ENET_PHY_IRQ,
 	[IRQ_ENET0_RXDMA]	= BCM_6338_ENET0_RXDMA_IRQ,
 	[IRQ_ENET0_TXDMA]	= BCM_6338_ENET0_TXDMA_IRQ,
 };
 
-static const unsigned long bcm96338_regs_spi[] = {
-	[SPI_CMD]		= SPI_BCM_6338_SPI_CMD,
-	[SPI_INT_STATUS]	= SPI_BCM_6338_SPI_INT_STATUS,
-	[SPI_INT_MASK_ST]	= SPI_BCM_6338_SPI_MASK_INT_ST,
-	[SPI_INT_MASK]		= SPI_BCM_6338_SPI_INT_MASK,
-	[SPI_ST]		= SPI_BCM_6338_SPI_ST,
-	[SPI_CLK_CFG]		= SPI_BCM_6338_SPI_CLK_CFG,
-	[SPI_FILL_BYTE]		= SPI_BCM_6338_SPI_FILL_BYTE,
-	[SPI_MSG_TAIL]		= SPI_BCM_6338_SPI_MSG_TAIL,
-	[SPI_RX_TAIL]		= SPI_BCM_6338_SPI_RX_TAIL,
-	[SPI_MSG_CTL]		= SPI_BCM_6338_SPI_MSG_CTL,
-	[SPI_MSG_DATA]		= SPI_BCM_6338_SPI_MSG_DATA,
-	[SPI_RX_DATA]		= SPI_BCM_6338_SPI_RX_DATA,
-};
-
 /*
  * 6345 register sets and irqs
  */
-
 static const unsigned long bcm96345_regs_base[] = {
+	[RSET_DSL_LMEM]		= BCM_6345_DSL_LMEM_BASE,
 	[RSET_PERF]		= BCM_6345_PERF_BASE,
 	[RSET_TIMER]		= BCM_6345_TIMER_BASE,
 	[RSET_WDT]		= BCM_6345_WDT_BASE,
 	[RSET_UART0]		= BCM_6345_UART0_BASE,
+	[RSET_UART1]		= BCM_6345_UART1_BASE,
 	[RSET_GPIO]		= BCM_6345_GPIO_BASE,
+	[RSET_SPI]		= BCM_6345_SPI_BASE,
+	[RSET_UDC0]		= BCM_6345_UDC0_BASE,
+	[RSET_OHCI0]		= BCM_6345_OHCI0_BASE,
+	[RSET_OHCI_PRIV]	= BCM_6345_OHCI_PRIV_BASE,
+	[RSET_USBH_PRIV]	= BCM_6345_USBH_PRIV_BASE,
+	[RSET_MPI]		= BCM_6345_MPI_BASE,
+	[RSET_PCMCIA]		= BCM_6345_PCMCIA_BASE,
+	[RSET_DSL]		= BCM_6345_DSL_BASE,
+	[RSET_ENET0]		= BCM_6345_ENET0_BASE,
+	[RSET_ENET1]		= BCM_6345_ENET1_BASE,
+	[RSET_ENETDMA]		= BCM_6345_ENETDMA_BASE,
+	[RSET_EHCI0]		= BCM_6345_EHCI0_BASE,
+	[RSET_SDRAM]		= BCM_6345_SDRAM_BASE,
+	[RSET_MEMC]		= BCM_6345_MEMC_BASE,
+	[RSET_DDR]		= BCM_6345_DDR_BASE,
 };
 
 static const int bcm96345_irqs[] = {
@@ -89,6 +100,8 @@ static const int bcm96345_irqs[] = {
 	[IRQ_DSL]		= BCM_6345_DSL_IRQ,
 	[IRQ_ENET0]		= BCM_6345_ENET0_IRQ,
 	[IRQ_ENET_PHY]		= BCM_6345_ENET_PHY_IRQ,
+	[IRQ_ENET0_RXDMA]	= BCM_6345_ENET0_RXDMA_IRQ,
+	[IRQ_ENET0_TXDMA]	= BCM_6345_ENET0_TXDMA_IRQ,
 };
 
 /*
@@ -100,12 +113,12 @@ static const unsigned long bcm96348_regs_base[] = {
 	[RSET_TIMER]		= BCM_6348_TIMER_BASE,
 	[RSET_WDT]		= BCM_6348_WDT_BASE,
 	[RSET_UART0]		= BCM_6348_UART0_BASE,
+	[RSET_UART1]		= BCM_6348_UART1_BASE,
 	[RSET_GPIO]		= BCM_6348_GPIO_BASE,
 	[RSET_SPI]		= BCM_6348_SPI_BASE,
 	[RSET_OHCI0]		= BCM_6348_OHCI0_BASE,
 	[RSET_OHCI_PRIV]	= BCM_6348_OHCI_PRIV_BASE,
 	[RSET_USBH_PRIV]	= BCM_6348_USBH_PRIV_BASE,
-	[RSET_UDC0]		= BCM_6348_UDC0_BASE,
 	[RSET_MPI]		= BCM_6348_MPI_BASE,
 	[RSET_PCMCIA]		= BCM_6348_PCMCIA_BASE,
 	[RSET_SDRAM]		= BCM_6348_SDRAM_BASE,
@@ -122,7 +135,6 @@ static const int bcm96348_irqs[] = {
 	[IRQ_SPI]		= BCM_6348_SPI_IRQ,
 	[IRQ_UART0]		= BCM_6348_UART0_IRQ,
 	[IRQ_DSL]		= BCM_6348_DSL_IRQ,
-	[IRQ_UDC0]		= BCM_6348_UDC0_IRQ,
 	[IRQ_ENET0]		= BCM_6348_ENET0_IRQ,
 	[IRQ_ENET1]		= BCM_6348_ENET1_IRQ,
 	[IRQ_ENET_PHY]		= BCM_6348_ENET_PHY_IRQ,
@@ -135,21 +147,6 @@ static const int bcm96348_irqs[] = {
 	[IRQ_PCI]		= BCM_6348_PCI_IRQ,
 };
 
-static const unsigned long bcm96348_regs_spi[] = {
-	[SPI_CMD]		= SPI_BCM_6348_SPI_CMD,
-	[SPI_INT_STATUS]	= SPI_BCM_6348_SPI_INT_STATUS,
-	[SPI_INT_MASK_ST]	= SPI_BCM_6348_SPI_MASK_INT_ST,
-	[SPI_INT_MASK]		= SPI_BCM_6348_SPI_INT_MASK,
-	[SPI_ST]		= SPI_BCM_6348_SPI_ST,
-	[SPI_CLK_CFG]		= SPI_BCM_6348_SPI_CLK_CFG,
-	[SPI_FILL_BYTE]		= SPI_BCM_6348_SPI_FILL_BYTE,
-	[SPI_MSG_TAIL]		= SPI_BCM_6348_SPI_MSG_TAIL,
-	[SPI_RX_TAIL]		= SPI_BCM_6348_SPI_RX_TAIL,
-	[SPI_MSG_CTL]		= SPI_BCM_6348_SPI_MSG_CTL,
-	[SPI_MSG_DATA]		= SPI_BCM_6348_SPI_MSG_DATA,
-	[SPI_RX_DATA]		= SPI_BCM_6348_SPI_RX_DATA,
-};
-
 /*
  * 6358 register sets and irqs
  */
@@ -159,6 +156,7 @@ static const unsigned long bcm96358_regs_base[] = {
 	[RSET_TIMER]		= BCM_6358_TIMER_BASE,
 	[RSET_WDT]		= BCM_6358_WDT_BASE,
 	[RSET_UART0]		= BCM_6358_UART0_BASE,
+	[RSET_UART1]		= BCM_6358_UART1_BASE,
 	[RSET_GPIO]		= BCM_6358_GPIO_BASE,
 	[RSET_SPI]		= BCM_6358_SPI_BASE,
 	[RSET_OHCI0]		= BCM_6358_OHCI0_BASE,
@@ -180,6 +178,7 @@ static const int bcm96358_irqs[] = {
 	[IRQ_TIMER]		= BCM_6358_TIMER_IRQ,
 	[IRQ_SPI]		= BCM_6358_SPI_IRQ,
 	[IRQ_UART0]		= BCM_6358_UART0_IRQ,
+	[IRQ_UART1]		= BCM_6358_UART1_IRQ,
 	[IRQ_DSL]		= BCM_6358_DSL_IRQ,
 	[IRQ_ENET0]		= BCM_6358_ENET0_IRQ,
 	[IRQ_ENET1]		= BCM_6358_ENET1_IRQ,
@@ -194,19 +193,61 @@ static const int bcm96358_irqs[] = {
 	[IRQ_PCI]		= BCM_6358_PCI_IRQ,
 };
 
-static const unsigned long bcm96358_regs_spi[] = {
-	[SPI_CMD]		= SPI_BCM_6358_SPI_CMD,
-	[SPI_INT_STATUS]	= SPI_BCM_6358_SPI_INT_STATUS,
-	[SPI_INT_MASK_ST]	= SPI_BCM_6358_SPI_MASK_INT_ST,
-	[SPI_INT_MASK]		= SPI_BCM_6358_SPI_INT_MASK,
-	[SPI_ST]		= SPI_BCM_6358_SPI_STATUS,
-	[SPI_CLK_CFG]		= SPI_BCM_6358_SPI_CLK_CFG,
-	[SPI_FILL_BYTE]		= SPI_BCM_6358_SPI_FILL_BYTE,
-	[SPI_MSG_TAIL]		= SPI_BCM_6358_SPI_MSG_TAIL,
-	[SPI_RX_TAIL]		= SPI_BCM_6358_SPI_RX_TAIL,
-	[SPI_MSG_CTL]		= SPI_BCM_6358_MSG_CTL,
-	[SPI_MSG_DATA]		= SPI_BCM_6358_SPI_MSG_DATA,
-	[SPI_RX_DATA]		= SPI_BCM_6358_SPI_RX_DATA,
+/*
+ * 6362 register sets and irqs
+ */
+static const unsigned long bcm96362_regs_base[] = {
+	[RSET_PERF]		= BCM_6362_PERF_BASE,
+	[RSET_TIMER]		= BCM_6362_TIMER_BASE,
+	[RSET_WDT]		= BCM_6362_WDT_BASE,
+	[RSET_UART0]		= BCM_6362_UART0_BASE,
+	[RSET_GPIO]		= BCM_6362_GPIO_BASE,
+	[RSET_SPI]		= BCM_6362_SPI_BASE,
+	[RSET_OHCI0]		= BCM_6362_OHCI0_BASE,
+	[RSET_EHCI0]		= BCM_6362_EHCI0_BASE,
+	[RSET_OHCI_PRIV]	= BCM_6362_OHCI_PRIV_BASE,
+	[RSET_USBH_PRIV]	= BCM_6362_USBH_PRIV_BASE,
+	[RSET_HSSPI]		= BCM_6362_HSSPI_BASE,
+	[RSET_DDR]		= BCM_6362_DDR_BASE,
+	[RSET_MISC]		= BCM_6362_MISC_BASE,
+	[RSET_TDM]              = BCM_6362_TDM_BASE,
+	[RSET_TDM_DMA]          = BCM_6362_TDM_DMA_BASE,
+	[RSET_TDM_DMA_CH1]      = BCM_6362_TDM_DMA_CH1_BASE,
+	[RSET_TDM_DMA_CH2]      = BCM_6362_TDM_DMA_CH2_BASE,
+};
+
+static const int bcm96362_irqs[] = {
+	[IRQ_TIMER]		= BCM_6362_TIMER_IRQ,
+	[IRQ_RING_OSC]          = BCM_6362_RING_OSC_IRQ,
+	[IRQ_SPI]               = BCM_6362_SPI_IRQ,
+	[IRQ_UART0]		= BCM_6362_UART0_IRQ,
+	[IRQ_UART1]             = BCM_6362_UART1_IRQ,
+	[IRQ_HSSPI]		= BCM_6362_HSSPI_IRQ,
+	[IRQ_WLAN_GPIO]         = BCM_6362_WLAN_GPIO_IRQ,
+	[IRQ_WLAN]              = BCM_6362_WLAN_IRQ,
+	[IRQ_IPSEC]             = BCM_6362_IPSEC_IRQ,
+	[IRQ_OHCI0]		= BCM_6362_OHCI0_IRQ,
+	[IRQ_EHCI0]		= BCM_6362_EHCI0_IRQ,
+	[IRQ_USBS]              = BCM_6362_USBS_IRQ,
+	[IRQ_NAND_FLASH]        = BCM_6362_NAND_FLASH_IRQ,
+	[IRQ_TDM]               = BCM_6362_TDM_IRQ,
+	[IRQ_EPHY]              = BCM_6362_EPHY_IRQ,
+	[IRQ_EPHY_ENERGY_0]     = BCM_6362_EPHY_ENERGY_0_IRQ,
+	[IRQ_EPHY_ENERGY_1]     = BCM_6362_EPHY_ENERGY_1_IRQ,
+	[IRQ_EPHY_ENERGY_2]     = BCM_6362_EPHY_ENERGY_2_IRQ,
+	[IRQ_EPHY_ENERGY_3]     = BCM_6362_EPHY_ENERGY_3_IRQ,
+	[IRQ_USB_CNTL_RX_DMA]   = BCM_6362_USB_CNTL_RX_DMA_IRQ,
+	[IRQ_USB_CNTL_TX_DMA]   = BCM_6362_USB_CNTL_TX_DMA_IRQ,
+	[IRQ_USB_BULK_RX_DMA]   = BCM_6362_USB_BULK_RX_DMA_IRQ,
+	[IRQ_USB_BULK_TX_DMA]   = BCM_6362_USB_BULK_TX_DMA_IRQ,
+	[IRQ_USB_ISO_RX_DMA]    = BCM_6362_USB_BULK_RX_DMA_IRQ,
+	[IRQ_USB_ISO_TX_DMA]    = BCM_6362_USB_BULK_TX_DMA_IRQ,
+	[IRQ_IPSEC_DMA_0]       = BCM_6362_IPSEC_DMA_0_IRQ,
+	[IRQ_IPSEC_DMA_1]       = BCM_6362_IPSEC_DMA_1_IRQ,
+	[IRQ_XDSL]              = BCM_6362_XDSL_IRQ,
+	[IRQ_FAP]               = BCM_6362_FAP_IRQ,
+	[IRQ_PCIE_RC]           = BCM_6362_PCIE_RC_IRQ,
+	[IRQ_PCIE_EP]           = BCM_6362_PCIE_EP_IRQ,
 };
 
 u16 __bcm63xx_get_cpu_id(void)
@@ -232,14 +273,17 @@ unsigned int bcm63xx_get_memory_size(void)
 {
 	return bcm63xx_memory_size;
 }
+EXPORT_SYMBOL(bcm63xx_get_memory_size);
 
 static unsigned int detect_cpu_clock(void)
 {
 	unsigned int tmp, n1 = 0, n2 = 0, m1 = 0;
 
+	/* BCM6338 has a fixed 240 Mhz frequency */
 	if (BCMCPU_IS_6338())
 		return 240000000;
 
+	/* BCM6345 has a fixed 140Mhz frequency */
 	if (BCMCPU_IS_6345())
 		return 140000000;
 
@@ -265,6 +309,21 @@ static unsigned int detect_cpu_clock(void)
 		m1 = (tmp & DMIPSPLLCFG_M1_MASK) >> DMIPSPLLCFG_M1_SHIFT;
 	}
 
+	if (BCMCPU_IS_6362()) {
+		const u32 cpu_speed_table[0x20] = {
+			320, 320, 320, 240, 160, 400, 440, 384,
+			320, 320, 320, 240, 160, 320, 400, 320,
+			320, 320, 320, 240, 160, 200, 400, 384,
+			320, 320, 320, 240, 160, 200, 400, 400
+		};
+		u32 mips_pll_fvco;
+
+		mips_pll_fvco = bcm_rset_readl(RSET_MISC, MISC_STRAP_BUS) & MISC_STRAP_BUS_MIPS_PLL_FVCO_MASK;
+		mips_pll_fvco >>= MISC_STRAP_BUS_MIPS_PLL_FVCO_SHIFT;
+
+		return cpu_speed_table[mips_pll_fvco] * 1000000;
+	}
+
 	return (16 * 1000000 * n1 * n2) / m1;
 }
 
@@ -275,6 +334,12 @@ static unsigned int detect_memory_size(void)
 {
 	unsigned int cols = 0, rows = 0, is_32bits = 0, banks = 0;
 	u32 val;
+
+	if (BCMCPU_IS_6345())
+		return (8 * 1024 * 1024);
+
+	if (BCMCPU_IS_6362())
+		return (bcm_ddr_readl(DDR_CSEND_REG) << 24);
 
 	if (BCMCPU_IS_6338() || BCMCPU_IS_6348()) {
 		val = bcm_sdram_readl(SDRAM_CFG_REG);
@@ -305,16 +370,24 @@ void __init bcm63xx_cpu_init(void)
 {
 	unsigned int tmp, expected_cpu_id;
 	struct cpuinfo_mips *c = &current_cpu_data;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+	unsigned int cpu = smp_processor_id();
+#endif
 
 	/* soc registers location depends on cpu type */
 	expected_cpu_id = 0;
 
 	switch (c->cputype) {
-	case CPU_BCM6338:
+	/*
+	 * BCM6338 as the same PrId as BCM3302 see arch/mips/kernel/cpu-probe.c
+	 */
+	case CPU_BCM3302:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+		__cpu_name[cpu] = "Broadcom BCM6338";
+#endif
 		expected_cpu_id = BCM6338_CPU_ID;
 		bcm63xx_regs_base = bcm96338_regs_base;
 		bcm63xx_irqs = bcm96338_irqs;
-		bcm63xx_regs_spi = bcm96338_regs_spi;
 		break;
 	case CPU_BCM6345:
 		expected_cpu_id = BCM6345_CPU_ID;
@@ -325,18 +398,23 @@ void __init bcm63xx_cpu_init(void)
 		expected_cpu_id = BCM6348_CPU_ID;
 		bcm63xx_regs_base = bcm96348_regs_base;
 		bcm63xx_irqs = bcm96348_irqs;
-		bcm63xx_regs_spi = bcm96348_regs_spi;
 		break;
 	case CPU_BCM6358:
 		expected_cpu_id = BCM6358_CPU_ID;
 		bcm63xx_regs_base = bcm96358_regs_base;
 		bcm63xx_irqs = bcm96358_irqs;
-		bcm63xx_regs_spi = bcm96358_regs_spi;
+		break;
+	case CPU_BCM6362:
+		expected_cpu_id = BCM6362_CPU_ID;
+		bcm63xx_regs_base = bcm96362_regs_base;
+		bcm63xx_irqs = bcm96362_irqs;
 		break;
 	}
 
-	/* really early to panic, but delaying panic would not help
-	 * since we will never get any working console */
+	/*
+	 * really early to panic, but delaying panic would not help since we
+	 * will never get any working console
+	 */
 	if (!expected_cpu_id)
 		panic("unsupported Broadcom CPU");
 
@@ -357,8 +435,8 @@ void __init bcm63xx_cpu_init(void)
 
 	printk(KERN_INFO "Detected Broadcom 0x%04x CPU revision %02x\n",
 	       bcm63xx_cpu_id, bcm63xx_cpu_rev);
-	printk(KERN_INFO "CPU frequency is %u Hz\n",
-	       bcm63xx_cpu_freq);
+	printk(KERN_INFO "CPU frequency is %u MHz\n",
+	       bcm63xx_cpu_freq / 1000000);
 	printk(KERN_INFO "%uMB of RAM installed\n",
 	       bcm63xx_memory_size >> 20);
 }

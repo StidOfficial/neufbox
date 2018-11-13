@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,19 +9,18 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tftp-hpa
 PKG_VERSION:=0.48
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=ftp://ftp.kernel.org/pub/software/network/tftp
+PKG_SOURCE_URL:=@KERNEL/software/network/tftp
 PKG_MD5SUM:=73dd29dfa9062a174163f6a267e0b5f7
-
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/tftp-hpa/Default
   SECTION:=net
   CATEGORY:=Network
+  DEPENDS:=+libreadline
   URL:=http://www.kernel.org/pub/software/network/tftp
 endef
 
@@ -37,7 +36,7 @@ endef
 
 define Build/Configure	
 	$(call Build/Configure/Default, \
-		, \
+		--without-tcpwrappers, \
 		CFLAGS="$$$$CFLAGS $$$$CPPFLAGS" \
 	)
 endef

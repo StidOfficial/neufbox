@@ -18,5 +18,7 @@ start() {
 stop() {
 	$IPTABLES -D LAN_FILTER -m tcp -p tcp -m state --state NEW --dport 9100 -j ACCEPT
 	for f in `ls /var/run/p910*d.pid`; do kill `cat $f`; done;
+	sleep 1
+	for f in `ls /var/run/p910*d.pid`; do kill -KILL `cat $f`; done;
 	status set p910nd_status down
 }

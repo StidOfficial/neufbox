@@ -1,38 +1,56 @@
 #
-# Copyright (C) 2008-2009 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 include $(TOPDIR)/rules.mk
+
 PKG_NAME:=owfs
-PKG_VERSION:=2.7p13
+PKG_VERSION:=2.8p4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=285483508f7fa42af3500b04f792058c
+PKG_MD5SUM:=beccd8765184b2abea0a3f28dc466ea3
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool 
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
-
 
 #
 # templates
 #
 
-define Package/owfs/Default
+define Package/$(PKG_NAME)/Default
   TITLE:=OWFS (1-Wire File System)
   URL:=http://owfs.sourceforge.net/
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=Filesystem
+endef
+
+define Package/$(PKG_NAME)/Default/description
+  OWFS is a suite of programs that designed to make the 1-wire bus and its
+  devices easily accessible. The underlying priciple is to create a virtual
+  filesystem, with the unique ID being the directory, and the individual
+  properties of the device are represented as simple files that can be read
+  and written.
+
+  Details of the individual slave or master design are hidden behind a
+  consistent interface. The goal is to provide an easy set of tools for a
+  software designer to create monitoring or control applications. There are
+  some performance enhancements in the implementation, including data caching,
+  parallel access to bus masters, and aggregation of device communication.
+  Still the fundemental goal has been ease of use, flexibility and correctness
+  rather than speed.
 endef
 
 define Package/owfs/Server
   $(call Package/owfs/Default)
   DEPENDS:=+libow +libpthread
-  SECTION:=net
-  CATEGORY:=Network
 endef
 
 define Package/owfs/Library
@@ -48,12 +66,6 @@ define Package/owfs/Utility
   DEPENDS:=+libow
 endef
 
-define Package/owfs/ServerInstall
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/$(2) $(1)/usr/bin/
-endef
-
-
 #
 # shared libraries
 #
@@ -64,12 +76,23 @@ define Package/libow
   TITLE:=OWFS - common shared library
 endef
 
+define Package/libow/description
+  $(call Package/$(PKG_NAME)/Default/description)
+
+  This package contains the OWFS library.
+endef
+
 define Package/libow-capi
   $(call Package/owfs/Library)
   DEPENDS:=+libow
   TITLE:=OWFS - C-API library
 endef
 
+define Package/libow-capi/description
+  $(call Package/$(PKG_NAME)/Default/description)
+
+  This package contains the OWFS C-API library.
+endef
 
 #
 # utilities
@@ -80,14 +103,24 @@ define Package/owshell
   TITLE:=OWFS - shell utilities
 endef
 
+define Package/owshell/description
+  $(call Package/$(PKG_NAME)/Default/description)
+
+  This package contains the OWFS shell utilities.
+endef
+
 define Package/owfs
   $(call Package/owfs/Utility)
-  SECTION:=utils
-  CATEGORY:=Utilities
-  DEPENDS+=+kmod-fuse +libfuse +fuse-utils
+  # libfuse depends on kmod-fuse, no need to declare dependency
+  DEPENDS+= +libfuse +fuse-utils
   TITLE:=OWFS - fuse file system
 endef
 
+define Package/owfs/description
+  $(call Package/$(PKG_NAME)/Default/description)
+
+  This package contains the OWFS fuse filesystem.
+endef
 
 #
 # network daemons
@@ -98,9 +131,21 @@ define Package/owhttpd
   TITLE:=OWFS - http server
 endef
 
+define Package/owhttpd/description
+  $(call Package/$(PKG_NAME)/Default/description)
+
+  This package contains the OWFS http server.
+endef
+
 define Package/owftpd
   $(call Package/owfs/Server)
   TITLE:=OWFS - ftp server
+endef
+
+define Package/owftpd/description
+  $(call Package/$(PKG_NAME)/Default/description)
+
+  This package contains the OWFS ftp server.
 endef
 
 define Package/owserver
@@ -108,68 +153,52 @@ define Package/owserver
   TITLE:=OWFS - network server
 endef
 
+define Package/owserver/description
+  $(call Package/$(PKG_NAME)/Default/description)
 
-
-PKG_CONFIGURE_OPTS:= \
-		--enable-zero \
-		--disable-parport \
-		--disable-ownfsd \
-		--disable-ownet \
-		--disable-owpython \
-		--disable-libow-perl \
-		--disable-owphp \
-		--disable-owtcl \
-		--disable-owside \
-		--disable-swig
+  This package contains the OWFS network server.
+endef
 
 CONFIGURE_ARGS += \
-	--prefix=/usr \
-	--exec-prefix=/usr \
 	--enable-owftpd \
 	--enable-owserver \
 	--enable-owhttpd \
 	--enable-owfs \
 	--with-fuseinclude="$(STAGING_DIR)/usr/include" \
 	--with-fuselib="$(STAGING_DIR)/usr/lib" \
-	$(PKG_CONFIGURE_OPTS) \
 	--enable-shared \
-	--disable-rpath
+	--disable-rpath \
+	--enable-zero \
+	--disable-parport \
+	--disable-ownfsd \
+	--disable-ownet \
+	--disable-owpython \
+	--disable-libow-perl \
+	--disable-owphp \
+	--disable-owtcl \
+	--disable-owside \
+	--disable-swig \
 
-define Build/Configure
-	(cd $(PKG_BUILD_DIR); \
-		rm -rf config.{status,cache} ; \
-		./bootstrap ; \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) $(CFLAGS_LARGEFILE)" \
-		CPPFLAGS="$(TARGET_CPPFLAGS)" \
-		LDFLAGS="$(TARGET_LDFLAGS)" \
-		lt_sys_lib_dlsearch_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
-		lt_sys_lib_search_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
-		shrext_cmds=".so" \
-		./configure \
-			$(CONFIGURE_ARGS) \
-	);
-endef
+CONFIGURE_VARS += \
+	LDFLAGS="$(TARGET_LDFLAGS) -Wl,-rpath-link=$(STAGING_DIR)/usr/lib -Wl,-rpath-link=$(TOOLCHAIN_DIR)/usr/lib" \
+	lt_cv_sys_lib_dlsearch_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
+	lt_cv_sys_lib_search_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
+	shrext_cmds=".so" \
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
+		HOST_CPU="$(PKGARCH)" \
 		all install
 endef
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP)	$(PKG_INSTALL_DIR)/usr/include/{owcapi,owfs_config}.h $(STAGING_DIR)/usr/include/
-	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libow-*.so* $(PKG_INSTALL_DIR)/usr/lib/libowcapi-*.so* $(STAGING_DIR)/usr/lib/
+	$(INSTALL_DIR) $(STAGING_DIR)/usr/include
+	$(CP)	$(PKG_INSTALL_DIR)/usr/include/ow{capi,fs_config}.h $(STAGING_DIR)/usr/include/
+	$(INSTALL_DIR) $(STAGING_DIR)/usr/lib
+	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libow{,capi}*.so* $(STAGING_DIR)/usr/lib/
 endef
-
-define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/{libow-capi,owfs_config}.h \
-		$(STAGING_DIR)/usr/lib/libow-capi-*.so* \
-		$(STAGING_DIR)/usr/lib/libow-*.so*
-endef
-
 
 define Package/owfs/install
 	$(INSTALL_DIR) $(1)/usr/bin
@@ -178,6 +207,7 @@ endef
 
 define Package/owshell/install
 	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/owget $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/owread $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/owwrite $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/owdir $(1)/usr/bin/
@@ -186,15 +216,18 @@ endef
 
 
 define Package/owserver/install
-	$(call Package/owfs/ServerInstall,$(1),owserver,70)
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/owserver $(1)/usr/bin/
 endef
 
 define Package/owhttpd/install
-	$(call Package/owfs/ServerInstall,$(1),owhttpd,80)
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/owhttpd $(1)/usr/bin/
 endef
 
 define Package/owftpd/install
-	$(call Package/owfs/ServerInstall,$(1),owftpd,80)
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/owftpd $(1)/usr/bin/
 endef
 
 
@@ -206,8 +239,6 @@ endef
 define Package/libow-capi/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libowcapi-*.so.* $(1)/usr/lib/
-	#$(INSTALL_DIR) $(1)/usr/include
-	#$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/include/{owcapi,owfs_config}.h $(1)/usr/include/
 endef
 
 

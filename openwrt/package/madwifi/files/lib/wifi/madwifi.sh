@@ -4,7 +4,7 @@ append DRIVERS "atheros"
 scan_atheros() {
 	local device="$1"
 	local wds
-	local adhoc sta ap
+	local adhoc ahdemo sta ap monitor
 	
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
@@ -84,21 +84,89 @@ enable_atheros() {
 
 	[ auto = "$channel" ] && channel=0
 
-	local first=1
+	config_get_bool antdiv "$device" diversity
+	config_get antrx "$device" rxantenna
+	config_get anttx "$device" txantenna
+	config_get_bool softled "$device" softled
+	config_get antenna "$device" antenna
+
+	devname="$(cat /proc/sys/dev/$device/dev_name)"
+	local antgpio=
+	local invert=
+	case "$devname" in
+		NanoStation2) antgpio=7; invert=1;;
+		NanoStation5) antgpio=1; invert=1;;
+		"NanoStation Loco2") antgpio=2;;
+		"NanoStation Loco5")
+			case "$antenna" in
+				horizontal) antdiv=0; anttx=1; antrx=1;;
+				vertical) antdiv=0; anttx=2; antrx=2;;
+				*) antdiv=1; anttx=0; antrx=0;;
+			esac
+		;;
+	esac
+	if [ -n "$invert" ]; then
+		_set="clear"
+		_clear="set"
+	else
+		_set="set"
+		_clear="clear"
+	fi
+	if [ -n "$antgpio" ]; then
+		softled=0
+		case "$devname" in
+			"NanoStation Loco2")
+				antdiv=0
+				antrx=1
+				anttx=1
+				case "$antenna" in
+					horizontal) gpioval=0;;
+					*) gpioval=1;;
+				esac
+			;;
+			*)
+				case "$antenna" in
+					external) antdiv=0; antrx=1; anttx=1; gpioval=1;;
+					horizontal) antdiv=0; antrx=1; anttx=1; gpioval=0;;
+					vertical) antdiv=0; antrx=2; anttx=2; gpioval=0;;
+					auto) antdiv=1; antrx=0; anttx=0; gpioval=0;;
+				esac
+			;;
+		esac
+			
+		[ -x "$(which gpioctl 2>/dev/null)" ] || antenna=
+		gpioctl "dirout" "$antgpio" >/dev/null 2>&1
+		case "$gpioval" in
+			0)
+				gpioctl "$_clear" "$antgpio" >/dev/null 2>&1
+			;;
+			1)
+				gpioctl "$_set" "$antgpio" >/dev/null 2>&1
+			;;
+		esac
+	fi
+
+	[ -n "$antdiv" ] && sysctl -w dev."$device".diversity="$antdiv" >&-
+	[ -n "$antrx" ] && sysctl -w dev."$device".rxantenna="$antrx" >&-
+	[ -n "$anttx" ] && sysctl -w dev."$device".txantenna="$anttx" >&-
+	[ -n "$softled" ] && sysctl -w dev."$device".softled="$softled" >&-
+
+	config_get distance "$device" distance
+	[ -n "$distance" ] && sysctl -w dev."$device".distance="$distance" >&-
+
 	for vif in $vifs; do
-		local start_hostapd vif_txpower
-		nosbeacon=
+		local start_hostapd= vif_txpower= nosbeacon=
 		config_get ifname "$vif" ifname
 		config_get enc "$vif" encryption
 		config_get eap_type "$vif" eap_type
 		config_get mode "$vif" mode
 		
 		case "$mode" in
-			sta) config_get nosbeacon "$device" nosbeacon;;
-			adhoc) config_get nosbeacon "$vif" sw_merge;;
+			sta) config_get_bool nosbeacon "$device" nosbeacon;;
+			adhoc) config_get_bool nosbeacon "$vif" sw_merge 1;;
 		esac
 		
-		config_get ifname "$vif" ifname
+		[ "$nosbeacon" = 1 ] || nosbeacon=""
 		ifname=$(wlanconfig "$ifname" create wlandev "$device" wlanmode "$mode" ${nosbeacon:+nosbeacon})
 		[ $? -ne 0 ] && {
 			echo "enable_atheros($device): Failed to set up $mode vif $ifname" >&2
@@ -106,7 +174,6 @@ enable_atheros() {
 		}
 		config_set "$vif" ifname "$ifname"
 
-		# only need to change freq band and channel on the first vif
 		config_get hwmode "$device" hwmode
 		[ -z "$hwmode" ] && config_get hwmode "$device" mode
 
@@ -122,13 +189,11 @@ enable_atheros() {
 			*fh) hwmode=fh;;
 			*) hwmode=auto;;
 		esac
+		iwpriv "$ifname" mode "$hwmode"
 		iwpriv "$ifname" pureg "$pureg"
 
-		[ "$first" = 1 ] && {
-			iwpriv "$ifname" mode "$hwmode"
-			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
-		}
-	
+		iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
+
 		config_get_bool hidden "$vif" hidden 0
 		iwpriv "$ifname" hide_ssid "$hidden"
 
@@ -142,7 +207,7 @@ enable_atheros() {
 			1|on|enabled) wds=1;;
 			*) wds=0;;
 		esac
-		iwpriv "$ifname" wds "$wds"
+		iwpriv "$ifname" wds "$wds" >/dev/null 2>&1
 
 		[ "$mode" = ap -a "$wds" = 1 ] && {
 			config_get_bool wdssep "$vif" wdssep 1
@@ -150,7 +215,11 @@ enable_atheros() {
 		}
 
 		case "$enc" in
-			WEP|wep)
+			wep*)
+				case "$enc" in
+					*shared*) iwpriv "$ifname" authmode 2;;
+					*)        iwpriv "$ifname" authmode 1;;
+				esac
 				for idx in 1 2 3 4; do
 					config_get key "$vif" "key${idx}"
 					iwconfig "$ifname" enc "[$idx]" "${key:-off}"
@@ -176,52 +245,12 @@ enable_atheros() {
 				}
 			;;
 		esac
-		config_get ssid "$vif" ssid
+
+		config_get_bool uapsd "$vif" uapsd 0
+		iwpriv "$ifname" uapsd "$uapsd"
 
 		config_get_bool bgscan "$vif" bgscan
 		[ -n "$bgscan" ] && iwpriv "$ifname" bgscan "$bgscan"
-
-		config_get_bool antdiv "$device" diversity
-		config_get antrx "$device" rxantenna
-		config_get anttx "$device" txantenna
-		config_get_bool softled "$device" softled 1
-
-		devname="$(cat /proc/sys/dev/$device/dev_name)"
-		antgpio=
-		case "$devname" in
-			NanoStation2) antgpio=7;;
-			NanoStation5) antgpio=1;;
-		esac
-		if [ -n "$antgpio" ]; then
-			softled=0
-			config_get antenna "$device" antenna
-			case "$antenna" in
-				external) antdiv=0; antrx=1; anttx=1 ;;
-				horizontal) antdiv=0; antrx=1; anttx=1 ;;
-				vertical) antdiv=0; antrx=2; anttx=2 ;;
-				auto) antdiv=1; antrx=0; anttx=0 ;;
-			esac
-			
-			[ -x "$(which gpioctl 2>/dev/null)" ] || antenna=
-			case "$antenna" in
-				horizontal|vertical|auto)
-					gpioctl "dirout" "$antgpio" >/dev/null 2>&1
-					gpioctl "set" "$antgpio" >/dev/null 2>&1
-				;;
-				external)
-					gpioctl "dirout" "$antgpio" >/dev/null 2>&1
-					gpioctl "clear" "$antgpio" >/dev/null 2>&1
-				;;
-			esac
-		fi
-
-		[ -n "$antdiv" ] && sysctl -w dev."$device".diversity="$antdiv" >&-
-		[ -n "$antrx" ] && sysctl -w dev."$device".rxantenna="$antrx" >&-
-		[ -n "$anttx" ] && sysctl -w dev."$device".txantenna="$anttx" >&-
-		[ -n "$softled" ] && sysctl -w dev."$device".softled="$softled" >&-
-
-		config_get distance "$device" distance
-		[ -n "$distance" ] && sysctl -w dev."$device".distance="$distance" >&-
 
 		config_get rate "$vif" rate
 		[ -n "$rate" ] && iwconfig "$ifname" rate "${rate%%.*}"
@@ -235,8 +264,8 @@ enable_atheros() {
 		config_get rts "$vif" rts
 		[ -n "$rts" ] && iwconfig "$ifname" rts "${rts%%.*}"
 
-		config_get_bool comp "$vif" compression
-		[ -n "$comp" ] && iwpriv "$ifname" compression "$comp"
+		config_get_bool comp "$vif" compression 0
+		iwpriv "$ifname" compression "$comp" >/dev/null 2>&1
 
 		config_get_bool minrate "$vif" minrate
 		[ -n "$minrate" ] && iwpriv "$ifname" minrate "$minrate"
@@ -255,9 +284,6 @@ enable_atheros() {
 
 		config_get_bool ar "$vif" ar
 		[ -n "$ar" ] && iwpriv "$ifname" ar "$ar"
-
-		config_get_bool turbo "$vif" turbo
-		[ -n "$turbo" ] && iwpriv "$ifname" turbo "$turbo"
 
 		config_get_bool beacon_power "$vif" beacon_power
 		[ -n "$beacon_power" ] && iwpriv "$ifname" beacon_pwr "$beacon_power"
@@ -300,10 +326,13 @@ enable_atheros() {
 			config_set "$vif" bridge "$bridge"
 			start_net "$ifname" "$net_cfg"
 		}
+
+		config_get ssid "$vif" ssid
 		[ -n "$ssid" ] && {
 			iwconfig "$ifname" essid on
 			iwconfig "$ifname" essid "$ssid"
 		}
+
 		set_wifi_up "$vif" "$ifname"
 
 		# TXPower settings only work if device is up already
@@ -342,7 +371,6 @@ enable_atheros() {
 				fi
 			;;
 		esac
-		first=0
 	done
 }
 
@@ -354,6 +382,18 @@ detect_atheros() {
 		config_get type "$dev" type
 		devname="$(cat /proc/sys/dev/$dev/dev_name)"
 		case "$devname" in
+			"NanoStation Loco2")
+				EXTRA_DEV="
+# Ubiquiti NanoStation Loco2 features
+	option antenna	vertical # (horizontal|vertical)
+"
+			;;
+			"NanoStation Loco5")
+				EXTRA_DEV="
+# Ubiquiti NanoStation Loco5 features
+	option antenna	auto # (auto|horizontal|vertical)
+"
+			;;
 			NanoStation*)
 				EXTRA_DEV="
 # Ubiquiti NanoStation features
@@ -361,7 +401,7 @@ detect_atheros() {
 "
 			;;
 		esac
-		[ "$type" = atheros ] && return
+		[ "$type" = atheros ] && continue
 		cat <<EOF
 config wifi-device  $dev
 	option type     atheros

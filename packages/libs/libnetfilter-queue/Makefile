@@ -1,28 +1,33 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=libnetfilter_queue
-PKG_VERSION:=0.0.16
+PKG_VERSION:=1.0.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=ftp://ftp.netfilter.org/pub/libnetfilter_queue/
-PKG_MD5SUM:=b36664e6cd39edbfe46b416a86118add
+PKG_SOURCE_URL:= \
+	http://www.netfilter.org/projects/libnetfilter_queue/files/ \
+	ftp://ftp.netfilter.org/pub/libnetfilter_queue/ \
+	http://mirrors.evolva.ro/netfilter.org/libnetfilter_queue/
+PKG_MD5SUM:=af6a9ea350f63a13609bc3b47b5c395c
 
 PKG_FIXUP:=libtool
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libnetfilter-queue
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=@LINUX_2_6 +libnfnetlink +kmod-nfnetlink-queue
+  DEPENDS:=@!LINUX_2_4 +libnfnetlink +kmod-nfnetlink-queue
   TITLE:=API to packets queued by the kernel packet filter
   URL:=http://www.netfilter.org/projects/libnetfilter_queue/
 endef
@@ -41,13 +46,6 @@ CONFIGURE_ARGS += \
 CONFIGURE_VARS += \
 	LIBNFNETLINK_CFLAGS="$(TARGET_CPPFLAGS)" \
 	LIBNFNETLINK_LIBS="$(TARGET_LDFLAGS)"
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) all
-	$(call libtool_fixup_libdir)
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" install
-endef
-
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/libnetfilter_queue

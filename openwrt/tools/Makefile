@@ -10,37 +10,68 @@ curdir:=tools
 
 # subdirectories to descend into
 tools-y :=
+ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4) += gmp mpfr
-tools-y += m4 autoconf automake bison pkg-config sed
-tools-y += sstrip ipkg-utils genext2fs squashfs squashfs4 mtd-utils lzma mkimage
-tools-y += firmware-utils patch-cmdline quilt
-tools-$(CONFIG_TARGET_ROOTFS_SQUASHFS) += fakeroot
-
+endif
+tools-y += m4 autoconf automake bison pkg-config sed mklibs
+tools-y += sstrip ipkg-utils genext2fs libuuid mtd-utils mkimage
+tools-y += firmware-utils patch-cmdline quilt yaffs2 xz
+tools-$(CONFIG_TARGET_orion) += wrt350nv2-builder upslug2
+tools-$(CONFIG_TARGET_x86) += qemu
+ifneq ($(CONFIG_LINUX_2_4)$(CONFIG_LINUX_2_6_21)$(CONFIG_LINUX_2_6_25),)
+tools-y += squashfs lzma-old
+else
+ifneq ($(CONFIG_TARGET_ar71xx),)
+tools-y += squashfs lzma-old
+endif
+tools-y += squashfs4 lzma
+endif
+tools-y += fakeroot
 tools-$(CONFIG_CCACHE) += ccache
-tools-$(CONFIG_powerpc) += dtc
+
+ifdef CONFIG_GCC_USE_GRAPHITE
+  tools-y += ppl cloog
+  $(curdir)/cloog/compile := $(curdir)/ppl/install
+endif
 
 # builddir dependencies
-$(curdir)/squashfs/compile := $(curdir)/lzma/install
-$(curdir)/quilt/compile := $(curdir)/sed/install
+$(curdir)/pkg-config/compile := $(curdir)/sed/install
+$(curdir)/squashfs/compile := $(curdir)/lzma-old/install
+$(curdir)/squashfs4/compile := $(curdir)/lzma/install
+$(curdir)/quilt/compile := $(curdir)/sed/install $(curdir)/autoconf/install
 $(curdir)/dtc/compile := $(curdir)/bison/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install
 $(curdir)/automake/compile := $(curdir)/m4/install $(curdir)/autoconf/install
 $(curdir)/mpfr/compile := $(curdir)/gmp/install
+$(curdir)/mtd-utils/compile := $(curdir)/libuuid/install
+$(curdir)/mkimage/compile := $(curdir)/sed/install
+$(curdir)/qemu/compile := $(curdir)/libuuid/install
+$(curdir)/upslug2/compile := $(curdir)/automake/install
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
 $(curdir)/builddirs-default := $(tools-y)
 
-# preparatory work
-$(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
-	@for dir in $(STAGING_DIR) $(STAGING_DIR_HOST); do ( \
+define PrepareStaging
+	@for dir in $(1); do ( \
 		set -x; \
 		mkdir -p "$$dir"; \
 		cd "$$dir"; \
 		mkdir -p bin lib include stamp; \
 	); done
-	mkdir -p $(BUILD_DIR_HOST)/stamp $(BUILD_DIR)/stamp
+endef
+
+# preparatory work
+$(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
+	$(call PrepareStaging,$(STAGING_DIR))
+	mkdir -p $(BUILD_DIR)/stamp
+	touch $@
+
+$(STAGING_DIR_HOST)/.prepared: $(TMP_DIR)/.build
+	$(call PrepareStaging,$(STAGING_DIR_HOST))
+	mkdir -p $(BUILD_DIR_HOST)/stamp
 	$(INSTALL_DATA) $(TOPDIR)/tools/include/*.h $(STAGING_DIR_HOST)/include/
 	touch $@
+
 
 define PrepareCommand
 $(STAGING_DIR_HOST)/bin/$(1): $(STAGING_DIR)/.prepared
@@ -57,12 +88,12 @@ $(eval $(call PrepareCommand,cp,gcp cp))
 $(eval $(call PrepareCommand,stat,gstat stat))
 
 $(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,find md5sum cp stat)
-$(curdir)//prepare = $(STAGING_DIR)/.prepared $($(curdir)/cmddeps)
-$(curdir)//compile = $(STAGING_DIR)/.prepared $($(curdir)/cmddeps)
+$(curdir)//prepare = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(curdir)/cmddeps)
+$(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(curdir)/cmddeps)
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
 $(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_3))
+$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_3 CONFIG_GCC_USE_GRAPHITE CONFIG_TARGET_orion))
 $(eval $(call subdir,$(curdir)))

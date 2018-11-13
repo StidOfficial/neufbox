@@ -44,6 +44,19 @@ define Download/kernel
   MD5SUM:=$(LINUX_KERNEL_MD5SUM)
 endef
 
+ifdef CONFIG_COLLECT_KERNEL_DEBUG
+  define Kernel/CollectDebug
+	rm -rf $(KERNEL_BUILD_DIR)/debug
+	mkdir -p $(KERNEL_BUILD_DIR)/debug/modules
+	$(CP) $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/debug/
+	-$(CP) \
+		$(STAGING_DIR_ROOT)/lib/modules/$(LINUX_VERSION)/* \
+		$(KERNEL_BUILD_DIR)/debug/modules/
+	$(FIND) $(KERNEL_BUILD_DIR)/debug -type f | $(XARGS) $(KERNEL_CROSS)strip --only-keep-debug
+	$(TAR) c -C $(KERNEL_BUILD_DIR) debug | bzip2 -c -9 > $(BIN_DIR)/kernel-debug.tar.bz2
+  endef
+endif
+
 define BuildKernel
   $(if $(QUILT),$(Build/Quilt))
   $(if $(LINUX_SITE),$(call Download,kernel))
@@ -54,6 +67,28 @@ define BuildKernel
 	$(Kernel/Prepare)
 	touch $$@
 
+  $(KERNEL_BUILD_DIR)/symtab.txt: FORCE
+	find $(LINUX_DIR) $(STAGING_DIR_ROOT)/lib/modules -name \*.ko | \
+		xargs $(TARGET_CROSS)nm | \
+		awk '$$$$1 == "U" { print $$$$2 } ' | \
+		sort -u > $$@
+
+  $(KERNEL_BUILD_DIR)/symtab.h: $(KERNEL_BUILD_DIR)/symtab.txt
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(KERNEL_BUILD_DIR)/symtab.txt | \
+			awk '{print "*(__ksymtab." $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(KERNEL_BUILD_DIR)/symtab.txt | \
+			awk '{print "*(__ksymtab_gpl." $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_STR \'; \
+		cat $(KERNEL_BUILD_DIR)/symtab.txt | \
+			awk '{print "*(__ksymtab_strings." $$$$1 ") \\" }'; \
+		echo; \
+	) > $$@
+
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_CONFIG) $(GENERIC_LINUX_CONFIG) $(TOPDIR)/.config
 	$(Kernel/Configure)
 	touch $$@
@@ -62,8 +97,9 @@ define BuildKernel
 	$(Kernel/CompileModules)
 	touch $$@
 
-  $(LINUX_DIR)/.image: $(STAMP_CONFIGURED) FORCE
+  $(LINUX_DIR)/.image: $(STAMP_CONFIGURED) $(if $(CONFIG_STRIP_KERNEL_EXPORTS),$(KERNEL_BUILD_DIR)/symtab.h) FORCE
 	$(Kernel/CompileImage)
+	$(Kernel/CollectDebug)
 	touch $$@
 	
   mostlyclean: FORCE
@@ -82,7 +118,8 @@ define BuildKernel
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config
 	touch $(LINUX_CONFIG)
 	$(_SINGLE)$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $$@
-	$(SCRIPT_DIR)/kconfig.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(if $(LINUX_SUBCONFIG),$(LINUX_SUBCONFIG),$(LINUX_CONFIG))
+	$(SCRIPT_DIR)/kconfig.pl '>' $(if $(LINUX_SUBCONFIG),'+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG),$(GENERIC_LINUX_CONFIG)) \
+		$(LINUX_DIR)/.config > $(if $(LINUX_SUBCONFIG),$(LINUX_SUBCONFIG),$(LINUX_CONFIG))
 	$(Kernel/Configure)
 
   install: $(LINUX_DIR)/.image

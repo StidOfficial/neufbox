@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2009 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,19 +9,22 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libshout
 PKG_VERSION:=2.2.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://downloads.us.xiph.org/releases/libshout/
 PKG_MD5SUM:=4f75fc9901c724b712c371c9a1e782d3
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
+TARGET_CFLAGS += $(FPIC)
+
 define Package/libshout
   SECTION:=libs
-  DEPENDS:=+libvorbisidec
+  DEPENDS:= +libspeex +libtheora +libvorbisidec
   CATEGORY:=Libraries
   TITLE:=Library which can be used to write a source client like ices
   URL:=http://www.icecast.org/download.php
@@ -44,20 +47,14 @@ define Build/Configure
 	)
 endef
 
-TARGET_CFLAGS += $(FPIC)
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
-
 define Build/InstallDev
-	mkdir -p $(1)/usr/include/shout
+	$(INSTALL_DIR) $(1)/usr/include/shout
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/shout/shout.h $(1)/usr/include/shout
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libshout.{a,so*} $(1)/usr/lib/
-	mkdir -p $(1)/usr/lib/pkgconfig
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+	$(SED) 's|/usr/include|$(STAGING_DIR)/usr/include|' \
+		$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/shout.pc
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/shout.pc $(1)/usr/lib/pkgconfig/		
 endef
 

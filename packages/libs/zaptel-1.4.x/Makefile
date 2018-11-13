@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -9,12 +9,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=zaptel
-PKG_VERSION:=1.4.9.2
-PKG_RELEASE:=2
+PKG_VERSION:=1.4.12.1
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://ftp.digium.com/pub/zaptel/releases/
-PKG_MD5SUM:=f6af404cc0244b93a2fc88b237f374bd
+PKG_SOURCE_URL:=http://downloads.asterisk.org/pub/telephony/zaptel/releases/ \
+        http://ftp.digium.com/pub/zaptel/releases/
+PKG_MD5SUM:=71e83a020b020fa60905edecf70e95a3
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,10 +24,13 @@ define Package/zaptel14/Default
   URL:=http://ftp.digium.com/pub/zaptel/releases
 endef
 
-define KernelPackage/zaptel14
-  $(call Package/zaptel14/Default)
+define KernelPackage/zaptel14/Default
+  TITLE:=Zaptel (kernel module)
   SUBMENU:=Other modules
-  TITLE+= (kernel module)
+endef
+
+define KernelPackage/zaptel14
+  $(call KernelPackage/zaptel14/Default)
   FILES:=$(PKG_BUILD_DIR)/kernel/zaptel.$(LINUX_KMOD_SUFFIX) \
   	$(PKG_BUILD_DIR)/kernel/ztdummy.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,zaptel ztdummy)
@@ -34,6 +38,28 @@ endef
 
 define KernelPackage/zaptel14/description
  This package contains the Zaptel core module and ztdummy driver.
+endef
+
+define KernelPackage/zaptel14-wcusb
+  $(call KernelPackage/zaptel14/Default)
+  DEPENDS += +kmod-zaptel14
+  FILES:=$(PKG_BUILD_DIR)/kernel/wcusb.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,71,wcusb)
+endef
+
+define KernelPackage/zaptel14-wcusb/description
+ This package contains the Zaptel S100U usb driver.
+endef
+
+define KernelPackage/zaptel14-wctdm
+  $(call KernelPackage/zaptel14/Default)
+  DEPENDS += +kmod-zaptel14
+  FILES:=$(PKG_BUILD_DIR)/kernel/wctdm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,71,wctdm)
+endef
+
+define KernelPackage/zaptel14-wctdm/description
+ This package contains the Zaptel wctdm driver.
 endef
 
 define Package/zaptel14-util
@@ -45,7 +71,7 @@ define Package/zaptel14-util
 endef
 
 define Package/zaptel14-util/description
- This package contains the zttest program
+ This package contains the zaptel utils.
 endef
 
 define Package/zaptel14-libtonezone
@@ -67,7 +93,7 @@ MAKE_FLAGS:= \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
 	KVERS="$(LINUX_VERSION)" \
 	KSRC="$(LINUX_DIR)" \
-	TOPDIR_MODULES="zaptel ztdummy" \
+	TOPDIR_MODULES="zaptel ztdummy wcusb wctdm" \
 	SUBDIR_MODULES=""
 
 define Build/Compile/kmod
@@ -106,5 +132,7 @@ define Package/zaptel14-libtonezone/install
 endef
 
 $(eval $(call KernelPackage,zaptel14))
+$(eval $(call KernelPackage,zaptel14-wcusb))
+$(eval $(call KernelPackage,zaptel14-wctdm))
 $(eval $(call BuildPackage,zaptel14-util))
 $(eval $(call BuildPackage,zaptel14-libtonezone))

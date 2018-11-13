@@ -6,12 +6,19 @@
 #
 
 # where to build (and put) .ipk packages
-IPKG:= \
+OPKG:= \
   IPKG_TMP=$(TMP_DIR)/ipkg \
   IPKG_INSTROOT=$(TARGET_DIR) \
   IPKG_CONF_DIR=$(STAGING_DIR)/etc \
   IPKG_OFFLINE_ROOT=$(TARGET_DIR) \
-  $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
+  $(STAGING_DIR_HOST)/bin/opkg \
+	--offline-root $(TARGET_DIR) \
+	--force-depends \
+	--force-overwrite \
+	--force-postinstall \
+	--add-dest root:/ \
+	--add-arch all:100 \
+	--add-arch $(ARCH_PACKAGES):200
 
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
@@ -24,21 +31,30 @@ define BuildIPKGVariable
   $(1)_COMMANDS += var2file "$(call shvar,Package/$(1)/$(2))" $(2);
 endef
 
+PARENL :=(
+PARENR :=)
+
 dep_split=$(subst :,$(space),$(1))
-dep_confvar=CONFIG_$(word 1,$(call dep_split,$(1)))
+dep_rem=$(subst !,,$(subst $(strip $(PARENL)),,$(subst $(strip $(PARENR)),,$(word 1,$(call dep_split,$(1))))))
+dep_confvar=$(strip $(foreach cond,$(subst ||, ,$(call dep_rem,$(1))),$(CONFIG_$(cond))))
+dep_pos=$(if $(call dep_confvar,$(1)),$(call dep_val,$(1)))
+dep_neg=$(if $(call dep_confvar,$(1)),,$(call dep_val,$(1)))
+dep_if=$(if $(findstring !,$(1)),$(call dep_neg,$(1)),$(call dep_pos,$(1)))
 dep_val=$(word 2,$(call dep_split,$(1)))
 strip_deps=$(strip $(subst +,,$(filter-out @%,$(1))))
-filter_deps=$(foreach dep,$(call strip_deps,$(1)),$(if $(findstring :,$(dep)),$(if $($(call dep_confvar,$(dep))),$(call dep_val,$(dep))),$(dep)))
+filter_deps=$(foreach dep,$(call strip_deps,$(1)),$(if $(findstring :,$(dep)),$(call dep_if,$(dep)),$(dep)))
 
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
     IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
-    IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
+    IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
+    KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
 
+    ifeq ($(if $(VARIANT),$(BUILD_VARIANT)),$(VARIANT))
     ifdef Package/$(1)/install
       ifneq ($(CONFIG_PACKAGE_$(1))$(SDK)$(DEVELOPER),)
-        compile: $$(IPKG_$(1))
+        compile: $$(IPKG_$(1)) $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
 
         ifeq ($(CONFIG_PACKAGE_$(1)),y)
           install: $$(INFO_$(1))
@@ -49,6 +65,7 @@ ifeq ($(DUMP),)
 		@echo "WARNING: skipping $(1) -- package not selected"
       endif
     endif
+    endif
 
     IDEPEND_$(1):=$$(call filter_deps,$$(DEPENDS))
   
@@ -57,8 +74,19 @@ ifeq ($(DUMP),)
     $(eval $(call BuildIPKGVariable,$(1),postinst))
     $(eval $(call BuildIPKGVariable,$(1),prerm))
     $(eval $(call BuildIPKGVariable,$(1),postrm))
-    $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH)
+
+    $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(STAMP_BUILT)
+	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
+	mkdir -p $(STAGING_DIR_ROOT)/stamp $(STAGING_DIR_ROOT)/tmp-$(1)
+	$(call Package/$(1)/install,$(STAGING_DIR_ROOT)/tmp-$(1))
+	$(call Package/$(1)/install_lib,$(STAGING_DIR_ROOT)/tmp-$(1))
+	-$(CP) $(STAGING_DIR_ROOT)/tmp-$(1)/. $(STAGING_DIR_ROOT)/
+	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
+	touch $$@
+
+    $$(IPKG_$(1)): $(STAMP_BUILT)
 	@rm -f $(PACKAGE_DIR)/$(1)_*
+	rm -rf $$(IDIR_$(1))
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
@@ -71,6 +99,8 @@ ifeq ($(DUMP),)
 		echo "Provides: $(PROVIDES)"; \
 		echo "Source: $(SOURCE)"; \
 		echo "Section: $(SECTION)"; \
+		echo "Status: unknown $(if $(filter hold,$(PKG_FLAGS)),hold,ok) not-installed"; \
+		echo "Essential: $(if $(filter essential,$(PKG_FLAGS)),yes,no)"; \
 		echo "Priority: $(PRIORITY)"; \
 		echo "Maintainer: $(MAINTAINER)"; \
 		echo "Architecture: $(PKGARCH)"; \
@@ -81,33 +111,38 @@ ifeq ($(DUMP),)
 	(cd $$(IDIR_$(1))/CONTROL; \
 		$($(1)_COMMANDS) \
 	)
-
-    $$(IPKG_$(1)): $(STAGING_DIR)/etc/ipkg.conf $(PKG_BUILD_DIR)/.built $$(IDIR_$(1))/CONTROL/control
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	mkdir -p $(PACKAGE_DIR)
 	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' | $(XARGS) rm -rf
 	$(RSTRIP) $$(IDIR_$(1))
 	SIZE=`cd $$(IDIR_$(1)); du -bs --exclude=./CONTROL . 2>/dev/null | cut -f1`; \
 	$(SED) "s|^\(Installed-Size:\).*|\1 $$$$SIZE|g" $$(IDIR_$(1))/CONTROL/control
+
+    ifneq ($$(KEEP_$(1)),)
+		@( \
+			keepfiles=""; \
+			for x in $$(KEEP_$(1)); do \
+				[ -f "$$(IDIR_$(1))/$$$$x" ] || keepfiles="$$$${keepfiles:+$$$$keepfiles }$$$$x"; \
+			done; \
+			[ -z "$keepfiles" ] || { \
+				mkdir -p $$(IDIR_$(1))/lib/upgrade/keep.d; \
+				for x in $$$$keepfiles; do echo $$$$x >> $$(IDIR_$(1))/lib/upgrade/keep.d/$(1); done; \
+			}; \
+		)
+    endif
+
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 	@[ -f $$(IPKG_$(1)) ] || false 
 
     $$(INFO_$(1)): $$(IPKG_$(1))
-	$(IPKG) install $$(IPKG_$(1))
+	@[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
+	$(OPKG) install $$(IPKG_$(1))
+	$(if $(filter-out essential,$(PKG_FLAGS)),for flag in $(filter-out essential,$(PKG_FLAGS)); do $(OPKG) flag $$$$flag $(1); done)
 
     $(1)-clean:
 	rm -f $(PACKAGE_DIR)/$(1)_*
 
     clean: $(1)-clean
 
-    $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH): $(STAMP_PREPARED)
-	-@rm -f $(PKG_BUILD_DIR)/.version-$(1)_* 2>/dev/null
-	@touch $$@
   endef
-
-  $(STAGING_DIR)/etc/ipkg.conf:
-	mkdir -p $(STAGING_DIR)/etc
-	echo "dest root /" > $(STAGING_DIR)/etc/ipkg.conf
-	echo "option offline_root $(TARGET_DIR)" >> $(STAGING_DIR)/etc/ipkg.conf
-
 endif

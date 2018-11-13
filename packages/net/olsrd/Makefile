@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,13 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=olsrd
-PKG_VERSION:=0.5.6-r4
-PKG_RELEASE:=2
+PKG_VERSION:=0.6.1
+PKG_RELEASE:=3
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.olsr.org/releases/0.5
-PKG_MD5SUM:=16076660413bcf625ba8772fdb3d607f
+PKG_SOURCE_URL:=http://www.olsr.org/releases/0.6
+PKG_MD5SUM:=a75fc9b6252df5b5f49f13418fafeff1
+
+PKG_BUILD_PARALLEL:=1
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,6 +25,7 @@ TARGET_CFLAGS += $(FPIC)
 define Package/olsrd/template
   SECTION:=net
   CATEGORY:=Network
+  MAINTAINER:=Saverio Proto <zioproto@gmail.com>
   TITLE:=OLSR (Optimized Link State Routing) daemon
   URL:=http://www.olsr.org/
 endef
@@ -73,10 +76,22 @@ define Package/olsrd-mod-httpinfo
   TITLE:=Small informative web server plugin
 endef
 
+define Package/olsrd-mod-mdns
+  $(call Package/olsrd/template)
+  DEPENDS:=olsrd
+  TITLE:=Multicast DNS plugin
+endef
+
 define Package/olsrd-mod-nameservice
   $(call Package/olsrd/template)
   DEPENDS:=olsrd
   TITLE:=Lightweight hostname resolver plugin
+endef
+
+define Package/olsrd-mod-p2pd
+  $(call Package/olsrd/template)
+  DEPENDS:=olsrd
+  TITLE:=Peer to Peer Discovery plugin
 endef
 
 define Package/olsrd-mod-quagga
@@ -97,30 +112,32 @@ define Package/olsrd-mod-txtinfo
   TITLE:=Small informative web server plugin
 endef
 
+define Package/olsrd-mod-watchdog
+  $(call Package/olsrd/template)
+  DEPENDS:=olsrd
+  TITLE:=Watchdog plugin
+endef
+
 define Package/olsrd-mod-secure/conffiles
 /etc/olsrd.d/olsrd_secure_key
 endef
 
-define Build/Configure
-endef
+MAKE_FLAGS+= \
+	NO_DEBUG_MESSAGES=1 \
+	OS="linux" \
+	DESTDIR="$(PKG_INSTALL_DIR)" \
+	STRIP="true" \
+	INSTALL_LIB="true" \
+	SUBDIRS="arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo mdns nameservice p2pd quagga secure txtinfo watchdog"
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		$(TARGET_CONFIGURE_OPTS) \
-		NODEBUG=1 \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		OS="linux" \
-		INSTALL_PREFIX="$(PKG_INSTALL_DIR)" \
-		LIBDIR="$(PKG_INSTALL_DIR)/usr/lib" \
-		SBINDIR="$(PKG_INSTALL_DIR)/usr/sbin/" \
-		ETCDIR="$(PKG_INSTALL_DIR)/etc" \
-		MANDIR="$(PKG_INSTALL_DIR)/usr/share/man" \
-		STRIP="true" \
-		INSTALL_LIB="true" \
-		SUBDIRS="arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo nameservice secure txtinfo quagga" \
-		all libs install install_libs
+	$(call Build/Compile/Default,all)
+	$(call Build/Compile/Default,libs)
+endef
+
+define Build/Install
+	$(call Build/Install/Default,install)
+	$(call Build/Install/Default,install_libs)
 endef
 
 define Package/olsrd/install
@@ -162,9 +179,19 @@ define Package/olsrd-mod-httpinfo/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/httpinfo/olsrd_httpinfo.so.* $(1)/usr/lib/
 endef
 
+define Package/olsrd-mod-mdns/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/mdns/olsrd_mdns.so.* $(1)/usr/lib/
+endef
+
 define Package/olsrd-mod-nameservice/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/nameservice/olsrd_nameservice.so.* $(1)/usr/lib/
+endef
+
+define Package/olsrd-mod-p2pd/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/p2pd/olsrd_p2pd.so.* $(1)/usr/lib/
 endef
 
 define Package/olsrd-mod-quagga/install
@@ -184,6 +211,11 @@ define Package/olsrd-mod-txtinfo/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/txtinfo/olsrd_txtinfo.so.* $(1)/usr/lib/
 endef
 
+define Package/olsrd-mod-watchdog/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/watchdog/olsrd_watchdog.so.* $(1)/usr/lib/
+endef
+
 $(eval $(call BuildPackage,olsrd))
 $(eval $(call BuildPackage,olsrd-mod-arprefresh))
 $(eval $(call BuildPackage,olsrd-mod-dot-draw))
@@ -191,7 +223,10 @@ $(eval $(call BuildPackage,olsrd-mod-bmf))
 $(eval $(call BuildPackage,olsrd-mod-dyn-gw))
 $(eval $(call BuildPackage,olsrd-mod-dyn-gw-plain))
 $(eval $(call BuildPackage,olsrd-mod-httpinfo))
+$(eval $(call BuildPackage,olsrd-mod-mdns))
 $(eval $(call BuildPackage,olsrd-mod-nameservice))
+$(eval $(call BuildPackage,olsrd-mod-p2pd))
 $(eval $(call BuildPackage,olsrd-mod-quagga))
 $(eval $(call BuildPackage,olsrd-mod-secure))
 $(eval $(call BuildPackage,olsrd-mod-txtinfo))
+$(eval $(call BuildPackage,olsrd-mod-watchdog))

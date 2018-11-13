@@ -1,4 +1,5 @@
-# Copyright (C) 2009 OpenWrt.org
+#
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,12 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libidn
-PKG_VERSION:=1.13
+PKG_VERSION:=1.18
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/libidn
-PKG_MD5SUM:=101f13b1cb698080c77e38b8e8d4c6a4
+PKG_MD5SUM:=66f115347439f56386f37a3ad92c1da2
+
+PKG_FIXUP:=libtool
+PKG_REMOVE_FILES:=GNUmakefile aclocal.m4
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -35,18 +41,13 @@ CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
 
-define Build/Compile
-	$(call Build/Compile/Default, \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		CC="$(TARGET_CC)" \
-		all install \
-	)
-endef
+MAKE_FLAGS += \
+	CC="$(TARGET_CC)" \
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/*.h $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libidn.{a,so*} $(1)/usr/lib/
 endef
 

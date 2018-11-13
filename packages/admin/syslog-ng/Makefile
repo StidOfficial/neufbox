@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=syslog-ng
 PKG_VERSION:=1.6.12
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=a3cbfdb6e1e5beea181a7349749719f3
 
 PKG_SOURCE_URL:= \
@@ -17,12 +17,14 @@ PKG_SOURCE_URL:= \
 	http://www.balabit.com/downloads/files/syslog-ng/stable/src
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
+PKG_INSTALL:=1
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/syslog-ng
   SECTION:=admin
   CATEGORY:=Administration
-  DEPENDS:=+libol +librt
+  DEPENDS:=+libol
   TITLE:=A powerful syslog daemon
   URL:=http://www.balabit.com/products/syslog_ng/
 endef
@@ -34,7 +36,7 @@ define Package/syslog-ng/description
 endef
 
 define Package/syslog-ng/conffiles
-/etc/syslog-ng/syslog-ng.conf
+#/etc/syslog-ng/syslog-ng.conf
 endef
 
 define Build/Configure
@@ -49,17 +51,13 @@ define Build/Configure
 	)
 endef
 
-define Build/Compile
-	$(call Build/Compile/Default,DESTDIR="$(PKG_INSTALL_DIR)" all install)
-endef
-
 define Package/syslog-ng/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/syslog-ng $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/syslog-ng.init $(1)/etc/init.d/syslog-ng
 	$(INSTALL_DIR) $(1)/etc/syslog-ng
-	$(INSTALL_DATA) ./files/syslog-ng.conf $(1)/etc/syslog-ng/
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_DATA) ./files/syslog-ng.conf $(1)/etc/syslog-ng/)
 endef
 
 $(eval $(call BuildPackage,syslog-ng))

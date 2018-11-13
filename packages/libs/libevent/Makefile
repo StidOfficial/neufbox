@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,13 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libevent
-PKG_VERSION:=1.4.9
+PKG_VERSION:=1.4.14b
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)-stable
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-stable.tar.gz
 PKG_SOURCE_URL:=http://www.monkey.org/~provos/
-PKG_MD5SUM:=5154fd4582d64077d6b17851f04d6957
+PKG_MD5SUM:=a00e037e4d3f9e4fe9893e8a2d27918c
+
+PKG_FIXUP:=libtool
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -26,20 +30,18 @@ define Package/libevent
 endef
 
 define Package/libevent/description
-	The libevent API provides a mechanism to execute a callback function 
-	when a specific event occurs on a file descriptor or after a timeout 
-	has been reached. Furthermore, libevent also support callbacks due 
+	The libevent API provides a mechanism to execute a callback function
+	when a specific event occurs on a file descriptor or after a timeout
+	has been reached. Furthermore, libevent also support callbacks due
 	to signals or regular timeouts.
-	
-	libevent is meant to replace the event loop found in event driven 
-	network servers. An application just needs to call event_dispatch() 
-	and then add or remove events dynamically without having to change 
+
+	libevent is meant to replace the event loop found in event driven
+	network servers. An application just needs to call event_dispatch()
+	and then add or remove events dynamically without having to change
 	the event loop.
 endef
 
 TARGET_CFLAGS += $(FPIC)
-
-Hooks/InstallDev/Post += libtool_fixup_libdir
 
 CONFIGURE_ARGS += \
 	--enable-shared \
@@ -47,13 +49,11 @@ CONFIGURE_ARGS += \
 
 MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
-	DESTDIR="$(PKG_INSTALL_DIR)" \
-	all install
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent.{la,a,so} $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libevent-1.4.so* $(1)/usr/lib/
 endef

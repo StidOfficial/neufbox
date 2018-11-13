@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -18,14 +18,14 @@ PKG_MD5SUM:=eb38d423b49255a7b9f5ba1f50844b53
 PKG_BUILD_DEPENDS:=python
 
 include $(INCLUDE_DIR)/package.mk
--include $(if $(DUMP),,$(STAGING_DIR)/mk/python-package.mk)
+$(call include_mk, python-package.mk)
 
 define Package/python-bluez
   SUBMENU:=Python
   SECTION:=lang
   CATEGORY:=Languages
   TITLE:=Python wrapper for the BlueZ Bluetooth stack
-  URL:=http://org.csail.mit.edu/pybluez/
+  URL:=http://code.google.com/p/pybluez/
   DEPENDS:=+python-mini +bluez-libs
 endef
 

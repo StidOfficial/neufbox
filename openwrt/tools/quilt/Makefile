@@ -16,12 +16,13 @@ PKG_MD5SUM:=d33d2442bd34387260b1c1db3e623af0
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Configure
+	cd $(HOST_BUILD_DIR) && autoconf
 	$(call Host/Configure/Default)
 	[ -f $(HOST_BUILD_DIR)/Makefile ]
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)"
+	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)" all lib/backup-files
 endef
 
 define Host/Install

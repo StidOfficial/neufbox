@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,11 +9,15 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=updatedd
 PKG_VERSION:=2.6
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=f03446105ed043cd5dbd1ab95484d27f
+
+PKG_FIXUP:=libtool
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -22,7 +26,7 @@ define Package/updatedd
   CATEGORY:=Network
   MENU:=1
   TITLE:=A tool to update dynamic dns services
-  URL:=http://www.philipp-benner.de/updatedd/
+  URL:=http://savannah.nongnu.org/projects/updatedd/
 endef
 
 define Package/updatedd/description
@@ -30,6 +34,10 @@ Updatedd is a small tool that will update one of many dynamic
 	dns services on boot. 
 	Please look at the /etc/init.d/ddns script for more info. 
 
+endef
+
+define Package/updatedd/conffiles
+/etc/config/updatedd
 endef
 
 define Package/updatedd-mod-changeip
@@ -101,10 +109,6 @@ define Package/updatedd-mod-zoneedit
   DEPENDS:=updatedd
   TITLE:=zoneedit.com
 endef
-
-MAKE_FLAGS += \
-	DESTDIR="$(PKG_INSTALL_DIR)" \
-	all install
 
 define BuildPlugin
   define Package/$(1)/install

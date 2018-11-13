@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -22,11 +22,11 @@ define Package/ipython
   SECTION:=lang
   CATEGORY:=Languages
   TITLE:=ipython
-  URL:=http://ipython.scipy.org/dist/
+  URL:=http://ipython.scipy.org/
 endef
 
 define Package/ipython/description
-  python bindings for dbus 
+  An enhanced interactive Python shell from the SciPy project
 endef
 
 define Build/Configure
@@ -46,13 +46,13 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)
-	cp -r $(PKG_INSTALL_DIR)/* $(1)
+	$(INSTALL_DIR) $(1)
+	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 endef
 
 define Package/ipython/install
-	mkdir -p $(1)
-	cp -r $(PKG_INSTALL_DIR)/* $(1)
+	$(INSTALL_DIR) $(1)
+	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 endef
 
 $(eval $(call BuildPackage,ipython))

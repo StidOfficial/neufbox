@@ -11,8 +11,6 @@ PKG_NAME:=wiviz
 PKG_VERSION:=1.0
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/wiviz
@@ -40,7 +38,7 @@ define Build/Compile
 endef
 
 define Package/wiviz/install	
-	mkdir -p $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/usr/sbin/
 	$(CP) ./files/* $(1)
 	find $(1) -name CVS | xargs rm -rf

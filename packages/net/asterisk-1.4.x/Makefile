@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=asterisk
-PKG_VERSION:=1.4.24.1
-PKG_RELEASE:=1
+PKG_VERSION:=1.4.25.1
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://downloads.digium.com/pub/asterisk/releases/
-PKG_MD5SUM:=2b74744350f420b3a94d5323c489426f
+PKG_MD5SUM:=ca17be11559eb939ea16b8de98ddeefb
 
 PKG_BUILD_DEPENDS:= libopenh323 pwlib
 
@@ -36,6 +36,7 @@ define Package/asterisk14/Default
   SECTION:=net
   CATEGORY:=Network
   URL:=http://www.asterisk.org/
+  MAINTAINER:=Hans Zandbelt <hans.zandbelt@gmail.com>
 endef
 
 define Package/asterisk14/Default/description
@@ -60,7 +61,7 @@ endef
 define Package/asterisk14-mini
 $(call Package/asterisk14/Default)
   TITLE:=Minimal open source PBX
-  DEPENDS:=+libncurses +libpthread @!TARGET_avr32
+  DEPENDS:=+libncurses +libpopt +libpthread @!TARGET_avr32
 endef
 
 define Package/asterisk14-mini/description
@@ -483,7 +484,7 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include/asterisk/
+	$(INSTALL_DIR) $(1)/usr/include/asterisk/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/asterisk/*.h $(1)/usr/include/asterisk/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/asterisk.h $(1)/usr/include/
 endef
@@ -548,8 +549,7 @@ define Package/asterisk14/install
 	rm -rf $(1)/usr/bin
 	rm -rf $(1)/usr/man
 	rm -rf $(1)/usr/include
-	rm -rf $(1)/var/spool/asterisk/meetme
-	rm -rf $(1)/var/spool/asterisk/voicemail
+	rm -rf $(1)/var
 	(cd $(1)/usr/lib/asterisk; \
 		rm -rf agi-bin; \
 		rm -rf images; \

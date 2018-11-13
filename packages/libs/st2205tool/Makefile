@@ -8,14 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=st2205tool
-PKG_VERSION:=1.4pre1
-PKG_RELEASE:=1
+PKG_VERSION:=1.4.3
+PKG_RELEASE:=2
 
-PKG_SOURCE:=st2205tool-v$(PKG_VERSION).tgz
-PKG_SOURCE_URL:=http://spritesmods.com/picframe/
-PKG_MD5SUM:=bf602227bce9c4365e5ae5e9b383d8d9
+PKG_SOURCE:=st2205tool-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
+PKG_MD5SUM:=827e3b719ebaf6bc537f2ce0ece3fccb
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -50,10 +51,9 @@ endef
 
 define Package/st2205tool/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/{bgrep,phack,splice,hackfw.sh} $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/setpic/setpic $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libst2205/libst2205.so* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libst2205/libst2205.so $(1)/usr/lib/libst2205.so.1
 endef
 
 $(eval $(call BuildPackage,st2205tool))

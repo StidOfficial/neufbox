@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -18,7 +18,7 @@ HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
 HOST_STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.$(PKG_NAME)_installed
 
-override MAKEFLAGS=
+override MAKEFLAGS=$(MAKE_JOBS)
 
 include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
@@ -36,6 +36,7 @@ define Host/Prepare
 endef
 
 HOST_CONFIGURE_VARS = \
+	CFLAGS="$(HOST_CFLAGS)" \
 	CPPFLAGS="$(HOST_CFLAGS)" \
 	LDFLAGS="$(HOST_LDFLAGS)" \
 	SHELL="$(BASH)"
@@ -54,7 +55,7 @@ HOST_CONFIGURE_ARGS = \
 HOST_CONFIGURE_CMD = ./configure
 
 define Host/Configure/Default
-	@(cd $(HOST_BUILD_DIR)/$(3); \
+	(cd $(HOST_BUILD_DIR)/$(3); \
 		if [ -x configure ]; then \
 			$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
 			$(2) \
@@ -79,7 +80,7 @@ define Host/Compile
 endef
 
 define Host/Install/Default
-	$(MAKE) -C $(HOST_BUILD_DIR) install
+	$(_SINGLE)$(MAKE) -C $(HOST_BUILD_DIR) install
 endef
 
 define Host/Install
@@ -129,17 +130,8 @@ ifndef DUMP
 	touch $$@
 
   $(call Host/Exports,$(HOST_STAMP_BUILT))
-  $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
-	$(call Host/Compile)
-	touch $$@
-
-  $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT)
-	$(call Host/Install)
-	mkdir -p $$(shell dirname $$@)
-	touch $$@
-
   ifdef Host/Install
-    host-install: $(HOST_STAMP_INSTALLED)
+    host-install: $(if $(STAMP_BUILT),$(HOST_STAMP_BUILT),$(HOST_STAMP_INSTALLED))
   endif
 
   ifndef STAMP_BUILT
@@ -148,8 +140,20 @@ ifndef DUMP
     install: host-install
     clean: host-clean
     update: host-update
+
+    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+		$(call Host/Compile)
+		touch $$@
+
+    $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT)
+		$(call Host/Install)
+		mkdir -p $$(shell dirname $$@)
+		touch $$@
   else
-    host-compile: $(HOST_STAMP_INSTALLED)
+    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+		$(call Host/Compile)
+		$(call Host/Install)
+		touch $$@
   endif
   host-prepare: $(HOST_STAMP_PREPARED)
   host-configure: $(HOST_STAMP_CONFIGURED)

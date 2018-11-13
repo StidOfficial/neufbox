@@ -10,11 +10,13 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=logilab-astng
 PKG_VERSION:=0.17.2
 PKG_RELEASE:=1
+
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.logilab.fr/pub/astng/
+PKG_MD5SUM:=a654d65a4644fb984d840906cf8b27d5
 
 include $(INCLUDE_DIR)/package.mk
--include $(if $(DUMP),,$(STAGING_DIR)/mk/python-package.mk)
+$(call include_mk, python-package.mk)
 
 define Package/logilab-astng
   SUBMENU:=Python
@@ -36,10 +38,9 @@ define Build/Compile
 	)
 endef
 
-define Package/logilad-astng/install
-	mkdir -p $(1)
-	cp -r $(PKG_INSTALL_DIR)/* $(1)
+define Package/logilab-astng/install
+	$(INSTALL_DIR) $(1)
+	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 endef
 
-$(eval $(call PyPackage,logilab-astng))
 $(eval $(call BuildPackage,logilab-astng))

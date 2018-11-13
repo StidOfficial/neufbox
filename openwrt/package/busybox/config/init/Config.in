@@ -12,14 +12,6 @@ config BUSYBOX_CONFIG_INIT
 	help
 	  init is the first program run when the system boots.
 
-config BUSYBOX_CONFIG_DEBUG_INIT
-	bool "Debugging aid"
-	default n
-	depends on BUSYBOX_CONFIG_INIT
-	help
-	  Turn this on to disable all the dangerous
-	  rebooting stuff when debugging.
-
 config BUSYBOX_CONFIG_FEATURE_USE_INITTAB
 	bool "Support reading an inittab file"
 	default y
@@ -40,11 +32,12 @@ config BUSYBOX_CONFIG_FEATURE_KILL_DELAY
 	int "How long to wait between TERM and KILL (0 - send TERM only)" if FEATURE_KILL_REMOVED
 	range 0 1024
 	default 0
+	depends on BUSYBOX_CONFIG_FEATURE_KILL_REMOVED
 	help
 	  With nonzero setting, init sends TERM, forks, child waits N
 	  seconds, sends KILL and exits. Setting it too high is unwise
-	  (child will hang around for too long and can actually kill
-	  wrong process!)
+	  (child will hang around for too long and could actually kill
+	  the wrong process!)
 
 config BUSYBOX_CONFIG_FEATURE_INIT_SCTTY
 	bool "Run commands with leading dash with controlling tty"
@@ -80,17 +73,15 @@ config BUSYBOX_CONFIG_FEATURE_INIT_COREDUMPS
 	help
 	  If this option is enabled and the file /.init_enable_core
 	  exists, then init will call setrlimit() to allow unlimited
-	  core file sizes.  If this option is disabled, processes
+	  core file sizes. If this option is disabled, processes
 	  will not generate any core files.
-
-
 
 config BUSYBOX_CONFIG_FEATURE_INITRD
 	bool "Support running init from within an initrd (not initramfs)"
 	default n
 	depends on BUSYBOX_CONFIG_INIT
 	help
-	  Legacy support for running init under the old-style initrd.  Allows
+	  Legacy support for running init under the old-style initrd. Allows
 	  the name linuxrc to act as init, and it doesn't assume init is PID 1.
 
 	  This does not apply to initramfs, which runs /init as PID 1 and
@@ -102,11 +93,31 @@ config BUSYBOX_CONFIG_HALT
 	help
 	  Stop all processes and either halt, reboot, or power off the system.
 
+config BUSYBOX_CONFIG_FEATURE_CALL_TELINIT
+	bool "Call telinit on shutdown and reboot"
+	default n
+	depends on BUSYBOX_CONFIG_HALT && !BUSYBOX_CONFIG_INIT
+	help
+	  Call an external program (normally telinit) to facilitate
+	  a switch to a proper runlevel.
+
+	  This option is only available if you selected halt and friends,
+	  but did not select init.
+
+config BUSYBOX_CONFIG_TELINIT_PATH
+	string "Path to telinit executable"
+	default "/sbin/telinit"
+	depends on BUSYBOX_CONFIG_FEATURE_CALL_TELINIT
+	help
+	  When busybox halt and friends have to call external telinit
+	  to facilitate proper shutdown, this path is to be used when
+	  locating telinit executable.
+
 config BUSYBOX_CONFIG_MESG
 	bool "mesg"
 	default y
 	help
-	  Mesg controls access to your terminal by others.  It is typically
+	  Mesg controls access to your terminal by others. It is typically
 	  used to allow or disallow other users to write to your terminal
 
 endmenu

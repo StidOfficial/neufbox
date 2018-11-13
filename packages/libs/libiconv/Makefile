@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libiconv
-PKG_VERSION:=1.11
+PKG_VERSION:=1.11.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/libiconv
-PKG_MD5SUM:=b77a17e4a5a817100ad4b2613935055e
+PKG_MD5SUM:=d42b97f6ef5dd0ba4469d520ed732fed
 
-PKG_FIXUP = libtool
+PKG_FIXUP = libtool no-autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -62,9 +62,9 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/lib/libiconv/include
+	$(INSTALL_DIR) $(1)/usr/lib/libiconv/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/iconv.h $(1)/usr/lib/libiconv/include/
-	mkdir -p $(1)/usr/lib/libiconv/lib
+	$(INSTALL_DIR) $(1)/usr/lib/libiconv/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcharset.{a,so*} $(1)/usr/lib/libiconv/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libiconv.{a,so*} $(1)/usr/lib/libiconv/lib/
 endef

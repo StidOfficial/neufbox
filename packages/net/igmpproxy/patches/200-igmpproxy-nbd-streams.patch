@@ -1,56 +1,64 @@
 --- a/src/request.c
 +++ b/src/request.c
-@@ -39,6 +39,9 @@
+@@ -38,6 +38,10 @@
+ */
  
- #include "defs.h"
- 
+ #include "igmpproxy.h"
++#ifdef HAVE_LIBNBD
 +#include "nbd/core.h"
 +#include "nbd/igmp.h"
-+
++#endif
+ 
  // Prototypes...
  void sendGroupSpecificMemberQuery(void *argument);  
-     
-@@ -79,6 +82,10 @@
+@@ -79,6 +83,12 @@ void acceptGroupReport(uint32_t src, uin
      // We have a IF so check that it's an downstream IF.
      if(sourceVif->state == IF_STATE_DOWNSTREAM) {
  
++#ifdef HAVE_LIBNBD
 +        nbd_open();
 +        nbd_igmp_stream_add(inetFmt(src, s1), inetFmt(group, s2));
 +        nbd_close();
++#endif
 +
-         IF_DEBUG log(LOG_DEBUG, 0, "Should insert group %s (from: %s) to route table. Vif Ix : %d",
+         my_log(LOG_DEBUG, 0, "Should insert group %s (from: %s) to route table. Vif Ix : %d",
              inetFmt(group,s1), inetFmt(src,s2), sourceVif->index);
  
-@@ -124,6 +131,10 @@
+@@ -125,6 +135,12 @@ void acceptLeaveMessage(uint32_t src, ui
          GroupVifDesc   *gvDesc;
          gvDesc = (GroupVifDesc*) malloc(sizeof(GroupVifDesc));
  
++#ifdef HAVE_LIBNBD
 +        nbd_open();
 +        nbd_igmp_stream_del(inetFmt(src, s1), inetFmt(group, s2));
 +        nbd_close();
++#endif
 +
          // Tell the route table that we are checking for remaining members...
          setRouteLastMemberMode(group);
  
---- a/src/rttable.c	2005-08-20 14:46:20.000000000 +0200
-+++ b/src/rttable.c	2009-03-20 11:22:32.471070865 +0100
-@@ -38,6 +38,9 @@
+--- a/src/rttable.c
++++ b/src/rttable.c
+@@ -38,6 +38,10 @@
  */
  
- #include "defs.h"
-+
+ #include "igmpproxy.h"
++#ifdef HAVE_LIBNBD
 +#include "nbd/core.h"
 +#include "nbd/igmp.h"
++#endif
      
  /**
  *   Routing table structure definition. Double linked list...
-@@ -475,6 +478,9 @@ int removeRoute(struct RouteTable*  crou
+@@ -469,6 +473,11 @@ int removeRoute(struct RouteTable*  crou
                   inetFmt(croute->group, s1));
  
      //BIT_ZERO(croute->vifBits);
++#ifdef HAVE_LIBNBD
 +    nbd_open();
 +    nbd_igmp_group_del(inetFmt(croute->group, s1));
 +    nbd_close();
++#endif
  
      // Uninstall current route from kernel
      if(!internUpdateKernelRoute(croute, 0)) {

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=peerguardian
 PKG_VERSION:=1.5beta
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=pglinux-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/peerguardian
 PKG_MD5SUM:=0fb2bc5501b031604fc56eec3bd35fa4
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/pglinux-$(PKG_VERSION)
+PKG_BUILD_PARALLEL:=1
 
 PKG_BUILD_DEPENDS:=iptables
 
@@ -24,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/peerguardian
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:= +libncurses +libpthread +uclibcxx +libnetfilter-queue
+  DEPENDS:= +libncurses +libpthread +libnetfilter-queue
   TITLE:=PeerGuardian for Linux
   URL:=http://phoenixlabs.org/
 endef
@@ -39,13 +40,14 @@ define Package/peerguardian/conffiles
 /etc/p2p.p2b.p2p
 endef
 
+EXTRA_CFLAGS:=-fno-rtti -I$(STAGING_DIR)/usr/include/libnetfilter_queue/
+
 CONFIGURE_VARS+= \
-	CXXFLAGS="$$$$CXXFLAGS $$$$CPPFLAGS -fno-builtin -fno-rtti -I$(STAGING_DIR)/usr/include/libnetfilter_queue/" \
-	LIBS="-nodefaultlibs -luClibc++ -Wl,-Bstatic,-lstdc++,-Bdynamic -lm -lgcc" \
+	LIBS="-lm"
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CXXLD="$(TARGET_CC)"
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+		CXXLD="$(TARGET_CXX)"
 endef
 
 define Package/peerguardian/install

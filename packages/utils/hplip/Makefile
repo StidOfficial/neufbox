@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,15 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hplip
-PKG_VERSION:=2.8.9
-PKG_RELEASE:=2
+PKG_VERSION:=3.9.12
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/hplip
-PKG_MD5SUM:=2e20dba86abb99a3ca59d05e814ce9a1
+PKG_MD5SUM:=2b0906b4a57b437988829557ca62adfd
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_DEPENDS := python
+PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -38,13 +38,14 @@ CONFIGURE_ARGS += \
 	--disable-fax-build \
 	--disable-pp-build \
 	--disable-doc-build \
-	--disable-foomatic-xml-install
+	--disable-foomatic-xml-install \
+	--disable-dbus-build
 
 define Build/Configure
 	$(call Build/Configure/Default,\
 		$(CONFIGURE_ARGS),\
 		ac_cv_lib_cups_cupsDoFileRequest=yes \
-		LIBS="-ljpeg -lusb" \
+		LIBS="-lz -ljpeg -lusb -lcups -lpng -ltiff" \
 	)
 endef
 
@@ -52,7 +53,7 @@ define Package/hplip/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/.libs/libhpip.so* $(1)/usr/lib/
 	$(CP) $(PKG_BUILD_DIR)/.libs/libhpmud.so* $(1)/usr/lib/
-	
+
 	$(INSTALL_DIR) $(1)/usr/lib/cups/backend
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/.libs/hp $(1)/usr/lib/cups/backend
 
@@ -64,6 +65,9 @@ define Package/hplip/install
 
 	$(INSTALL_DIR) $(1)/usr/share/hplip/data/models/
 	$(CP) $(PKG_BUILD_DIR)/data/models/models.dat $(1)/usr/share/hplip/data/models/
+
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/usb/
+	$(INSTALL_BIN) ./files/20-hplip $(1)/etc/hotplug.d/usb/
 endef
 
 $(eval $(call BuildPackage,hplip))

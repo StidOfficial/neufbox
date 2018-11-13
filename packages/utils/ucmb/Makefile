@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,19 +8,23 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ucmb
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 include $(INCLUDE_DIR)/package.mk
 
 
 define KernelPackage/ucmb
   SUBMENU:=Other modules
-  DEPENDS:=@LINUX_2_6_28||LINUX_2_6_29 +kmod-spi-gpio +kmod-crc16
+  DEPENDS:=@!LINUX_2_4 \
+          @!LINUX_2_6_21 @!LINUX_2_6_22 @!LINUX_2_6_23 @!LINUX_2_6_24 \
+	  @!LINUX_2_6_25 @!LINUX_2_6_26 @!LINUX_2_6_27 \
+	  +kmod-spi-gpio +kmod-crc16
   KCONFIG:=CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
   TITLE:=Microcontroller Message Bus
   FILES:=$(PKG_BUILD_DIR)/ucmb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,93,ucmb)
+  MAINTAINER:=Michael Buesch <mb@bu3sch.de>
 endef
 
 define KernelPackage/ucmb/description
@@ -39,7 +43,6 @@ define KernelPackage/ucmb/description
 endef
 
 define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./driver/* $(PKG_BUILD_DIR)/
 endef
 
@@ -50,6 +53,13 @@ define Build/Compile
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(BUILDFLAGS)" \
 		modules
+endef
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(CP) \
+		$(PKG_BUILD_DIR)/ucmb.h \
+		$(1)/usr/include
 endef
 
 $(eval $(call KernelPackage,ucmb))

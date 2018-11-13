@@ -11,6 +11,7 @@
 #include <linux/ioport.h>
 #include <linux/timer.h>
 #include <linux/platform_device.h>
+#include <linux/slab.h>
 #include <linux/delay.h>
 #include <linux/pci.h>
 #include <linux/gpio.h>
@@ -42,25 +43,25 @@ static inline void pcmcia_writel(struct bcm63xx_pcmcia_socket *skt,
 }
 
 /*
- * (Re-)Initialise the socket, turning on status interrupts and PCMCIA
- * bus.  This must wait for power to stabilise so that the card status
- * signals report correctly.
+ * This callback should (re-)initialise the socket, turn on status
+ * interrupts and PCMCIA bus, and wait for power to stabilise so that
+ * the card status signals report correctly.
+ *
+ * Hardware cannot do that.
  */
 static int bcm63xx_pcmcia_sock_init(struct pcmcia_socket *sock)
 {
-	struct bcm63xx_pcmcia_socket *skt;
-	skt = sock->driver_data;
 	return 0;
 }
 
 /*
- * Remove power on the socket, disable IRQs from the card.
- * Turn off status interrupts, and disable the PCMCIA bus.
+ * This callback should remove power on the socket, disable IRQs from
+ * the card, turn off status interrupts, and disable the PCMCIA bus.
+ *
+ * Hardware cannot do that.
  */
 static int bcm63xx_pcmcia_suspend(struct pcmcia_socket *sock)
 {
-	struct bcm63xx_pcmcia_socket *skt;
-	skt = sock->driver_data;
 	return 0;
 }
 
@@ -82,8 +83,8 @@ static int bcm63xx_pcmcia_set_socket(struct pcmcia_socket *sock,
 
 	spin_lock_irqsave(&skt->lock, flags);
 
-	/* apply requested socket power */
-	/* FIXME: hardware can't do this */
+	/* note: hardware cannot control socket power, so we will
+	 * always report SS_POWERON */
 
 	/* apply socket reset */
 	val = pcmcia_readl(skt, PCMCIA_C1_REG);
@@ -211,7 +212,7 @@ static unsigned int __get_socket_status(struct bcm63xx_pcmcia_socket *skt)
 		/* guess cardtype from all this */
 		skt->card_type = vscd_to_cardtype[stat];
 		if (!skt->card_type)
-			printk(KERN_ERR PFX "unsupported card type\n");
+			dev_err(&skt->socket.dev, "unsupported card type\n");
 
 		/* drive both VS pin to 0 again */
 		val &= ~(PCMCIA_C1_VS1OE_MASK | PCMCIA_C1_VS2OE_MASK);
@@ -322,7 +323,7 @@ static struct pccard_operations bcm63xx_pcmcia_operations = {
 /*
  * register pcmcia socket to core
  */
-static int bcm63xx_drv_pcmcia_probe(struct platform_device *pdev)
+static int __devinit bcm63xx_drv_pcmcia_probe(struct platform_device *pdev)
 {
 	struct bcm63xx_pcmcia_socket *skt;
 	struct pcmcia_socket *sock;
@@ -401,7 +402,11 @@ static int bcm63xx_drv_pcmcia_probe(struct platform_device *pdev)
 	val |= PCMCIA_C1_EN_PCMCIA_GPIO_MASK;
 	pcmcia_writel(skt, val, PCMCIA_C1_REG);
 
-	/* FIXME set correct pcmcia timings */
+	/*
+	 * Hardware has only one set of timings registers, not one for
+	 * each memory access type, so we configure them for the
+	 * slowest one: attribute memory.
+	 */
 	val = PCMCIA_C2_DATA16_MASK;
 	val |= 10 << PCMCIA_C2_RWCOUNT_SHIFT;
 	val |= 6 << PCMCIA_C2_INACTIVE_SHIFT;
@@ -431,7 +436,7 @@ err:
 	return ret;
 }
 
-static int bcm63xx_drv_pcmcia_remove(struct platform_device *pdev)
+static int __devexit bcm63xx_drv_pcmcia_remove(struct platform_device *pdev)
 {
 	struct bcm63xx_pcmcia_socket *skt;
 	struct resource *res;
@@ -473,19 +478,29 @@ static void __devexit bcm63xx_cb_exit(struct pci_dev *dev)
 static struct pci_device_id bcm63xx_cb_table[] = {
 	{
 		.vendor		= PCI_VENDOR_ID_BROADCOM,
-		.device		= PCI_ANY_ID,
+		.device		= BCM6348_CPU_ID,
 		.subvendor	= PCI_VENDOR_ID_BROADCOM,
 		.subdevice	= PCI_ANY_ID,
 		.class		= PCI_CLASS_BRIDGE_CARDBUS << 8,
 		.class_mask	= ~0,
 	},
-	{}
+
+	{
+		.vendor		= PCI_VENDOR_ID_BROADCOM,
+		.device		= BCM6358_CPU_ID,
+		.subvendor	= PCI_VENDOR_ID_BROADCOM,
+		.subdevice	= PCI_ANY_ID,
+		.class		= PCI_CLASS_BRIDGE_CARDBUS << 8,
+		.class_mask	= ~0,
+	},
+
+	{ },
 };
 
 MODULE_DEVICE_TABLE(pci, bcm63xx_cb_table);
 
 static struct pci_driver bcm63xx_cardbus_driver = {
-	.name		= "yenta_cardbus",
+	.name		= "bcm63xx_cardbus",
 	.id_table	= bcm63xx_cb_table,
 	.probe		= bcm63xx_cb_probe,
 	.remove		= __devexit_p(bcm63xx_cb_exit),

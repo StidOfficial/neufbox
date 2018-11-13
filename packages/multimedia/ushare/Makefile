@@ -10,23 +10,25 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ushare
 PKG_VERSION:=1.1a
 PKG_RELEASE:=1
-PKG_INSTALL:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://ushare.geexbox.org/releases/
 PKG_MD5SUM:=5bbcdbf1ff85a9710fa3d4e82ccaa251
 
-include $(INCLUDE_DIR)/package.mk
+PKG_INSTALL:=1
 
-PKG_DEPS:=+libupnp +efixo-libnbd
+include $(INCLUDE_DIR)/package.mk
 
 define Package/ushare
  SECTION:=multimedia
  CATEGORY:=Multimedia
  TITLE:= UPnP A/V & DLNA Media Server
  URL:=http://ushare.geexbox.org/
- DEPENDS:=$(PKG_DEPS)
+ DEPENDS:=+libupnp
 endef
+
+PKG_BUILD_DEPENDS:=PACKAGE_efixo-libnbd:efixo-libnbd
+PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_efixo-libnbd
 
 define Package/ushare/description
  uShare is a UPnP (TM) A/V & DLNA Media Server. It implements the server 
@@ -34,11 +36,14 @@ define Package/ushare/description
  multimedia files.
 endef
 
+MAKE_INSTALL_FLAGS+= \
+	INSTALL="install" \
+
 define Build/Configure
 	# this is *NOT* GNU configure
 	( cd $(PKG_BUILD_DIR); \
 		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
-		LDFLAGS="$(TARGET_LDFLAGS) -lpthread -lz" \
+		LDFLAGS="$(TARGET_LDFLAGS) -Wl,-rpath-link=$(STAGING_DIR)/usr/lib" \
 		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		PKG_CONFIG_LIBDIR="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		./configure \
@@ -50,15 +55,12 @@ define Build/Configure
 		--disable-debug \
 		--disable-optimize \
 		--disable-strip \
-		$(PKG_CONF_EXTRA_OPTS) \
 	)
 endef
 
-MAKE_FLAGS += DESTDIR="$(PKG_INSTALL_DIR)" INSTALL="install"
-
-#define Package/ushare/conffiles
+define Package/ushare/conffiles
 #/etc/ushare.conf
-#endef
+endef
 
 define Package/ushare/install
 	$(INSTALL_DIR) $(1)/etc

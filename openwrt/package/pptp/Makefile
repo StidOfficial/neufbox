@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pptp
-PKG_VERSION:=1.6.0
-PKG_RELEASE:=6
+PKG_VERSION:=1.7.1
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/pptpclient
-PKG_MD5SUM:=9a706327fb9827541d7c86d48ceb9631
+PKG_MD5SUM:=b47735ba5d6d37dfdbccb85afc044ede
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -25,8 +25,12 @@ define Package/pptp
   DEPENDS:=+ppp +kmod-gre
 endef
 
-define Package/pptp/daemon
+define Package/pptp/description
  This package contains a PPTP (Point-to-Point Tunneling Protocol) client.
+endef
+
+define Package/pptp/conffiles
+/etc/ppp/options.pptp
 endef
 
 define Package/pptp/install

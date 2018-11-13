@@ -8,18 +8,19 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=faad2
-PKG_VERSION:=2.6.1
+PKG_VERSION:=2.7
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/faac
-PKG_MD5SUM:=74e92df40c270f216a8305fc87603c8a
+PKG_MD5SUM:=4c332fa23febc0e4648064685a3d4332
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
-
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
+
+TARGET_CFLAGS += $(FPIC)
 
 define Package/faad2/Default
   URL:=http://www.audiocoding.com/faad2.html
@@ -50,6 +51,7 @@ $(call Package/faad2/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+=library
+  DEPENDS:=@BUILD_PATENTED
 endef
 
 define Package/libfaad2/description
@@ -58,6 +60,10 @@ $(call Package/faad2/Default/description)
 endef
 
 define Build/Configure
+	# This replacement were do according to many comments on the web because of gcc 3.4.5 version (.6 included).-
+	# wich doesn't recognices the -iquote parameter to AM_CFLAGS
+	($(SED) 's,-iquote $$$$(top_srcdir),-I$$$$(top_srcdir),g' $(PKG_BUILD_DIR)/libfaad/Makefile.am; \
+	$(SED) 's,-iquote $$$$(top_srcdir),-I$$$$(top_srcdir),g' $(PKG_BUILD_DIR)/libfaad/Makefile.in);
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
 		autoreconf -vif \
 	);
@@ -69,16 +75,10 @@ define Build/Configure
 	)
 endef
 
-TARGET_CFLAGS += $(FPIC)
-
-MAKE_FLAGS += \
-	DESTDIR="$(PKG_INSTALL_DIR)" \
-	all install \
-
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/*.h $(1)/usr/include
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfaad.{a,so*} $(1)/usr/lib/
 endef
 

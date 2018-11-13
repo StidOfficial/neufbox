@@ -1,5 +1,5 @@
---- linux-2.6.21.7/include/linux/netfilter/nf_conntrack_common.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/netfilter/nf_conntrack_common.h	2008-10-10 02:43:10.000000000 +0200
+--- a/include/linux/netfilter/nf_conntrack_common.h
++++ b/include/linux/netfilter/nf_conntrack_common.h
 @@ -73,6 +73,12 @@ enum ip_conntrack_status {
  	/* Connection has fixed timeout. */
  	IPS_FIXED_TIMEOUT_BIT = 10,
@@ -26,9 +26,8 @@
  };
  
  enum ip_conntrack_expect_events {
-diff -pNur linux-2.6.21.7/include/linux/skbuff.h linux-2.6.21.7/include/linux/skbuff.h
---- linux-2.6.21.7/include/linux/skbuff.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/skbuff.h	2008-06-25 18:34:08.000000000 +0200
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
 @@ -44,6 +44,19 @@
  #define SKB_MAX_HEAD(X)		(SKB_MAX_ORDER((X), 0))
  #define SKB_MAX_ALLOC		(SKB_MAX_ORDER(0, 2))
@@ -102,7 +101,7 @@ diff -pNur linux-2.6.21.7/include/linux/skbuff.h linux-2.6.21.7/include/linux/sk
  	/* These elements must be at the end, see alloc_skb() for details.  */
  	unsigned int		truesize;
  	atomic_t		users;
-@@ -405,6 +468,47 @@ extern unsigned int   skb_find_text(stru
+@@ -405,6 +450,47 @@ extern unsigned int   skb_find_text(stru
  /* Internal */
  #define skb_shinfo(SKB)		((struct skb_shared_info *)((SKB)->end))
  
@@ -150,9 +149,8 @@ diff -pNur linux-2.6.21.7/include/linux/skbuff.h linux-2.6.21.7/include/linux/sk
  /**
   *	skb_queue_empty - check if a queue is empty
   *	@list: queue head
-diff -pNur linux-2.6.21.7/include/linux/sockios.h linux-2.6.21.7/include/linux/sockios.h
---- linux-2.6.21.7/include/linux/sockios.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/sockios.h	2008-06-25 18:34:10.000000000 +0200
+--- a/include/linux/sockios.h
++++ b/include/linux/sockios.h
 @@ -88,6 +88,9 @@
  #define SIOCDARP	0x8953		/* delete ARP table entry	*/
  #define SIOCGARP	0x8954		/* get ARP table entry		*/
@@ -187,9 +185,8 @@ diff -pNur linux-2.6.21.7/include/linux/sockios.h linux-2.6.21.7/include/linux/s
  /* Device private ioctl calls */
  
  /*
-diff --exclude=.svn -pNur linux-2.6.21.7/net/core/dev.c linux-2.6.21.7/net/core/dev.c
---- linux-2.6.21.7/net/core/dev.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/core/dev.c	2008-10-13 18:23:39.000000000 +0200
+--- a/net/core/dev.c
++++ b/net/core/dev.c
 @@ -181,6 +181,11 @@ DEFINE_RWLOCK(dev_base_lock);
  EXPORT_SYMBOL(dev_base);
  EXPORT_SYMBOL(dev_base_lock);
@@ -202,7 +199,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/dev.c linux-2.6.21.7/net/core/
  #define NETDEV_HASHBITS	8
  static struct hlist_head dev_name_head[1<<NETDEV_HASHBITS];
  static struct hlist_head dev_index_head[1<<NETDEV_HASHBITS];
-@@ -1708,6 +1707,20 @@ static __inline__ int handle_bridge(stru
+@@ -1708,6 +1713,20 @@ static __inline__ int handle_bridge(stru
  	if ((*pskb)->pkt_type == PACKET_LOOPBACK ||
  	    (port = rcu_dereference((*pskb)->dev->br_port)) == NULL)
  		return 0;
@@ -223,7 +220,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/dev.c linux-2.6.21.7/net/core/
  
  	if (*pt_prev) {
  		*ret = deliver_skb(*pskb, *pt_prev, orig_dev);
-@@ -1849,9 +1849,28 @@ int netif_receive_skb(struct sk_buff *sk
+@@ -1823,9 +1842,28 @@ int netif_receive_skb(struct sk_buff *sk
  ncls:
  #endif
  
@@ -252,7 +249,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/dev.c linux-2.6.21.7/net/core/
  	type = skb->protocol;
  	list_for_each_entry_rcu(ptype, &ptype_base[ntohs(type)&15], list) {
  		if (ptype->type == type &&
-@@ -1861,6 +1880,9 @@ ncls:
+@@ -1835,6 +1873,9 @@ ncls:
  			pt_prev = ptype;
  		}
  	}
@@ -262,7 +259,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/dev.c linux-2.6.21.7/net/core/
  
  	if (pt_prev) {
  		ret = pt_prev->func(skb, skb->dev, pt_prev, orig_dev);
-@@ -2506,10 +2542,25 @@ static int dev_ifsioc(struct ifreq *ifr,
+@@ -2506,10 +2547,25 @@ static int dev_ifsioc(struct ifreq *ifr,
  					   (currently unused) */
  			return -EOPNOTSUPP;
  
@@ -288,7 +285,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/dev.c linux-2.6.21.7/net/core/
  		case SIOCSIFMTU:	/* Set the MTU of a device */
  			return dev_set_mtu(dev, ifr->ifr_mtu);
  
-@@ -2685,6 +2736,9 @@ int dev_ioctl(unsigned int cmd, void __u
+@@ -2685,6 +2741,9 @@ int dev_ioctl(unsigned int cmd, void __u
  		case SIOCGIFMAP:
  		case SIOCGIFINDEX:
  		case SIOCGIFTXQLEN:
@@ -298,7 +295,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/dev.c linux-2.6.21.7/net/core/
  			dev_load(ifr.ifr_name);
  			read_lock(&dev_base_lock);
  			ret = dev_ifsioc(&ifr, cmd);
-@@ -2784,6 +2838,9 @@ int dev_ioctl(unsigned int cmd, void __u
+@@ -2784,6 +2843,9 @@ int dev_ioctl(unsigned int cmd, void __u
  		 */
  		default:
  			if (cmd == SIOCWANDEV ||
@@ -308,7 +305,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/dev.c linux-2.6.21.7/net/core/
  			    (cmd >= SIOCDEVPRIVATE &&
  			     cmd <= SIOCDEVPRIVATE + 15)) {
  				dev_load(ifr.ifr_name);
-@@ -3069,9 +3112,36 @@ EXPORT_SYMBOL(register_netdev);
+@@ -3043,9 +3105,36 @@ EXPORT_SYMBOL(register_netdev);
  static void netdev_wait_allrefs(struct net_device *dev)
  {
  	unsigned long rebroadcast_time, warning_time;
@@ -346,9 +343,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/dev.c linux-2.6.21.7/net/core/
  		if (time_after(jiffies, rebroadcast_time + 1 * HZ)) {
  			rtnl_lock();
  
-diff --exclude=.svn -pNur linux-2.6.21.7/net/core/Makefile linux-2.6.21.7/net/core/Makefile
---- linux-2.6.21.7/net/core/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/core/Makefile	2008-10-13 18:23:39.000000000 +0200
+--- a/net/core/Makefile
++++ b/net/core/Makefile
 @@ -2,6 +2,10 @@
  # Makefile for the Linux networking core.
  #
@@ -360,14 +356,14 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/Makefile linux-2.6.21.7/net/co
  obj-y := sock.o request_sock.o skbuff.o iovec.o datagram.o stream.o scm.o \
  	 gen_stats.o gen_estimator.o
  
-@@ -11,3 +15,4 @@ obj-y		     += dev.o ethtool.o dev_mcast
+@@ -17,3 +21,5 @@ obj-$(CONFIG_WIRELESS_EXT) += wireless.o
  obj-$(CONFIG_NETPOLL) += netpoll.o
  obj-$(CONFIG_NET_DMA) += user_dma.o
  obj-$(CONFIG_FIB_RULES) += fib_rules.o
-+obj-$(CONFIG_BLOG) += blog.o
-diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/core/skbuff.c
---- linux-2.6.21.7/net/core/skbuff.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/core/skbuff.c	2008-10-13 18:23:39.000000000 +0200
++obj-$(CONFIG_BLOG) += blog.o 
++obj-$(CONFIG_BCM96362) += nbuff.o
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
 @@ -66,6 +66,9 @@
  #include <asm/system.h>
  
@@ -390,7 +386,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/co
  	/* make sure we initialize shinfo sequentially */
  	shinfo = skb_shinfo(skb);
  	atomic_set(&shinfo->dataref, 1);
-@@ -263,6 +269,18 @@ static void skb_release_data(struct sk_b
+@@ -263,6 +271,18 @@ static void skb_release_data(struct sk_b
  		if (skb_shinfo(skb)->frag_list)
  			skb_drop_fraglist(skb);
  
@@ -409,7 +405,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/co
  		kfree(skb->head);
  	}
  }
-@@ -276,6 +294,22 @@ void kfree_skbmem(struct sk_buff *skb)
+@@ -276,6 +296,22 @@ void kfree_skbmem(struct sk_buff *skb)
  	atomic_t *fclone_ref;
  
  	skb_release_data(skb);
@@ -432,7 +428,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/co
  	switch (skb->fclone) {
  	case SKB_FCLONE_UNAVAILABLE:
  		kmem_cache_free(skbuff_head_cache, skb);
-@@ -300,6 +334,9 @@ void kfree_skbmem(struct sk_buff *skb)
+@@ -300,6 +336,9 @@ void kfree_skbmem(struct sk_buff *skb)
  			kmem_cache_free(skbuff_fclone_cache, other);
  		break;
  	};
@@ -442,7 +438,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/co
  }
  
  /**
-@@ -376,6 +417,7 @@ void kfree_skb(struct sk_buff *skb)
+@@ -376,6 +415,7 @@ void kfree_skb(struct sk_buff *skb)
  struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t gfp_mask)
  {
  	struct sk_buff *n;
@@ -450,7 +446,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/co
  
  	n = skb + 1;
  	if (skb->fclone == SKB_FCLONE_ORIG &&
-@@ -445,6 +487,31 @@ struct sk_buff *skb_clone(struct sk_buff
+@@ -445,6 +485,31 @@ struct sk_buff *skb_clone(struct sk_buff
  #endif
  	skb_copy_secmark(n, skb);
  #endif
@@ -482,7 +478,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/co
  	C(truesize);
  	atomic_set(&n->users, 1);
  	C(head);
-@@ -464,6 +532,9 @@ static void copy_skb_header(struct sk_bu
+@@ -464,6 +529,9 @@ static void copy_skb_header(struct sk_bu
  	 *	Shift between the two data areas in bytes
  	 */
  	unsigned long offset = new->data - old->data;
@@ -492,7 +488,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/co
  
  	new->sk		= NULL;
  	new->dev	= old->dev;
-@@ -506,6 +577,32 @@ static void copy_skb_header(struct sk_bu
+@@ -506,6 +574,32 @@ static void copy_skb_header(struct sk_bu
  	new->tc_index	= old->tc_index;
  #endif
  	skb_copy_secmark(new, old);
@@ -525,7 +521,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/co
  	atomic_set(&new->users, 1);
  	skb_shinfo(new)->gso_size = skb_shinfo(old)->gso_size;
  	skb_shinfo(new)->gso_segs = skb_shinfo(old)->gso_segs;
-@@ -667,6 +765,12 @@ int pskb_expand_head(struct sk_buff *skb
+@@ -667,6 +761,12 @@ int pskb_expand_head(struct sk_buff *skb
  	skb->h.raw   += off;
  	skb->nh.raw  += off;
  	skb->cloned   = 0;
@@ -538,9 +534,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/core/skbuff.c linux-2.6.21.7/net/co
  	skb->nohdr    = 0;
  	atomic_set(&skb_shinfo(skb)->dataref, 1);
  	return 0;
-diff --exclude=.svn -pNur linux-2.6.21.7/net/Kconfig linux-2.6.21.7/net/Kconfig
---- linux-2.6.21.7/net/Kconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/Kconfig	2008-10-13 18:23:39.000000000 +0200
+--- a/net/Kconfig
++++ b/net/Kconfig
 @@ -61,6 +61,16 @@ config INET
  
  	  Short answer: say Y.

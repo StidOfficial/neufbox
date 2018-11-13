@@ -11,11 +11,11 @@ PKG_NAME:=numpy
 PKG_VERSION:=1.0.4
 PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://downloads.sourceforge.net/numpy/
+PKG_SOURCE_URL:=@SF/numpy
 PKG_MD5SUM:=8f011e9d7697da570efaac61c51725e0
 
 include $(INCLUDE_DIR)/package.mk
--include $(if $(DUMP),,$(STAGING_DIR)/mk/python-package.mk)
+$(call include_mk, python-package.mk)
 
 define Package/numpy
   SUBMENU:=Python
@@ -35,8 +35,8 @@ define Build/Compile
 endef
 
 define Package/numpy/install
-	mkdir -p $(1)
-	cp -r $(PKG_INSTALL_DIR)/* $(1)
+	$(INSTALL_DIR) $(1)
+	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 endef
 
 define Require/python25-dev

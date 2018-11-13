@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=squid
-PKG_VERSION:=2.6.STABLE14
+PKG_VERSION:=2.7.STABLE9
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.squid-cache.org/Versions/v2/2.6/
-PKG_MD5SUM:=eadb138d48320df8b99349121159c6bf
+PKG_SOURCE_URL:=http://www.squid-cache.org/Versions/v2/2.7/
+PKG_MD5SUM:=3c6642c85470b1079207d43bba25a819
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -26,14 +26,14 @@ endef
 define Package/squid
   $(call Package/squid/Default)
   MENU:=1
-  DEPENDS:=+libopenssl +libpthread @LINUX_2_6
+  DEPENDS:=+libopenssl +libpthread @!LINUX_2_4
   TITLE:=full-featured Web proxy cache
 endef
 
 define Package/squid/description
-	Squid is a high-performance proxy caching server for web clients, 
-	supporting FTP, gopher, and HTTP data objects. Unlike traditional 
-	caching software, Squid handles all requests in a single, 
+	Squid is a high-performance proxy caching server for web clients,
+	supporting FTP, gopher, and HTTP data objects. Unlike traditional
+	caching software, Squid handles all requests in a single,
 	non-blocking, I/O-driven process.
 endef
 
@@ -131,11 +131,11 @@ CONFIGURE_ARGS += \
 
 CONFIGURE_VARS += \
 	ac_cv_header_linux_netfilter_ipv4_h=yes \
+	ac_cv_epoll_works=yes \
 
 define Build/Compile
 	# pass INCLUDES to compile host sources against our OpenSSL, not the host one
 	$(MAKE) -C $(PKG_BUILD_DIR)/lib \
-		INCLUDES="$(TARGET_CPPFLAGS)" \
 		all
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
@@ -160,7 +160,7 @@ define Package/squid/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/squid $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/lib/squid
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/squid/{unlinkd,pinger} $(1)/usr/lib/squid/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/squid/{unlinkd,pinger,logfile-daemon} $(1)/usr/lib/squid/
 endef
 
 define Package/squid-mod-cachemgr/install

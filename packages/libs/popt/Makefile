@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,19 +9,27 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=popt
 PKG_VERSION:=1.7
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.1.x/
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=5988e7aeb0ae4dac8d83561265984cc9
 
+PKG_FIXUP:=libtool
+PKG_REMOVE_FILES:=autogen.sh aclocal.m4
+
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/package.mk
+
+TARGET_CFLAGS += $(FPIC)
 
 define Package/libpopt
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=A command line option parsing library
-  URL:=ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.1.x/
+  URL:=http://rpm5.org/files/popt/
 endef
 
 define Build/Configure
@@ -31,18 +39,10 @@ define Build/Configure
 	)
 endef
 
-TARGET_CFLAGS += $(FPIC)
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
-
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/popt.h $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpopt.{a,so*} $(1)/usr/lib/
 endef
 

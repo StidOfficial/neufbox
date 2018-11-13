@@ -664,6 +664,13 @@ static const struct wlc_call wlc_calls[] = {
 		.desc = "Set/Remove WEP keys"
 	},
 	{
+		.name = "wepauth",
+		.param = INT,
+		.handler = wlc_ioctl,
+		.data.num = ((WLC_GET_AUTH << 16) | WLC_SET_AUTH),
+		.desc = "WEP authentication type. 0 = OpenSystem, 1 = SharedKey"
+	},
+	{
 		.name = "wsec_restrict",
 		.param = INT,
 		.handler = wlc_bssiovar,
@@ -904,6 +911,20 @@ static const struct wlc_call wlc_calls[] = {
 		.data.num = ((WLC_GET_DESIRED_BSSID << 16) | WLC_SET_DESIRED_BSSID),
 		.handler = wlc_ioctl,
 		.desc = "Desired BSSID"
+	},
+	{
+		.name = "assoclist",
+		.param = STRING,
+		.data.num = (WLC_GET_ASSOCLIST << 16),
+		.handler = wlc_maclist,
+		.desc = "MACs of associated stations"
+	},
+	{
+		.name = "gmode",
+		.param = INT,
+		.data.num = ((WLC_GET_GMODE << 16) | WLC_SET_GMODE),
+		.handler = wlc_ioctl,
+		.desc = "G Mode"
 	},
 };
 #define wlc_calls_size (sizeof(wlc_calls) / sizeof(struct wlc_call))

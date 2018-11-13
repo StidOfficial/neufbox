@@ -8,29 +8,41 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hotplug2
-PKG_VERSION:=0.9
-PKG_RELEASE:=3
+PKG_REV:=201
+PKG_VERSION:=$(PKG_REV)
+PKG_RELEASE:=2
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://isteve.bofh.cz/~isteve/hotplug2
-PKG_MD5SUM:=ea2c01d027b4002e4e6b0ff266f51a51
+PKG_SOURCE_PROTO:=svn
+PKG_SOURCE_VERSION:=$(PKG_REV)
+PKG_SOURCE_SUBDIR:=hotplug2-$(PKG_VERSION)
+PKG_SOURCE_URL:=http://svn.nomi.cz/svn/isteve/hotplug2
+PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
+#PKG_SOURCE_URL:=http://isteve.bofh.cz/~isteve/hotplug2
+#PKG_MD5SUM:=ea2c01d027b4002e4e6b0ff266f51a51
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/hotplug2
   SECTION:=base
   CATEGORY:=Base system
-  VERSION:=0.9+r102-$(PKG_RELEASE)
-  TITLE:=Dynamic device management subsystem for embedded systems
+  VERSION:=1.0-beta-$(PKG_RELEASE)
+  TITLE:=Version 1.0 Dynamic device management subsystem for embedded systems
   URL:=http://isteve.bofh.cz/~isteve/hotplug2/
 endef
 
 define Package/hotplug2/description
  Hotplug2 is a trivial replacement of some of the UDev functionality
  in a tiny pack, intended for Linux early userspace: Init RAM FS and InitRD.
+ This is an implementation of Hotplug2-1.0-beta
 endef
 
-MAKE_FLAGS += CFLAGS="$(TARGET_CFLAGS) -DHAVE_RULES -I."
+define Package/hotplug2/conffiles
+/etc/hotplug2.rules
+endef
+
+MAKE_FLAGS += \
+	COPTS="$(TARGET_CFLAGS)" \
+	STATIC_WORKER="fork"
 
 define Package/hotplug2/install
 	$(INSTALL_DIR) $(1)/etc

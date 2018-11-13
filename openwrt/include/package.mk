@@ -17,20 +17,21 @@ include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
 
 STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,_$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPENDS),)))
-STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured$(if $(QUILT)$(DUMP),,_$(call confvar,$(PKG_CONFIG_DEPENDS)))
+STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured$(if $(DUMP),,_$(call confvar,$(PKG_CONFIG_DEPENDS)))
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_NAME)_installed
+
+STAGING_FILES_LIST:=$(PKG_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).list
 
 include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
 include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
 include $(INCLUDE_DIR)/package-ipkg.mk
-include $(INCLUDE_DIR)/package-debug.mk
 include $(INCLUDE_DIR)/package-bin.mk
 include $(INCLUDE_DIR)/autotools.mk
 
-override MAKEFLAGS=
+override MAKEFLAGS=$(MAKE_JOBS)
 CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 ifneq ($(CONFIG_LINUX_2_4),)
   CONFIG_SITE:=$(subst linux-,linux2.4-,$(CONFIG_SITE))
@@ -46,6 +47,17 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
       $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),,-x "*/.dep_*" -x "*/ipkg*"))
     endef
   endif
+endif
+
+ifeq ($(CONFIG_$(PKG_NAME)_USE_CUSTOM_SOURCE_DIR),y)
+# disable load stage
+PKG_SOURCE_URL:=
+# add hook to install a link to customer source path of dedicated package
+Hooks/Prepare/Pre += prepare_custom_source_directory
+# define empty default action
+define Build/Prepare/Default
+	@: 
+endef
 endif
 
 define Download/default
@@ -115,7 +127,7 @@ define Build/DefaultTargets
 		$(call $(hook),$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host)$(sep)\
 	)
 	if [ -d $(TMP_DIR)/stage-$(PKG_NAME) ]; then \
-		(cd $(TMP_DIR)/stage-$(PKG_NAME); find ./ > $(STAGING_DIR)/packages/$(PKG_NAME).list); \
+		(cd $(TMP_DIR)/stage-$(PKG_NAME); find ./ > $(STAGING_DIR)/packages/$(STAGING_FILES_LIST)); \
 		$(CP) $(TMP_DIR)/stage-$(PKG_NAME)/* $(STAGING_DIR)/; \
 	fi
 	rm -rf $(TMP_DIR)/stage-$(PKG_NAME)
@@ -130,9 +142,18 @@ define Build/DefaultTargets
 
   prepare: $(STAMP_PREPARED)
   configure: $(STAMP_CONFIGURED)
+  dist: $(STAMP_CONFIGURED)
+  distcheck: $(STAMP_CONFIGURED)
+endef
+
+define Build/IncludeOverlay
+  $(eval -include $(wildcard $(TOPDIR)/overlay/*/$(PKG_NAME).mk))
+  define Build/IncludeOverlay
+  endef
 endef
 
 define BuildPackage
+  $(Build/IncludeOverlay)
   $(eval $(Package/Default))
   $(eval $(Package/$(1)))
 
@@ -156,10 +177,10 @@ endif
   $(call shexport,Package/$(1)/config)
 
   $(if $(DUMP), \
-    $(Dumpinfo), \
+    $(Dumpinfo/Package), \
     $(foreach target, \
       $(if $(Package/$(1)/targets),$(Package/$(1)/targets), \
-        $(if $(PKG_TARGETS),$(PKG_TARGETS), ipkg $(if $(CONFIG_DEBUG_DIR),debug)) \
+        $(if $(PKG_TARGETS),$(PKG_TARGETS), ipkg) \
       ), $(BuildTarget/$(target)) \
     ) \
   )
@@ -178,6 +199,8 @@ Build/Prepare=$(call Build/Prepare/Default,)
 Build/Configure=$(call Build/Configure/Default,)
 Build/Compile=$(call Build/Compile/Default,)
 Build/Install=$(if $(PKG_INSTALL),$(call Build/Install/Default,))
+Build/Dist=$(call Build/Dist/Default,)
+Build/DistCheck=$(call Build/DistCheck/Default,)
 
 $(PACKAGE_DIR):
 	mkdir -p $@
@@ -192,13 +215,19 @@ clean-staging: FORCE
 	rm -f $(STAMP_INSTALLED)
 	@-(\
 		cd "$(STAGING_DIR)"; \
-		if [ -f packages/$(PKG_NAME).list ]; then \
-			cat packages/$(PKG_NAME).list | xargs -r rm -f 2>/dev/null; \
+		if [ -f packages/$(STAGING_FILES_LIST) ]; then \
+			cat packages/$(STAGING_FILES_LIST) | xargs -r rm -f 2>/dev/null; \
 		fi; \
 	)
 
 clean: clean-staging FORCE
 	$(call Build/UninstallDev,$(STAGING_DIR),$(STAGING_DIR_HOST))
 	$(Build/Clean)
-	rm -f $(STAGING_DIR)/packages/$(PKG_NAME).list $(STAGING_DIR_HOST)/packages/$(PKG_NAME).list
+	rm -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) $(STAGING_DIR_HOST)/packages/$(STAGING_FILES_LIST)
 	rm -rf $(PKG_BUILD_DIR)
+
+dist:
+	$(Build/Dist)
+   
+distcheck:
+	$(Build/DistCheck) 

@@ -28,7 +28,7 @@ load_all_config_options()
 	# after we're done with it.  For reference
 	# the $1 variable is the name of the option
 	# and $2 is the name of the section
-	config_cb() 
+	config_cb()
 	{
 		if [ ."$2" = ."$section_id" ]; then
 			option_cb()
@@ -53,10 +53,9 @@ get_current_ip()
 {
 
 	#if ip source is not defined, assume we want to get ip from wan 
-	if [ "$ip_source" != "interface" ] && [ "$ip_source" != "web" ]
+	if [ "$ip_source" != "interface" ] && [ "$ip_source" != "web" ] && [ "$ip_source" != "script" ]
 	then
 		ip_source="network"
-		ip_network="wan"
 	fi
 
 	if [ "$ip_source" = "network" ]
@@ -74,6 +73,10 @@ get_current_ip()
 	if [ "$ip_source" = "network" ] || [ "$ip_source" = "interface" ]
 	then
 		current_ip=$(ifconfig $ip_interface | grep -o 'inet addr:[0-9.]*' | grep -o "$ip_regex")
+	elif [ "$ip_source" = "script" ]
+	then
+		# get ip from script
+		current_ip=$($ip_script)
 	else
 		# get ip from web
 		# we check each url in order in ip_url variable, and if no ips are found we use dyndns ip checker
@@ -85,7 +88,7 @@ get_current_ip()
 				current_ip=$(echo $( wget -O - $addr 2>/dev/null) | grep -o "$ip_regex")
 			fi
 		done
-		
+
 		#here we hard-code the dyndns checkip url in case no url was specified
 		if [ -z "$current_ip" ]
 		then
@@ -116,6 +119,6 @@ start_daemon_for_all_ddns_sections()
 
 	for section in $SECTIONS
 	do
-		/usr/lib/ddns/dynamic_dns_updater.sh $section 0&
+		/usr/lib/ddns/dynamic_dns_updater.sh $section 0 > /dev/null 2>&1 &
 	done
 }

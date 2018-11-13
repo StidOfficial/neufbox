@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,11 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ngrep
 PKG_VERSION:=1.45
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/ngrep
 PKG_MD5SUM:=bc8150331601f3b869549c94866b4f1c
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -34,28 +36,25 @@ define Package/ngrep/description
 	like tcpdump and snoop.
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default,	\
-		--with-pcap-includes=$(STAGING_DIR)/usr/include \
-		--enable-pcre \
-		--with-pcre=$(STAGING_DIR)/usr \
-		--enable-ipv6 \
-		--disable-dropprivs \
-		,\
-		LDFLAGS="$(TARGET_LDFLAGS) -lpcre" \
-	)
-endef
+CONFIGURE_ARGS+= \
+	--with-pcap-includes=$(STAGING_DIR)/usr/include \
+	--enable-pcre \
+	--with-pcre=$(STAGING_DIR)/usr \
+	--disable-dropprivs \
+
+CONFIGURE_VARS+= \
+	LDFLAGS="$(TARGET_LDFLAGS) -lpcre" \
 
 define Build/Compile	
 	$(call Build/Compile/Default,\
-		DESTDIR="$(PKG_INSTALL_DIR)" \
+		INCLUDES="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/pcap" \
 		all \
 	)
 endef
 
 define Package/ngrep/install	
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ngrep $(1)/usr/bin/
 endef
 
 $(eval $(call BuildPackage,ngrep))

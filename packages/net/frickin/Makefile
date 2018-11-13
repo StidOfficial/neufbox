@@ -13,9 +13,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/frickin
-PKG_MD5SUM:= 5b2e98da2310c71c703d4617b88a173f
-
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_MD5SUM:=5b2e98da2310c71c703d4617b88a173f
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,7 +21,7 @@ define Package/frickin
   SECTION:=net
   CATEGORY:=Network
   TITLE:=PPTP (Point-to-Point Tunneling Protocol) proxy
-  URL:=http://frickin.sourceforge.net/
+  URL:=http://sourceforge.net/projects/frickin/
   SUBMENU:=VPN
 endef
 

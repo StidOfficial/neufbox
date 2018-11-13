@@ -1,6 +1,5 @@
-diff -pNur linux-2.6.21.7/include/linux/atmdev.h linux-2.6.21.7/include/linux/atmdev.h
---- linux-2.6.21.7/include/linux/atmdev.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/atmdev.h	2008-06-25 18:34:06.000000000 +0200
+--- a/include/linux/atmdev.h
++++ b/include/linux/atmdev.h
 @@ -98,10 +98,23 @@ struct atm_dev_stats {
  					/* set backend handler */
  #define ATM_NEWBACKENDIF _IOW('a',ATMIOC_SPECIAL+3,atm_backend_t)
@@ -39,9 +38,8 @@ diff -pNur linux-2.6.21.7/include/linux/atmdev.h linux-2.6.21.7/include/linux/at
  
  /* for ATM_GETTYPE */
  #define ATM_ITFTYP_LEN	8	/* maximum length of interface type name */
-diff -pNur linux-2.6.21.7/include/linux/atm.h linux-2.6.21.7/include/linux/atm.h
---- linux-2.6.21.7/include/linux/atm.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/atm.h	2008-06-25 18:34:06.000000000 +0200
+--- a/include/linux/atm.h
++++ b/include/linux/atm.h
 @@ -48,6 +48,9 @@
  #define ATM_AAL2	2		/* AAL2 (VBR) */
  #define ATM_AAL34	3		/* AAL3/4 (data) */
@@ -52,9 +50,8 @@ diff -pNur linux-2.6.21.7/include/linux/atm.h linux-2.6.21.7/include/linux/atm.h
  
  /*
   * socket option name coding functions
-diff --exclude=.svn -pNur linux-2.6.21.7/net/atm/br2684.c linux-2.6.21.7/net/atm/br2684.c
---- linux-2.6.21.7/net/atm/br2684.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/atm/br2684.c	2008-10-13 18:23:39.000000000 +0200
+--- a/net/atm/br2684.c
++++ b/net/atm/br2684.c
 @@ -12,6 +12,7 @@ Author: Marcell GAL, 2000, XDSL Ltd, Hun
  #include <linux/skbuff.h>
  #include <linux/etherdevice.h>
@@ -475,7 +472,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/atm/br2684.c linux-2.6.21.7/net/atm
  	brdev->stats.rx_packets++;
  	brdev->stats.rx_bytes += skb->len;
  	memset(ATM_SKB(skb), 0, sizeof(struct atm_skb_data));
-@@ -552,6 +754,9 @@ Note: we do not have explicit unassign, 
+@@ -552,6 +754,9 @@ Note: we do not have explicit unassign,
  	atmvcc->user_back = brvcc;
  	brvcc->encaps = (enum br2684_encaps) be.encaps;
  	brvcc->old_push = atmvcc->push;
@@ -1493,9 +1490,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/atm/br2684.c linux-2.6.21.7/net/atm
  module_init(br2684_init);
  module_exit(br2684_exit);
  
-diff --exclude=.svn -pNur linux-2.6.21.7/net/atm/common.c linux-2.6.21.7/net/atm/common.c
---- linux-2.6.21.7/net/atm/common.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/atm/common.c	2008-10-13 18:23:39.000000000 +0200
+--- a/net/atm/common.c
++++ b/net/atm/common.c
 @@ -40,6 +40,11 @@
  struct hlist_head vcc_hash[VCC_HTABLE_SIZE];
  DEFINE_RWLOCK(vcc_sklist_lock);
@@ -1508,7 +1504,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/atm/common.c linux-2.6.21.7/net/atm
  static void __vcc_insert_socket(struct sock *sk)
  {
  	struct atm_vcc *vcc = atm_sk(sk);
-@@ -260,6 +265,13 @@ static int adjust_tp(struct atm_trafprm 
+@@ -260,6 +265,13 @@ static int adjust_tp(struct atm_trafprm
  			    "(%d)\n",aal);
  			/* fall through */
  		case ATM_AAL5:
@@ -1522,7 +1518,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/atm/common.c linux-2.6.21.7/net/atm
  			max_sdu = ATM_MAX_AAL5_PDU;
  	}
  	if (!tp->max_sdu) tp->max_sdu = max_sdu;
-@@ -382,6 +394,13 @@ static int __vcc_connect(struct atm_vcc 
+@@ -382,6 +394,13 @@ static int __vcc_connect(struct atm_vcc
  			vcc->qos.aal = ATM_AAL5;
  			/* fall through */
  		case ATM_AAL5:
@@ -1563,47 +1559,3 @@ diff --exclude=.svn -pNur linux-2.6.21.7/net/atm/common.c linux-2.6.21.7/net/atm
  	if (!test_bit(ATM_VF_HASQOS, &vcc->flags))
  		return -EBADFD;
  	if (vcc->qos.txtp.traffic_class == ATM_ANYCLASS ||
-diff --exclude=.svn -pNur linux-2.6.21.7/net/atm/Kconfig linux-2.6.21.7/net/atm/Kconfig
---- linux-2.6.21.7/net/atm/Kconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/atm/Kconfig	2008-10-13 18:23:39.000000000 +0200
-@@ -72,3 +72,13 @@ config ATM_BR2684_IPFILTER
- 	  This is an experimental mechanism for users who need to terminate a
- 	  large number of IP-only vcc's.  Do not enable this unless you are sure
- 	  you know what you are doing.
-+
-+# CONFIG_MIPS_BRCM Begin Broadcom added code.
-+config ATM_RT2684
-+	tristate "RFC1483/2684 Routed protocols"
-+	depends on ATM && INET
-+	help
-+	  ATM PVCs can carry PPP PDUs according to RFC2364. This is a simplified
-+	  point-to-point PPPoA implementation without atmarp support.
-+# CONFIG_MIPS_BRCM End Broadcom added code.
-+	  
-diff --exclude=.svn -pNur linux-2.6.21.7/net/atm/Makefile linux-2.6.21.7/net/atm/Makefile
---- linux-2.6.21.7/net/atm/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/net/atm/Makefile	2008-10-13 18:23:39.000000000 +0200
-@@ -1,13 +1,23 @@
- #
- # Makefile for the ATM Protocol Families.
- #
-+ifneq ($(strip $(BUILD_BRCM_VLAN)),)
-+CFLAGS	+= -DSUPPORT_VLAN
-+endif
- 
- atm-y		:= addr.o pvc.o signaling.o svc.o ioctl.o common.o atm_misc.o raw.o resources.o atm_sysfs.o
- mpoa-objs	:= mpc.o mpoa_caches.o mpoa_proc.o
- 
- obj-$(CONFIG_ATM) += atm.o
- obj-$(CONFIG_ATM_CLIP) += clip.o
-+atm-$(subst m,y,$(CONFIG_ATM_CLIP)) += ipcommon.o
- obj-$(CONFIG_ATM_BR2684) += br2684.o
-+atm-$(subst m,y,$(CONFIG_ATM_BR2684)) += ipcommon.o
-+atm-$(subst m,y,$(CONFIG_NET_SCH_ATM)) += ipcommon.o
-+# CONFIG_MIPS_BRCM Begin Broadcom added code.
-+obj-$(CONFIG_ATM_RT2684) += rt2684.o
-+atm-$(subst m,y,$(CONFIG_ATM_RT2684)) += ipcommon.o
-+# CONFIG_MIPS_BRCM End Broadcom added code.
- atm-$(CONFIG_PROC_FS) += proc.o
- 
- obj-$(CONFIG_ATM_LANE) += lec.o

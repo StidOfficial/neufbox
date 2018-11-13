@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bind
-PKG_VERSION:=9.5.0-P1
-PKG_RELEASE:=2
+PKG_VERSION:=9.7.2-P2
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
 	ftp://ftp.isc.org/isc/bind9/$(PKG_VERSION) \
 	http://www.mirrorservice.org/sites/ftp.isc.org/isc/bind9/$(PKG_VERSION)
-PKG_MD5SUM:=a4f9dd6d205d24ec89fa4e44d8188197
+PKG_MD5SUM:=e74de6ec9c2cd27576794c873bd85f4a
+
+PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -24,7 +26,7 @@ define Package/bind/Default
   CATEGORY:=Network
   DEPENDS:=+bind-libs +libopenssl
   TITLE:=bind
-  URL:=http://www.isc.org/sw/bind/
+  URL:=https://www.isc.org/software/bind
   SUBMENU:=DNS
 endef
 
@@ -50,7 +52,7 @@ define Package/bind-tools
   $(call Package/bind/Default)
   TITLE+= administration tools (all)
 endef
-  
+
 define Package/bind-rndc
   $(call Package/bind/Default)
   TITLE+= administration tools (rndc and rndc-confgen only)
@@ -79,20 +81,19 @@ endef
 export BUILD_CC="$(TARGET_CC)"
 
 CONFIGURE_ARGS += \
-		--enable-shared \
-		--enable-static \
-		--enable-ipv6 \
-		--with-randomdev="/dev/urandom" \
-		--disable-threads \
-		--with-openssl="$(STAGING_DIR)/usr" \
-		--with-libtool \
-		--with-libxml2=no \
-		, \
-		BUILD_CC="$(TARGET_CC)" \
+	--enable-shared \
+	--enable-static \
+	--with-randomdev="/dev/urandom" \
+	--disable-threads \
+	--with-openssl="$(STAGING_DIR)/usr" \
+	--with-libtool \
+	--with-libxml2=no \
+	--enable-epoll=yes \
+
+CONFIGURE_VARS += \
+	BUILD_CC="$(TARGET_CC)" \
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR)/lib/dns \
 		BUILD_CC="$(HOSTCC)" \
 		CC="$(HOSTCC)" \
@@ -100,7 +101,6 @@ define Build/Compile
 		LIBS="" \
 		gen
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-	DESTDIR="$(PKG_INSTALL_DIR)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 endef

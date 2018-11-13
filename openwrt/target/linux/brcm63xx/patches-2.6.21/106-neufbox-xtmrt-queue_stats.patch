@@ -1,14 +1,12 @@
---- linux-2.6.21.7/drivers/net/bcmxtmrt.c	2009-04-09 11:38:08.889829942 +0200
-+++ linux-2.6.21.7/drivers/net/bcmxtmrt.c	2009-04-09 11:40:15.021871838 +0200
-@@ -222,6 +222,44 @@ static inline void cache_wbflush_len(voi
+--- a/drivers/net/bcmxtmrt.c
++++ b/drivers/net/bcmxtmrt.c
+@@ -220,6 +220,42 @@ static inline void cache_wbflush_len(voi
      }
  }
  
 +static int proc_net_xtm(char *page, char **start, off_t off, int cnt, int *eof, void *data)
 +{
 +	volatile unsigned long *xtm_base = (volatile unsigned long *)(0xfffe2000);
-+	unsigned long txbytes = *(xtm_base + 0x440/sizeof(*xtm_base));
-+	unsigned long rxbytes = *(xtm_base + 0x460/sizeof(*xtm_base));
 +	char *p = page;
 +	int len;
 +	unsigned i;
@@ -45,7 +43,7 @@
  
  /***************************************************************************
   * Function Name: bcmxtmrt_init
-@@ -254,6 +292,7 @@ int __init bcmxtmrt_init( void )
+@@ -252,6 +288,7 @@ int __init bcmxtmrt_init( void )
      g_GlobalInfo.ulNumExtBufs50Pct = g_GlobalInfo.ulNumExtBufs / 2;
  
      bcmxtmrt_add_proc_files();
@@ -53,11 +51,11 @@
  
      return( 0 );
  } /* bcmxtmrt_init */
-@@ -266,6 +305,7 @@ int __init bcmxtmrt_init( void )
+@@ -264,6 +301,7 @@ int __init bcmxtmrt_init( void )
   ***************************************************************************/
  static void bcmxtmrt_cleanup( void )
  {
 +    remove_proc_entry("xtm", proc_net);
-     bcmxtmrt_add_proc_files();
+     bcmxtmrt_del_proc_files();
      deregister_atm_ioctl(&g_PppoAtmIoctlOps);
      if( g_GlobalInfo.pAtmDev )

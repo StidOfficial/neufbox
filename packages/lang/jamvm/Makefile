@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=jamvm
-PKG_VERSION:=1.5.0
+PKG_VERSION:=1.5.4
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/jamvm
-PKG_MD5SUM:=a965452442cdbfc94caba57d0dd25a8f
+PKG_MD5SUM:=7654e9657691f5f09c4f481ed4686176
+
+PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,7 +25,7 @@ define Package/jamvm
   CATEGORY:=Languages
   TITLE:=A compact Java Virtual Machine
   URL:=http://sourceforge.net/projects/jamvm
-  DEPENDS:=+libffi-sable +libpthread @!mips
+  DEPENDS:=+libffi +zlib +libpthread @!avr32 @!mips
 endef
 
 define Package/jamvm/description
@@ -36,6 +38,8 @@ define Package/jamvm/description
 endef
 
 CONFIGURE_ARGS+= \
+	--with-classpath-install-dir=/usr \
+	--disable-tls \
 	--enable-ffi \
 	--disable-int-threading \
 

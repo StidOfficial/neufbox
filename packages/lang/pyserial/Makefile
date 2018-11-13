@@ -10,13 +10,15 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=pyserial
 PKG_VERSION:=2.4
 PKG_RELEASE:=1
+
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/pyserial
+PKG_MD5SUM:=eec19df59fd75ba5a136992897f8e468
 
 PKG_BUILD_DEPENDS:=python
 
 include $(INCLUDE_DIR)/package.mk
--include $(if $(DUMP),,$(STAGING_DIR)/mk/python-package.mk)
+$(call include_mk, python-package.mk)
 
 define Package/pyserial
   SUBMENU:=Python

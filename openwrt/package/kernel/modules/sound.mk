@@ -10,7 +10,7 @@ SOUND_MENU:=Sound Support
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
-  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT
+  DEPENDS:=@AUDIO_SUPPORT +!TARGET_x86:kmod-input-core
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
@@ -24,7 +24,8 @@ define KernelPackage/sound-core
 	CONFIG_SND_SEQUENCER_OSS=y \
 	CONFIG_HOSTAUDIO \
 	CONFIG_SND_PCM_OSS \
-	CONFIG_SND_MIXER_OSS
+	CONFIG_SND_MIXER_OSS \
+	CONFIG_SOUND_OSS_CORE_PRECLAIM=y
 endef
 
 define KernelPackage/sound-core/2.4
@@ -62,7 +63,7 @@ define KernelPackage/sound-core/2.6
   AUTOLOAD:=$(call AutoLoad,30,$(SOUNDCORE_LOAD))
 endef
 
-define KernelPackage/sound-core/uml-2.6
+define KernelPackage/sound-core/uml
   FILES:= \
 	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/arch/um/drivers/hostaudio.$(LINUX_KMOD_SUFFIX)
@@ -75,10 +76,16 @@ endef
 
 $(eval $(call KernelPackage,sound-core))
 
-define KernelPackage/sound-i8x0
+
+define KernelPackage/sound/Depends
   SUBMENU:=$(SOUND_MENU)
+  DEPENDS:=kmod-sound-core $(1)
+endef
+
+
+define KernelPackage/sound-i8x0
+$(call KernelPackage/sound/Depends,@!TARGET_uml)
   TITLE:=Intel/SiS/nVidia/AMD/ALi AC97 Controller
-  DEPENDS:=kmod-sound-core
   KCONFIG:=CONFIG_SND_INTEL8X0
   FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,35,snd-i8x0)
@@ -92,12 +99,13 @@ endef
 
 $(eval $(call KernelPackage,sound-i8x0))
 
+
 define KernelPackage/sound-ps3
-  SUBMENU:=$(SOUND_MENU)
+$(call KernelPackage/sound/Depends,@TARGET_ps3||TARGET_ps3chk)
   TITLE:=PS3 Audio
-  DEPENDS:=kmod-sound-core
   KCONFIG:=CONFIG_SND_PS3 \
-		CONFIG_SND_PPC
+		CONFIG_SND_PPC=y \
+		CONFIG_SND_PS3_DEFAULT_START_DELAY=2000
   FILES:=$(LINUX_DIR)/sound/ppc/snd_ps3.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,35, snd_ps3)
 endef
@@ -108,10 +116,10 @@ endef
 
 $(eval $(call KernelPackage,sound-ps3))
 
+
 define KernelPackage/sound-cs5535audio
-  SUBMENU:=$(SOUND_MENU)
+$(call KernelPackage/sound/Depends,@!TARGET_uml)
   TITLE:=CS5535 PCI Controller
-  DEPENDS:=kmod-sound-core
   KCONFIG:=CONFIG_SND_CS5535AUDIO
   FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/ac97_bus.$(LINUX_KMOD_SUFFIX) \
@@ -124,3 +132,16 @@ define KernelPackage/sound-cs5535audio/description
 endef
 
 $(eval $(call KernelPackage,sound-cs5535audio))
+
+
+define KernelPackage/sound-soc-core
+$(call KernelPackage/sound/Depends)
+  TITLE:=SoC sound support
+  KCONFIG:= \
+	CONFIG_SND_SOC \
+	CONFIG_SND_SOC_ALL_CODECS=n
+  FILES:=$(LINUX_DIR)/sound/soc/snd-soc-core.ko
+  AUTOLOAD:=$(call AutoLoad,55, snd-soc-core)
+endef
+
+$(eval $(call KernelPackage,sound-soc-core))

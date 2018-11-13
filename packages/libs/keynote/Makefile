@@ -15,12 +15,14 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=b569066ac2ba1356c2112b118a7d74d0
 
+PKG_BUILD_PARALLEL:=0
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/keynote
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@LINUX_2_6 +libopenssl
+  DEPENDS:=@!LINUX_2_4 +libopenssl
   TITLE:=Simple and flexible trust-management system
   URL:=http://www1.cs.columbia.edu/~angelos/keynote.html
 endef
@@ -40,9 +42,9 @@ MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS)"
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include/keynote
+	$(INSTALL_DIR) $(1)/usr/include/keynote
 	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(1)/usr/include/keynote/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libkeynote.a $(1)/usr/lib/
 endef
 

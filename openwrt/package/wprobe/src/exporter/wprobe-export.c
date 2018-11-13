@@ -25,7 +25,6 @@ static int do_close = 0;
 struct wprobe_mapping {
 	int id;
 	bool counter;
-	float scale;
 	const char *wprobe_id;
 	struct wprobe_value *val;
 };
@@ -36,16 +35,14 @@ struct wprobe_mapping {
 
 #define WMAP(_id, _name, ...) \
 	{ \
-		.scale = 1.0f, \
 		.counter = false, \
-		.id = IPFIX_FT_WPROBE_##_id##_AVG, \
+		.id = IPFIX_FT_WPROBE_##_id##_N, \
 		.wprobe_id = _name \
 		, ## __VA_ARGS__ \
 	}
 
 #define WMAP_COUNTER(_id, _name, ...) \
 	{ \
-		.scale = 1.0f, \
 		.counter = true, \
 		.id = IPFIX_FT_WPROBE_##_id, \
 		.wprobe_id = _name \
@@ -65,8 +62,8 @@ static struct wprobe_mapping map_globals[] = {
 };
 
 static struct wprobe_mapping map_perlink[] = {
-	WMAP(IEEE_TX_RATE, "tx_rate", .scale = 10.0f),
-	WMAP(IEEE_RX_RATE, "rx_rate", .scale = 10.0f),
+	WMAP(IEEE_TX_RATE, "tx_rate"),
+	WMAP(IEEE_RX_RATE, "rx_rate"),
 	WMAP(RSSI, "rssi"),
 	WMAP(SIGNAL, "signal"),
 	WMAP(RETRANSMIT_200, "retransmit_200"),
@@ -77,9 +74,6 @@ static struct wprobe_mapping map_perlink[] = {
 
 static unsigned char link_local[6];
 static char link_default[6];
-static LIST_HEAD(global_attr);
-static LIST_HEAD(link_attr);
-static LIST_HEAD(links);
 static int nfields = 0;
 
 #define FOKUS_USERID	12325
@@ -147,7 +141,7 @@ add_template_fields(ipfix_t *handle, ipfix_template_t *t, struct wprobe_mapping 
 		if (map[i].counter)
 			g_data.addrs[f++] = &map[i].val->U32;
 		else
-			g_data.addrs[f++] = &map[i].val->avg;
+			g_data.addrs[f++] = &map[i].val->n;
 
         if (ipfix_add_field( handle, t, FOKUS_USERID, map[i].id + 0, 4) < 0)
             exit(1);
@@ -155,31 +149,34 @@ add_template_fields(ipfix_t *handle, ipfix_template_t *t, struct wprobe_mapping 
 		if (map[i].counter)
 			continue;
 
-		g_data.addrs[f++] = &map[i].val->stdev;
-		g_data.addrs[f++] = &map[i].val->n;
-        if (ipfix_add_field( handle, t, FOKUS_USERID, map[i].id + 1, 4) < 0)
+		g_data.lens[f] = 8;
+		g_data.addrs[f++] = &map[i].val->s;
+
+		g_data.lens[f] = 8;
+		g_data.addrs[f++] = &map[i].val->ss;
+        if (ipfix_add_field( handle, t, FOKUS_USERID, map[i].id + 1, 8) < 0)
             exit(1);
-        if (ipfix_add_field( handle, t, FOKUS_USERID, map[i].id + 2, 4) < 0)
+        if (ipfix_add_field( handle, t, FOKUS_USERID, map[i].id + 2, 8) < 0)
             exit(1);
     }
 	g_data.maxfields = f;
 }
 
 static void
-wprobe_dump_data(ipfix_t *ipfixh, ipfix_template_t *ipfixt, const char *ifname, struct list_head *gl, struct list_head *ll, struct list_head *ls)
+wprobe_dump_data(ipfix_t *ipfixh, ipfix_template_t *ipfixt, struct wprobe_iface *dev)
 {
 	struct wprobe_link *link;
 
-	wprobe_update_links(ifname, ls);
-	wprobe_request_data(ifname, gl, NULL, 2);
-	if (list_empty(ls)) {
+	wprobe_update_links(dev);
+	wprobe_request_data(dev, NULL);
+	if (list_empty(&dev->links)) {
 		g_data.addrs[1] = link_default;
 		ipfix_export_array(ipfixh, ipfixt, g_data.maxfields, g_data.addrs, g_data.lens);
 		ipfix_export_flush(ipfixh);
 	}
-	list_for_each_entry(link, ls, list) {
+	list_for_each_entry(link, &dev->links, list) {
 		g_data.addrs[1] = link->addr;
-		wprobe_request_data(ifname, ll, link->addr, 2);
+		wprobe_request_data(dev, link->addr);
 		ipfix_export_array(ipfixh, ipfixt, g_data.maxfields, g_data.addrs, g_data.lens);
 		ipfix_export_flush(ipfixh);
 	}
@@ -187,6 +184,7 @@ wprobe_dump_data(ipfix_t *ipfixh, ipfix_template_t *ipfixt, const char *ifname, 
 
 int main ( int argc, char **argv )
 {
+	struct wprobe_iface *dev = NULL;
     ipfix_template_t  *ipfixt = NULL;
     ipfix_t *ipfixh = NULL;
     int protocol = IPFIX_PROTO_TCP;
@@ -196,6 +194,7 @@ int main ( int argc, char **argv )
     int port = IPFIX_PORTNO;
     int verbose_level = 0;
     int opt, i = 10;
+	char *err = NULL;
 
 	while ((opt = getopt(argc, argv, "hi:c:p:vstu")) != EOF) {
 		switch (opt) {
@@ -254,20 +253,14 @@ int main ( int argc, char **argv )
 		return -1;
 	}
 
-	if (wprobe_init() != 0) {
-		fprintf(stderr, "wprobe init failed\n");
+	dev = wprobe_get_auto(ifname, &err);
+	if (!dev || (list_empty(&dev->global_attr) && list_empty(&dev->link_attr))) {
+		fprintf(stderr, "Cannot connect to wprobe on interface '%s': %s\n", ifname, (err ? err : "Unknown error"));
 		return -1;
 	}
 
-	wprobe_dump_attributes(ifname, false, &global_attr, (char *) link_local);
-	wprobe_dump_attributes(ifname, true, &link_attr, NULL);
-	if (list_empty(&global_attr) && list_empty(&link_attr)) {
-		fprintf(stderr, "Cannot connect to wprobe on interface '%s'\n", ifname);
-		return -1;
-	}
-
-	match_template(map_globals, ARRAY_SIZE(map_globals), &global_attr);
-	match_template(map_perlink, ARRAY_SIZE(map_perlink), &link_attr);
+	match_template(map_globals, ARRAY_SIZE(map_globals), &dev->global_attr);
+	match_template(map_perlink, ARRAY_SIZE(map_perlink), &dev->link_attr);
 	if (nfields == 0) {
 		fprintf(stderr, "No usable attributes found\n");
 		return -1;
@@ -300,14 +293,8 @@ int main ( int argc, char **argv )
 	add_template_fields(ipfixh, ipfixt, map_perlink, ARRAY_SIZE(map_perlink));
 
 	while (!do_close) {
-		usleep(100 * 1000);
-		wprobe_measure(ifname);
-
-		if (i-- > 0)
-			continue;
-
-		i = 10;
-		wprobe_dump_data(ipfixh, ipfixt, ifname, &global_attr, &link_attr, &links);
+		sleep(1);
+		wprobe_dump_data(ipfixh, ipfixt, dev);
     }
 
     ipfix_delete_template( ipfixh, ipfixt );

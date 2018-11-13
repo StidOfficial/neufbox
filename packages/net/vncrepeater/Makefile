@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vncrepeater
 PKG_VERSION:=0.12
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.rit.edu/~reh5586/openwrt/packages/vncrepeater/src
 PKG_MD5SUM:=5951740a8a103d7d9668558b3639c6c4
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -24,7 +24,7 @@ define Package/vncrepeater
   CATEGORY:=Network
   DEPENDS:=+uclibcxx
   TITLE:=UltraVNC repeater for Linux
-  URL:=http://ultravnc.sourceforge.net/addons/repeater.html
+  URL:=http://www.uvnc.com/addons/repeater.html
 endef
 
 define Package/vncrepeater/conffiles
@@ -43,7 +43,7 @@ endef
 define Build/Compile
 	$(call Build/Compile/Default, \
 		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -I$(STAGING_DIR)/usr/include/uClibc++ -fno-builtin -fno-rtti -nostdinc++" \
-		LDFLAGS="$(TARGET_LDFLAGS) -nodefaultlibs -luClibc++" \
+		LDFLAGS="$(TARGET_LDFLAGS) -nodefaultlibs -luClibc++ -lc $(LIBGCC_S)" \
 		repeater \
 	)
 endef

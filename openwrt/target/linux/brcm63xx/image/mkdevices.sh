@@ -15,11 +15,6 @@
 #****************************************************************************
 echo TARGET_DIR = [$1] 
 
-chmod u+s $1/bin/busybox
-
-# Create FIFO devices
-mknod $1/dev/initctl p
-
 #Create character devices
 mkdir -p $1/dev/pts
 mknod $1/dev/mem c 1 1
@@ -57,6 +52,7 @@ mknod $1/dev/tty c 5 0
 mknod $1/dev/console c 5 1
 mknod $1/dev/ptmx c 5 2
 mknod $1/dev/ppp c 108 0
+mknod $1/dev/random c 1 8
 mknod $1/dev/urandom c 1 9
 mknod $1/dev/tun c 10 200
 mkdir $1/dev/shm
@@ -105,7 +101,9 @@ mknod $1/dev/ring11 c 229 11
 
 mknod $1/dev/gpio c 232 0
 
-mknod $1/dev/voiceSubSys0 c 210 0
+mknod $1/dev/voiceSubSys0 c 230 0
+mknod $1/dev/voicePcm0 c 231 0
+mknod $1/dev/voicePcm1 c 231 1
 mknod $1/dev/events   c 10 222
 mknod -m 666 $1/dev/leds    c 10 132
 mknod $1/dev/watchdog    c 10 130
@@ -155,8 +153,8 @@ ln -sf /dev/mtd2 $1/dev/mtd-config
 ln -sf /dev/mtdblock2 $1/dev/mtdblock-config
 ln -sf /dev/mtd3 $1/dev/mtd-rescue
 ln -sf /dev/mtdblock3 $1/dev/mtdblock-rescue
-ln -sf /dev/mtd4 $1/dev/mtd-dsldriver
-ln -sf /dev/mtdblock4 $1/dev/mtdblock-adsl
+ln -sf /dev/mtd4 $1/dev/mtd-adslphy
+ln -sf /dev/mtdblock4 $1/dev/mtdblock-adslphy
 ln -sf /dev/mtd5 $1/dev/mtd-bootcfg
 ln -sf /dev/mtdblock5 $1/dev/mtdblock-bootcfg
 ln -sf /dev/mtd7 $1/dev/mtd-flash
@@ -208,6 +206,8 @@ mknod $1/dev/ttyUSB8 c 188 8
 mknod $1/dev/ttyUSB9 c 188 9
 mknod $1/dev/ttyUSB10 c 188 10
 mknod $1/dev/ttyUSB11 c 188 11
+mknod $1/dev/ttyACM0 c 166 0
+mknod $1/dev/ttyACM1 c 166 1
 
 # PRINTER
 mknod $1/dev/printer0 c 180 0
@@ -216,6 +216,12 @@ mknod $1/dev/usb/lp0 c 180 0
 mknod $1/dev/usb/lp1 c 180 1
 ln -sf $1/dev/usb/lp0 $1/dev/lp0
 ln -sf $1/dev/usb/lp1 $1/dev/lp1
+
+mkdir $1/dev/input
+mknod $1/dev/input/event0 c 13 64
+mknod $1/dev/input/event1 c 13 65
+mknod $1/dev/input/event2 c 13 66
+mknod $1/dev/input/event3 c 13 67
 
 # SOUND
 #mkdir -p $1/dev/snd
@@ -288,3 +294,8 @@ ln -sf $1/dev/usb/lp1 $1/dev/lp1
 #ln -s /dev/amidi0 $1/dev/amidi
 #ln -s /dev/midi0 $1/dev/midi
 #ln -s /dev/music $1/dev/sequencer1
+
+chmod u+s $1/bin/busybox
+chmod u+s $1/usr/bin/serialization || true > /dev/null
+chmod u+s $1/usr/bin/ledctl || true > /dev/null
+chmod u+s $1/usr/sbin/wlctl || true > /dev/null

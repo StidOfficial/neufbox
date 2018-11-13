@@ -21,16 +21,23 @@ PKG_SOURCE_URL:=$(LINUX_SITE)
 HOST_BUILD_DIR:=$(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 PKG_MD5SUM:=$(LINUX_KERNEL_MD5SUM)
 LINUX_DIR := $(HOST_BUILD_DIR)
+FILES_DIR := 
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
 ifeq ($(strip $(BOARD)),uml)
-  LINUX_KARCH:=$(ARCH)
+  LINUX_KARCH:=$(subst x86_64,x86,$(subst i386,x86,$(ARCH)))
 endif
 
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.18)),1)
   LINUX_HAS_HEADERS_INSTALL:=y
+endif
+
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.33)),1)
+  LINUX_ASM_INCLUDES:=arch/$(LINUX_KARCH)/include/asm
+else
+  LINUX_ASM_INCLUDES:=include/asm
 endif
 
 KMAKE := $(MAKE) -C $(HOST_BUILD_DIR) \
@@ -73,48 +80,24 @@ define Host/Prepare/lzma
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
 endef
 
-# XXX: the following are needed to build a cris toolchain
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.28)),1)
-  define Host/Prepare/pre/cris
-	ln -sf $(HOST_BUILD_DIR)/include/asm-cris/arch-v10 $(HOST_BUILD_DIR)/include/asm-cris/arch
-	ln -sf $(HOST_BUILD_DIR)/include/asm-cris/arch-v10 $(HOST_BUILD_DIR)/arch/cris/arch
-  endef
-
-  define Host/Prepare/post/cris
+define Host/Prepare/post/cris
 	$(CP) \
 		$(HOST_BUILD_DIR)/include/linux/user.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
-	$(CP) \
-		$(HOST_BUILD_DIR)/include/linux/user.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
-	$(CP) \
-		$(HOST_BUILD_DIR)/include/asm-cris/elf.h \
-		$(HOST_BUILD_DIR)/include/asm-cris/page.h \
-		$(HOST_BUILD_DIR)/include/asm-cris/user.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
-	$(CP) \
-		$(HOST_BUILD_DIR)/include/asm-generic/memory_model.h \
-		$(HOST_BUILD_DIR)/include/asm-generic/page.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm-generic/
-
-	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/arch
-	$(CP) \
-		$(HOST_BUILD_DIR)/include/asm-cris/arch/elf.h \
-		$(HOST_BUILD_DIR)/include/asm-cris/arch/page.h \
-		$(HOST_BUILD_DIR)/include/asm-cris/arch/ptrace.h \
-		$(HOST_BUILD_DIR)/include/asm-cris/arch/user.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/arch/
-  endef
-else
-  define Host/Prepare/post/cris
-	$(CP) \
-		$(HOST_BUILD_DIR)/include/linux/user.h \
+		$(HOST_BUILD_DIR)/include/linux/autoconf.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
 	ln -snf $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/arch-v10/arch \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/arch
 	$(SED) '/#include <asm\/page\.h>/d' $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/user.h
-  endef
-endif
+endef
+
+define Host/Prepare/post/ubicom32
+	$(CP) \
+		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/elf.h \
+		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/user.h \
+		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/page.h \
+		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/page_offset.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
+endef
 
 define Host/Prepare/post/mips
 	$(call Host/Prepare/lzma)
@@ -124,17 +107,12 @@ define Host/Prepare/post/mipsel
 	$(call Host/Prepare/lzma)
 endef
 
-ifneq ($(strip $(CONFIG_NATIVE_TOOLCHAIN)),)
 define Host/Prepare
-endef
-else
-define Host/Prepare
-	$(if $(FILES_DIR),mkdir -p $(FILES_DIR))
 	$(call Kernel/Prepare/Default)
 	ln -sf linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
 	$(SED) 's/@expr length/@-expr length/' $(HOST_BUILD_DIR)/Makefile
 	yes '' | $(KMAKE) oldconfig
-	$(KMAKE) include/linux/version.h include/asm
+	$(KMAKE) include/linux/version.h $(LINUX_ASM_INCLUDES)
 	if [ -d $(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm ]; then \
 		$(CP) \
 			$(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm/. \
@@ -144,7 +122,6 @@ define Host/Prepare
 	$(call Host/Prepare/all)
 	$(call Host/Prepare/post/$(ARCH))
 endef
-endif
 
 define Host/Configure
 endef
@@ -152,14 +129,9 @@ endef
 define Host/Compile
 endef
 
-ifneq ($(strip $(CONFIG_NATIVE_TOOLCHAIN)),)
-define Host/Install
-endef
-else
 define Host/Install
 	$(CP) $(BUILD_DIR_TOOLCHAIN)/linux-dev/* $(TOOLCHAIN_DIR)/
 endef
-endif
 
 define Host/Clean
 	rm -rf \

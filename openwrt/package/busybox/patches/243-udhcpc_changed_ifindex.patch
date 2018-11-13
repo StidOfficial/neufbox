@@ -1,15 +1,15 @@
 --- a/networking/udhcp/dhcpc.c
 +++ b/networking/udhcp/dhcpc.c
-@@ -319,6 +319,12 @@ int udhcpc_main(int argc ATTRIBUTE_UNUSE
- 	for (;;) {
- 		unsigned timestamp_before_wait;
+@@ -342,6 +342,12 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+ 		/* silence "uninitialized!" warning */
+ 		unsigned timestamp_before_wait = timestamp_before_wait;
  
 +		/* When running on a bridge, the ifindex may have changed (e.g. if
 +		 * member interfaces were added/removed or if the status of the
 +		 * bridge changed).
 +		 * Workaround: refresh it here before processing the next packet */
-+		read_interface(client_config.interface, &client_config.ifindex, NULL, client_config.arp);
++		udhcp_read_interface(client_config.interface, &client_config.ifindex, NULL, client_config.client_mac);
 +
- 		if (listen_mode != LISTEN_NONE && sockfd < 0) {
- 			if (listen_mode == LISTEN_KERNEL)
- 				sockfd = listen_socket(/*INADDR_ANY,*/ CLIENT_PORT, client_config.interface);
+ 		//bb_error_msg("sockfd:%d, listen_mode:%d", sockfd, listen_mode);
+ 
+ 		/* Was opening raw or udp socket here

@@ -1,3 +1,21 @@
+/*
+ * jffs2 on-disk structure generator for mtd
+ *
+ * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License v2
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * Based on:
+ *   JFFS2 -- Journalling Flash File System, Version 2.
+ *   Copyright © 2001-2007 Red Hat, Inc.
+ *   Created by David Woodhouse <dwmw2@infradead.org>
+ */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdint.h>
@@ -24,7 +42,7 @@ static int last_ino = 0;
 static int last_version = 0;
 static char *buf = NULL;
 static int ofs = 0;
-static int outfd = 0;
+static int outfd = -1;
 static int mtdofs = 0;
 static int target_ino = 0;
 
@@ -168,7 +186,7 @@ static void add_file(const char *name, int parent)
 	ri.usercompr = 0;
 
 	fd = open(name, 0);
-	if (fd <= 0) {
+	if (fd < 0) {
 		fprintf(stderr, "File %s does not exist\n", name);
 		return;
 	}
@@ -264,7 +282,7 @@ int mtd_write_jffs2(const char *mtd, const char *filename, const char *dir)
 	int err = -1, fdeof = 0;
 
 	outfd = mtd_check_open(mtd);
-	if (!outfd)
+	if (outfd < 0)
 		return -1;
 
 	if (quiet < 2)

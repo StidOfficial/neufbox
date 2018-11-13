@@ -7,41 +7,32 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lzma
-PKG_VERSION:=443
+PKG_VERSION:=4.65
 
-PKG_SOURCE:=$(PKG_NAME)$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=@SF/sevenzip
-PKG_MD5SUM:=c4e1b467184c7cffd4371c74df2baf0f
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
+PKG_MD5SUM:=434e51a018b4c8ef377bf81520a53af0
+
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
-HOST_UNPACK:=bzcat $(DL_DIR)/$(PKG_SOURCE) | $(TAR) -C $(HOST_BUILD_DIR) $(TAR_OPTIONS)
-
-LIB_DIR=$(HOST_BUILD_DIR)/C/7zip/Compress/LZMA_C
-ALONE_DIR=$(HOST_BUILD_DIR)/C/7zip/Compress/LZMA_Alone
-
-define Host/Prepare
-	$(call Host/Prepare/Default)
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/include/sqlma
-	$(CP) files/*.h $(STAGING_DIR_HOST)/include/sqlma
-endef
+UTIL_DIR=$(HOST_BUILD_DIR)/C/LzmaUtil
+ALONE_DIR=$(HOST_BUILD_DIR)/CPP/7zip/Compress/LZMA_Alone
 
 define Host/Compile
-	cd $(LIB_DIR) && $(MAKE) -f sqlzma.mk Sqlzma=$(STAGING_DIR_HOST)/include/sqlma
-	cd $(ALONE_DIR) && $(MAKE) -f sqlzma.mk Sqlzma=$(STAGING_DIR_HOST)/include/sqlma
+	$(MAKE) -C $(UTIL_DIR) -f makefile.gcc
+	$(MAKE) -C $(ALONE_DIR) -f makefile.gcc
 endef
 
 define Host/Install
-	$(INSTALL_DATA) $(LIB_DIR)/libunlzma.a $(STAGING_DIR_HOST)/lib/
-	$(INSTALL_DATA) $(LIB_DIR)/libunlzma_r.a $(STAGING_DIR_HOST)/lib/
-	$(INSTALL_DATA) $(ALONE_DIR)/liblzma_r.a $(STAGING_DIR_HOST)/lib/
-	$(INSTALL_BIN) $(ALONE_DIR)/lzma $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/lib $(STAGING_DIR_HOST)/include $(STAGING_DIR_HOST)/bin
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/CPP/7zip/Compress/LZMA_Alone/lzma_alone $(STAGING_DIR_HOST)/bin/lzma
+	$(CP) $(HOST_BUILD_DIR)/C/*.h $(STAGING_DIR_HOST)/include/
+	$(CP) $(UTIL_DIR)/liblzma.a $(STAGING_DIR_HOST)/lib/
 endef
 
 define Host/Clean
-	rm -f \
-		$(STAGING_DIR_HOST)/lib/liblzma.a \
-		$(STAGING_DIR_HOST)/bin/lzma
 endef
 
 $(eval $(call HostBuild))

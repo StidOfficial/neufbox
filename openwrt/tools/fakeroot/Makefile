@@ -10,17 +10,13 @@ PKG_NAME:=fakeroot
 PKG_VERSION:=1.9.5
 
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@GNU/fakeroot
+PKG_SOURCE_URL:=@GNU/fakeroot ftp://ftp.eenet.ee/pub/FreeBSD/distfiles/
 PKG_MD5SUM:=95c0c78c734b9782ec8d47e99c8e3fc8
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Host/Configure
-	$(call Host/Configure/Default,)
-endef
-
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)
+	$(_SINGLE)$(MAKE) -C $(HOST_BUILD_DIR)
 endef
 
 define Host/Install

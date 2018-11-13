@@ -1,10 +1,12 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
+START=50
 
 start() {
-	exec telnetd -F -p 1287
+	telnetd -p 1287
 }
 
 stop() {
-	killall telnetd
+	killall telnetd 2>/dev/null
 }
+

@@ -8,8 +8,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.lysator.liu.se/~nisse/misc/
 PKG_MD5SUM:=720704bac078d067111b32444e24ba69
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/argp-standalone
@@ -30,10 +28,10 @@ endef
 #        all install
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP)   $(PKG_BUILD_DIR)/argp.h \
 		$(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP)   $(PKG_BUILD_DIR)/libargp.a \
 		$(1)/usr/lib/
 endef

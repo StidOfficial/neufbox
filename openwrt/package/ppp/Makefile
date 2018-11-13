@@ -1,11 +1,12 @@
-# 
-# Copyright (C) 2006-2008 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.4
@@ -17,8 +18,9 @@ PKG_MD5SUM:=183800762e266132218b204dfb428d29
 
 PKG_BUILD_DEPENDS:=libpcap
 
+PKG_INSTALL:=1
+
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 define Package/ppp/Default
   SECTION:=net
@@ -34,17 +36,27 @@ $(call Package/ppp/Default)
 endef
 
 define Package/ppp/description
- This package contains the PPP (Point-to-Point Protocol) daemon.
+This package contains the PPP (Point-to-Point Protocol) daemon.
 endef
+
+#define Package/ppp/conffiles
+#/etc/ppp/chap-secrets
+#/etc/ppp/filter
+#/etc/ppp/ip-down
+#/etc/ppp/ip-up
+#/etc/ppp/ipv6-down
+#/etc/ppp/ipv6-up
+#/etc/ppp/options
+#endef
 
 define Package/ppp-mod-pppoa
 $(call Package/ppp/Default)
-  DEPENDS:=ppp +linux-atm +kmod-pppoa
+  DEPENDS:=ppp +kmod-pppoa
   TITLE:=PPPoA plugin
 endef
 
 define Package/ppp-mod-pppoa/description
- This package contains a PPPoA (PPP over ATM) plugin for ppp.
+This package contains a PPPoA (PPP over ATM) plugin for ppp.
 endef
 
 define Package/ppp-mod-pppoe
@@ -54,7 +66,7 @@ $(call Package/ppp/Default)
 endef
 
 define Package/ppp-mod-pppoe/description
- This package contains a PPPoE (PPP over Ethernet) plugin for ppp.
+This package contains a PPPoE (PPP over Ethernet) plugin for ppp.
 endef
 
 define Package/ppp-mod-radius
@@ -64,8 +76,13 @@ $(call Package/ppp/Default)
 endef
 
 define Package/ppp-mod-radius/description
- This package contains a RADIUS (Remote Authentication Dial-In User 
- Service) plugin for ppp.
+This package contains a RADIUS (Remote Authentication Dial-In User Service)
+plugin for ppp.
+endef
+
+define Package/ppp-mod-radius/conffiles
+/etc/ppp/radius.conf
+/etc/ppp/radius/
 endef
 
 define Package/chat
@@ -75,8 +92,8 @@ $(call Package/ppp/Default)
 endef
 
 define Package/chat/description
- This package contains an utility to establish conversation with other 
- PPP servers (via a modem).
+This package contains an utility to establish conversation with other PPP servers
+(via a modem).
 endef
 
 define Package/pppdump
@@ -86,7 +103,7 @@ $(call Package/ppp/Default)
 endef
 
 define Package/pppdump/description
- This package contains an utility to read PPP record file.
+This package contains an utility to read PPP record file.
 endef
 
 define Package/pppstats
@@ -96,7 +113,7 @@ $(call Package/ppp/Default)
 endef
 
 define Package/pppstats/description
- This package contains an utility to report PPP statistics.
+This package contains an utility to report PPP statistics.
 endef
 
 
@@ -106,63 +123,62 @@ $(call Build/Configure/Default,, \
 	UNAME_R="$(LINUX_VERSION)" \
 	UNAME_M="$(ARCH)" \
 )
+	mkdir -p $(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux
+	cp \
+		$(LINUX_DIR)/include/linux/compiler.h \
+		$(LINUX_DIR)/include/linux/atm*.h \
+		$(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux/
 endef
 
-define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)/usr
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		COPTS="$(TARGET_CFLAGS)" \
+MAKE_FLAGS += COPTS="$(TARGET_CFLAGS)" \
 		PRECOMPILED_FILTER=1 \
-		STAGING_DIR="$(STAGING_DIR)" \
-		DESTDIR="$(PKG_INSTALL_DIR)/usr" \
-		all install
-endef
+		STAGING_DIR="$(STAGING_DIR)"
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/pppd $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/include/pppd $(1)/usr/include/
 endef
 
 define Package/ppp/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppd $(1)/usr/sbin/
-#	$(INSTALL_DIR) $(1)/lib/network
-#	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/network/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppd $(1)/usr/sbin/
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_DIR) $(1)/lib/network)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/network/)
 	$(INSTALL_DIR) $(1)/etc/ppp
-#	$(INSTALL_CONF) ./files/etc/ppp/chap-secrets $(1)/etc/ppp/
-#	$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/
-	$(if $(CONFIG_TARGET_brcm63xx_neufbox4_main),$(INSTALL_BIN) ./files/etc/ppp/ip-up $(1)/etc/ppp/)
-#	$(INSTALL_DIR) $(1)/etc/ppp/ip-up.d
-	$(if $(CONFIG_TARGET_brcm63xx_neufbox4_main),$(INSTALL_BIN) ./files/etc/ppp/ip-down $(1)/etc/ppp/)
-#	$(INSTALL_DIR) $(1)/etc/ppp/ip-down.d
-#	$(INSTALL_BIN) ./files/etc/ppp/ipv6-up $(1)/etc/ppp/
-#	$(INSTALL_BIN) ./files/etc/ppp/ipv6-down $(1)/etc/ppp/
-	$(if $(CONFIG_TARGET_brcm63xx_neufbox4),$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/)
-	$(if $(CONFIG_TARGET_brcm63xx_neufbox4),ln -sf /tmp/ppp/resolv.conf $(1)/etc/ppp/resolv.conf)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_CONF) ./files/etc/ppp/chap-secrets $(1)/etc/ppp/)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_BIN) ./files/etc/ppp/ip-up $(1)/etc/ppp/)
+	$(INSTALL_DIR) $(1)/etc/ppp/ip-up.d
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_BIN) ./files/etc/ppp/ip-down $(1)/etc/ppp/)
+	$(INSTALL_DIR) $(1)/etc/ppp/ip-down.d
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_BIN) ./files/etc/ppp/ipv6-up $(1)/etc/ppp/)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_BIN) ./files/etc/ppp/ipv6-down $(1)/etc/ppp/)
+	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,ln -sf /tmp/resolv.conf.auto $(1)/etc/ppp/resolv.conf)
 endef
 	
 define Package/ppp-mod-pppoa/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/pppoatm.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/pppoatm.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
 	$(INSTALL_DIR) $(1)/lib/network
 	$(INSTALL_BIN) ./files/pppoa.sh $(1)/lib/network/
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/atm
+	$(INSTALL_DATA) ./files/etc/hotplug.d/atm/20-atm-modem $(1)/etc/hotplug.d/atm/
 endef
 
 define Package/ppp-mod-pppoe/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
-#	$(INSTALL_DIR) $(1)/lib/network
-#	$(INSTALL_BIN) ./files/pppoe.sh $(1)/lib/network/
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_DIR) $(1)/lib/network)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_BIN) ./files/pppoe.sh $(1)/lib/network/)
 endef
 
 define Package/ppp-mod-radius/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/radius.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/radius.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_DATA) ./files/etc/ppp/radius.conf $(1)/etc/ppp/
@@ -175,17 +191,17 @@ endef
 
 define Package/chat/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/chat $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/chat $(1)/usr/sbin/
 endef
 
 define Package/pppdump/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppdump $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppdump $(1)/usr/sbin/
 endef
 
 define Package/pppstats/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppstats $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,ppp))

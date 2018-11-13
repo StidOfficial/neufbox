@@ -1,5 +1,2 @@
-root::0:root
-admin::1:admin
-diag::2:diag
-fabprocess::10:fabprocess
-nobody::99:
+root:x:0:
+nogroup:x:65534:

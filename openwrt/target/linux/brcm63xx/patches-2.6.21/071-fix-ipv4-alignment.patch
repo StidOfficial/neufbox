@@ -1,6 +1,5 @@
-diff -pNur linux/net/ipv4/ip_input.c linux/net/ipv4/ip_input.c
---- linux/net/ipv4/ip_input.c	2009-06-19 10:54:10.000000000 +0200
-+++ linux/net/ipv4/ip_input.c	2009-02-26 22:50:16.000000000 +0100
+--- a/net/ipv4/ip_input.c
++++ b/net/ipv4/ip_input.c
 @@ -337,6 +337,11 @@ drop:
  	return -1;
  }

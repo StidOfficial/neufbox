@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,25 +8,28 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=shell-fm
-PKG_VERSION:=0.5
-PKG_RELEASE:=2
+PKG_REV:=c274aa51b52185b289ac22f0cb95420a1c19868b
+PKG_VERSION:=0.7
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://nex.scrapping.cc/code/shell-fm/downloads/
-PKG_MD5SUM:=a257283b0f7e9173ee1073b88e57c5f6
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=git://github.com/jkramer/shell-fm.git
+PKG_SOURCE_VERSION:=$(PKG_REV)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/shell-fm
   SECTION:=sound
   CATEGORY:=Sound
-  DEPENDS:=+libao +libmad
+  DEPENDS:=+libao +madplay +libpthread
   TITLE:=Console Based Last.FM Radio Player
   URL:=http://nex.scrapping.cc
 endef
 
 define Package/shell-fm/description
-	Shell.FM is a console based player for the streams provided 
+	Shell.FM is a console based player for the streams provided
 	by Last.FM for the Linux platform. It's lightweight and easy to use.
 endef
 
@@ -42,15 +45,15 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -I./include/ $(TARGET_CPPFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		LDFLAGS="$(TARGET_LDFLAGS) -lmad -lao" \
+		LDFLAGS="$(TARGET_LDFLAGS) -lmad -lao -lpthread" \
 		all install
 endef
 
-define Package/shell-fm/install	
+define Package/shell-fm/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/shell-fm $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/shell-fm $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/etc
-	$(INSTALL_DATA) ./files/shell-fm.rc $(1)/etc/shell-fm.rc
+	$(INSTALL_CONF) ./files/shell-fm.rc $(1)/etc/shell-fm.rc
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/shell-fm.init $(1)/etc/init.d/shell-fm
 endef

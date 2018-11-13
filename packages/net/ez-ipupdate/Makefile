@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,14 +9,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ez-ipupdate
 PKG_VERSION:=3.0.11b8
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
 PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/e/ez-ipupdate \
 	http://ftp.de.debian.org/debian/pool/main/e/ez-ipupdate
 PKG_MD5SUM:=000211add4c4845ffa4211841bff4fb0
-
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 

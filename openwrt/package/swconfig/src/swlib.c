@@ -581,11 +581,13 @@ add_switch(struct nl_msg *msg, void *arg)
 	if (tb[SWITCH_ATTR_ID])
 		dev->id = nla_get_u32(tb[SWITCH_ATTR_ID]);
 	if (tb[SWITCH_ATTR_NAME])
-		dev->name = strdup(nla_get_string(tb[SWITCH_ATTR_DEV_NAME]));
+		dev->name = strdup(nla_get_string(tb[SWITCH_ATTR_NAME]));
 	if (tb[SWITCH_ATTR_PORTS])
 		dev->ports = nla_get_u32(tb[SWITCH_ATTR_PORTS]);
 	if (tb[SWITCH_ATTR_VLANS])
 		dev->vlans = nla_get_u32(tb[SWITCH_ATTR_VLANS]);
+	if (tb[SWITCH_ATTR_CPU_PORT])
+		dev->cpu_port = nla_get_u32(tb[SWITCH_ATTR_CPU_PORT]);
 
 	if (!sa->head) {
 		sa->head = dev;

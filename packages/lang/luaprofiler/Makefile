@@ -23,6 +23,7 @@ define Package/luaprofiler
   CATEGORY:=Languages
   TITLE:=Lua Profiler
   URL:=http://luaprofiler.luaforge.net
+  DEPENDS:=+lua
 endef
 
 define Package/luaprofiler/description
@@ -40,7 +41,7 @@ TARGET_LDFLAGS += -llua
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
+		CFLAGS="$(TARGET_CFLAGS) -std=gnu99" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
 		-f Makefile.linux
 endef

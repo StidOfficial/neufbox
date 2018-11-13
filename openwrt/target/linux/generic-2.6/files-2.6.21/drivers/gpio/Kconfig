@@ -25,11 +25,6 @@ config DEBUG_GPIO
 
 # put expanders in the right section, in alphabetical order
 
-config GPIO_74HC164D
-	tristate "serial 74HC164 GPIO controler"
-	help
-	  Say yes here to support the 74HC164D controler.
-
 comment "I2C GPIO expanders:"
 
 config GPIO_PCA953X

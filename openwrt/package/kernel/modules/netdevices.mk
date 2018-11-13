@@ -113,7 +113,7 @@ $(eval $(call KernelPackage,via-rhine))
 define KernelPackage/via-velocity
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=VIA Velocity Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@TARGET_ixp4xx
+  DEPENDS:=@TARGET_ixp4xx||TARGET_mpc83xx||TARGET_x86
   KCONFIG:=CONFIG_VIA_VELOCITY
   FILES:=$(LINUX_DIR)/drivers/net/via-velocity.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,via-velocity)
@@ -144,6 +144,22 @@ define KernelPackage/8139too/description
 endef
 
 $(eval $(call KernelPackage,8139too))
+
+
+define KernelPackage/8139cp
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=RealTek RTL-8139C+ PCI Fast Ethernet Adapter kernel support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_8139CP
+  FILES:=$(LINUX_DIR)/drivers/net/8139cp.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,8139cp)
+endef
+
+define KernelPackage/8139cp/description
+ Kernel module for RealTek RTL-8139C+ PCI Fast Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,8139cp))
 
 
 define KernelPackage/r8169
@@ -200,19 +216,36 @@ $(eval $(call KernelPackage,e100))
 
 define KernelPackage/e1000
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Intel(R) PRO/1000 cards kernel support
-  DEPENDS:=@TARGET_x86
+  TITLE:=Intel(R) PRO/1000 PCI cards kernel support
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_E1000 \
-    CONFIG_E1000_DISABLE_PACKET_SPLIT=n
+    CONFIG_E1000_DISABLE_PACKET_SPLIT=n \
+    CONFIG_E1000_NAPI=y
   FILES:=$(LINUX_DIR)/drivers/net/e1000/e1000.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,e1000)
 endef
 
 define KernelPackage/e1000/description
- Kernel modules for Intel(R) PRO/1000 Ethernet adapters.
+ Kernel modules for Intel(R) PRO/1000 PCI Ethernet adapters.
 endef
 
 $(eval $(call KernelPackage,e1000))
+
+
+define KernelPackage/e1000e
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel(R) PRO/1000 PCIe cards kernel support
+  DEPENDS:=@PCIE_SUPPORT
+  KCONFIG:=CONFIG_E1000E
+  FILES:=$(LINUX_DIR)/drivers/net/e1000e/e1000e.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,e1000e)
+endef
+
+define KernelPackage/e1000e/description
+ Kernel modules for Intel(R) PRO/1000 PCIe Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,e1000e))
 
 
 define KernelPackage/b44
@@ -273,7 +306,7 @@ define KernelPackage/tg3
   TITLE:=Broadcom Tigon3 Gigabit Ethernet
   FILES:=$(LINUX_DIR)/drivers/net/tg3.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_TIGON3
-  DEPENDS:=@LINUX_2_6 +LINUX_2_6_27||LINUX_2_6_28||LINUX_2_6_29||LINUX_2_6_30:kmod-libphy
+  DEPENDS:=@LINUX_2_6 +!TARGET_brcm47xx:kmod-libphy @!TARGET_ubicom32
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   AUTOLOAD:=$(call AutoLoad,50,tg3)
 endef
@@ -283,6 +316,64 @@ define KernelPackage/tg3/description
 endef
 
 $(eval $(call KernelPackage,tg3))
+
+
+define KernelPackage/broadcom-phys
+  TITLE:=Broadcom 54xx PHYs
+  FILES:=$(LINUX_DIR)/drivers/net/phy/broadcom.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_BROADCOM_PHY
+  DEPENDS:=@LINUX_2_6 LINUX_2_6_28||LINUX_2_6_30:kmod-libphy
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  AUTOLOAD:=$(call AutoLoad,50,broadcom)
+endef
+
+define KernelPackage/broadcom-phys/description
+ Kernel modules for Broadcom 54xx PHYs.
+endef
+
+$(eval $(call KernelPackage,broadcom-phys))
+
+
+define KernelPackage/bcm53xx
+  TITLE:=Broadcom robo switch.
+  FILES:=$(LINUX_DIR)/drivers/net/bcm53xx.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_BCM53XX
+  DEPENDS:=@LINUX_2_6
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+endef
+
+define KernelPackage/bcm53xx/description
+ Kernel modules for Broadcom robo switch.
+endef
+$(eval $(call KernelPackage,bcm53xx))
+
+
+define KernelPackage/bcm54xx
+  TITLE:=Broadcom robo switch.
+  FILES:=$(LINUX_DIR)/drivers/net/bcm54xx.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_BCM54XX
+  DEPENDS:=@LINUX_2_6
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+endef
+
+define KernelPackage/bcm54xx/description
+ Kernel modules for Broadcom phys.
+endef
+$(eval $(call KernelPackage,bcm54xx))
+
+
+define KernelPackage/rtl8367r
+  TITLE:=Realtek 8367R switch.
+  FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8367r.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_RTL8367R_PHY
+  DEPENDS:=@LINUX_2_6
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+endef
+
+define KernelPackage/rtl8367r/description
+ Kernel modules for Realtek 8367R switch.
+endef
+$(eval $(call KernelPackage,rtl8367r))
 
 
 define KernelPackage/ssb-gige
@@ -342,3 +433,33 @@ endef
 
 $(eval $(call KernelPackage,gigaset))
 
+
+define KernelPackage/macvlan
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MAC-VLAN support
+  DEPENDS:=@LINUX_2_6 @!LINUX_2_6_21
+  KCONFIG:=CONFIG_MACVLAN
+  FILES:=$(LINUX_DIR)/drivers/net/macvlan.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,macvlan)
+endef
+
+define KernelPackage/macvlan/description
+ A kernel module which allows one to create virtual interfaces that
+ map packets to or from specific MAC addresses to a particular interface.
+endef
+
+$(eval $(call KernelPackage,macvlan))
+
+define KernelPackage/dummy
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Dummy network device
+  KCONFIG:=CONFIG_DUMMY
+  FILES:=$(LINUX_DIR)/drivers/net/dummy.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,34,dummy)
+endef
+
+define KernelPackage/dummy/description
+  The dummy network device
+endef
+
+$(eval $(call KernelPackage,dummy))

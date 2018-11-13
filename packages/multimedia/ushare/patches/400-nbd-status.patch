@@ -1,18 +1,16 @@
-diff -pruN ./ushare-1.1a.orig/configure ushare-1.1a/configure
---- ./ushare-1.1a.orig/configure	2009-02-20 18:30:19.733834394 +0100
-+++ ushare-1.1a/configure	2009-02-20 18:30:57.455827724 +0100
-@@ -746,7 +746,7 @@ else
+--- a/configure
++++ b/configure
+@@ -747,7 +747,7 @@ else
    append_config "STRIP=echo ignoring strip"
    append_config "INSTALLSTRIP="
  fi
 -append_config "EXTRALIBS=$extralibs"
-+append_config "EXTRALIBS=$extralibs -lnbu -lnbd"
++append_config "EXTRALIBS=$extralibs -lnbd"
  
  append_config "OPTFLAGS=$CFLAGS"
  append_config "LDFLAGS=$LDFLAGS"
-diff -pruN ./ushare-1.1a.orig/src/metadata.c ushare-1.1a/src/metadata.c
---- ./ushare-1.1a.orig/src/metadata.c	2009-02-20 18:30:19.733834394 +0100
-+++ ushare-1.1a/src/metadata.c	2009-02-20 18:32:55.919866963 +0100
+--- a/src/metadata.c
++++ b/src/metadata.c
 @@ -40,6 +40,9 @@
  #ifdef HAVE_FAM
  #include "ufam.h"
@@ -31,7 +29,7 @@ diff -pruN ./ushare-1.1a.orig/src/metadata.c ushare-1.1a/src/metadata.c
    if (!entry || !file || !name)
      return;
  
-@@ -472,7 +476,11 @@ metadata_add_file (struct ushare_t *ut, 
+@@ -472,7 +476,11 @@ metadata_add_file (struct ushare_t *ut,
  
      child = upnp_entry_new (ut, name, file, entry, st_ptr->st_size, false);
      if (child)
@@ -51,9 +49,8 @@ diff -pruN ./ushare-1.1a.orig/src/metadata.c ushare-1.1a/src/metadata.c
  
    if (ut->rb)
    {
-diff -pruN ./ushare-1.1a.orig/src/ushare.c ushare-1.1a/src/ushare.c
---- ./ushare-1.1a.orig/src/ushare.c	2009-02-20 18:30:19.733834394 +0100
-+++ ushare-1.1a/src/ushare.c	2009-02-20 18:55:19.198277688 +0100
+--- a/src/ushare.c
++++ b/src/ushare.c
 @@ -76,6 +76,9 @@
  #include "ufam.h"
  #endif /* HAVE_FAM */
@@ -89,7 +86,7 @@ diff -pruN ./ushare-1.1a.orig/src/ushare.c ushare-1.1a/src/ushare.c
      raise (SIGINT);
    }
  }
-@@ -811,6 +818,8 @@ int ushare_daemon(int nochdir, int noclo
+@@ -775,6 +782,8 @@ ushare_kill (ctrl_telnet_client *client,
  int
  main (int argc, char **argv)
  {
@@ -98,17 +95,13 @@ diff -pruN ./ushare-1.1a.orig/src/ushare.c ushare-1.1a/src/ushare.c
    ut = ushare_new ();
    if (!ut)
      return EXIT_FAILURE;
-@@ -849,54 +858,65 @@ main (int argc, char **argv)
+@@ -813,50 +822,61 @@ main (int argc, char **argv)
    {
      /* starting syslog feature as soon as possible */
      start_log ();
 +
 +    int err;
-+ 
-+    /* uClibc daemon() has problems with pthread and friends */
-+    /* workaround from http://www.mail-archive.com/uclibc@uclibc.org/msg01073.html */
-+    /* res = daemon(0, 0); */
-+    err = ushare_daemon (0, 0);
++    err = daemon (0, 0);
 +    if (err == -1)
 +    {
 +      log_error (_("Error: failed to daemonize program : %s\n"),
@@ -172,11 +165,7 @@ diff -pruN ./ushare-1.1a.orig/src/ushare.c ushare-1.1a/src/ushare.c
 -  if (ut->daemon)
 -  {
 -    int err;
-- 
--    /* uClibc daemon() has problems with pthread and friends */
--    /* workaround from http://www.mail-archive.com/uclibc@uclibc.org/msg01073.html */
--    /* res = daemon(0, 0); */
--    err = ushare_daemon (0, 0);
+-    err = daemon (0, 0);
 -    if (err == -1)
 -    {
 -      log_error (_("Error: failed to daemonize program : %s\n"),
@@ -193,7 +182,7 @@ diff -pruN ./ushare-1.1a.orig/src/ushare.c ushare-1.1a/src/ushare.c
    }
  
    signal (SIGINT, UPnPBreak);
-@@ -906,8 +926,8 @@ main (int argc, char **argv)
+@@ -866,8 +886,8 @@ main (int argc, char **argv)
    {
      if (ctrl_telnet_start (ut->telnet_port) < 0)
      {
@@ -204,7 +193,7 @@ diff -pruN ./ushare-1.1a.orig/src/ushare.c ushare-1.1a/src/ushare.c
      }
      
      ctrl_telnet_register ("kill", ushare_kill,
-@@ -917,24 +937,41 @@ main (int argc, char **argv)
+@@ -877,24 +897,41 @@ main (int argc, char **argv)
    if (init_upnp (ut) < 0)
    {
      finish_upnp (ut);
@@ -250,9 +239,8 @@ diff -pruN ./ushare-1.1a.orig/src/ushare.c ushare-1.1a/src/ushare.c
 -  return EXIT_SUCCESS;
 +  return ret ;
  }
-diff -pruN ./ushare-1.1a.orig/src/ushare.h ushare-1.1a/src/ushare.h
---- ./ushare-1.1a.orig/src/ushare.h	2009-02-20 18:30:19.721834723 +0100
-+++ ushare-1.1a/src/ushare.h	2009-02-20 18:55:55.264323193 +0100
+--- a/src/ushare.h
++++ b/src/ushare.h
 @@ -97,6 +97,7 @@ struct ushare_t {
    struct rbtree *rb;
    struct upnp_entry_t *root_entry;

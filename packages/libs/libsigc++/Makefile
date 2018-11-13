@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libsigc++
-PKG_VERSION:=2.2.3
-PKG_RELEASE:=2
+PKG_VERSION:=2.2.6
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://ftp.gnome.org/pub/GNOME/sources/libsigc++/2.2/
-PKG_MD5SUM:=f4574b343eebc4bff66a9e1e5ce6e490
+PKG_SOURCE_URL:=@GNOME/libsigc++/2.2
+PKG_MD5SUM:=d216ef85785e0d17eda9b0326cfdcf71
 
 PKG_FIXUP = libtool
 
@@ -23,13 +23,13 @@ define Package/libsigcxx
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=typesafe callback system for standard C++
-  URL:=http://libsigc++.sourceforge.net/
+  URL:=http://libsigc.sourceforge.net/
   DEPENDS:=+libstdcpp
 endef
 
 define Package/libsigcxx/description
- It allows you to define signals and to connect those signals to any 
- callback function, either global or a member function, regardless of 
+ It allows you to define signals and to connect those signals to any
+ callback function, either global or a member function, regardless of
  whether it is static or virtual.
 endef
 

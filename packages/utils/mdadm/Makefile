@@ -12,9 +12,8 @@ PKG_VERSION:=2.6.7.2
 PKG_RELEASE:=1
 PKG_MD5SUM:=e4badb4a8ded4344ba0fa785883955d8
 
-PKG_SOURCE_URL:=http://www.kernel.org/pub/linux/utils/raid/mdadm
+PKG_SOURCE_URL:=@KERNEL/linux/utils/raid/mdadm
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,7 +22,7 @@ define Package/mdadm
   CATEGORY:=Utilities
   TITLE:=A tool for managing Soft RAID under Linux
   URL:=http://www.kernel.org/pub/linux/utils/raid/mdadm/
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@!LINUX_2_4
 endef
 
 define Build/Compile

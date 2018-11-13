@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,16 +9,17 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=binutils
 PKG_VERSION:=$(strip $(subst ",, $(CONFIG_BINUTILS_VERSION)))
 #"))
-PKG_RELEASE:=1
-PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/binutils/ \
-	ftp://gatekeeper.dec.com/pub/GNU/ \
-		ftp://ftp.uu.net/archive/systems/gnu/ \
-		ftp://ftp.eu.uu.net/pub/gnu/ \
-		ftp://ftp.funet.fi/pub/gnu/prep/ \
-		ftp://ftp.leo.org/pub/comp/os/unix/gnu/
+PKG_RELEASE:=3
 
+PKG_SOURCE_URL:=@GNU/binutils
 PKG_SOURCE:=binutils-$(PKG_VERSION).tar.bz2
+PKG_MD5SUM:=
+
 PATCH_DIR:=$(TOPDIR)/toolchain/binutils/patches/$(PKG_VERSION)
+
+PKG_FIXUP:=libtool
+PKG_LIBTOOL_PATHS:=. gas bfd opcodes gprof binutils ld libiberty gold intl
+PKG_REMOVE_FILES:=libtool.m4
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -34,57 +35,73 @@ define Package/objdump
   SECTION:=devel
   CATEGORY:=Development
   TITLE:=objdump
-  DEPENDS:=+zlib
+  DEPENDS:=+zlib 
 endef
 
 define Package/binutils/description
   The Binutils package contains a linker, an assembler, and other tools for handling object files
 endef
 
-define Package/libbfd
-  SECTION:=libs
-  CATEGORY:=Libraries
-  TITLE:=libbfd
-endef
-
-define Build/Configure
-	$(call Build/Configure/Default, \
+CONFIGURE_ARGS = \
+		--target=$(REAL_GNU_TARGET_NAME) \
+		--host=$(REAL_GNU_TARGET_NAME) \
+		--build=$(GNU_HOST_NAME) \
+		--with-sysroot=$(PKG_INSTALL_DIR) \
+		--prefix=/usr \
+		--disable-multilib \
 		--disable-werror \
 		--disable-nls \
+		$(SOFT_FLOAT_CONFIG_OPTION) \
+		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS))
+
+TARGET_CFLAGS += $(FPIC)
+
+define Build/Configure
+	$(call Build/Configure/Default)
+	$(call Build/Compile/Default, \
+		configure-bfd \
+		configure-binutils \
+		configure-etc \
+		configure-gas \
+		configure-gprof \
+		configure-intl \
+		configure-ld \
+		configure-libiberty \
+		configure-opcodes \
 	)
+	$(MAKE) CFLAGS="$(TARGET_CFLAGS)"-C $(PKG_BUILD_DIR)/bfd/po Makefile
 endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/{lib,include}
-	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)/usr/lib/libbfd.a \
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/* \
 		$(1)/usr/lib/
-	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)/usr/include/{symcat,ansidecl,bfd,bfdlink}.h \
+	$(CP) \
+		$(PKG_BUILD_DIR)/include/*.h \
 		$(1)/usr/include/
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/include/* \
+		$(1)/usr/include/
+	rm -f $(1)/usr/include/gdbm.h
 endef
 
 define Build/Compile
-	make -C $(PKG_BUILD_DIR)/bfd/doc/ CFLAGS="-I$(PKG_BUILD_DIR)/include" chew
+	$(MAKE) -C $(PKG_BUILD_DIR)/bfd/doc/ CFLAGS="-I$(PKG_BUILD_DIR)/include" chew
 	$(call Build/Compile/Default)
 endef
 
 define Package/objdump/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(CP) $(PKG_INSTALL_DIR)/usr/*-linux/bin/objdump $(1)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/$(REAL_GNU_TARGET_NAME)/bin/objdump $(1)/usr/bin/
 endef
 
 define Package/binutils/install
 	$(INSTALL_DIR) $(1)/usr
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ $(1)/usr/
-	$(CP) $(PKG_INSTALL_DIR)/usr/*-linux $(1)/usr
+	$(CP) $(PKG_INSTALL_DIR)/usr/$(REAL_GNU_TARGET_NAME) $(1)/usr
 	rm -f $(1)/usr/bin/objdump
-endef
-
-define Package/libbdf/install
-    true
 endef
 
 $(eval $(call BuildPackage,binutils))
 $(eval $(call BuildPackage,objdump))
-$(eval $(call BuildPackage,libbfd))

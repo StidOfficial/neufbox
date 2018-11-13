@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,14 +10,16 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=cython
 PKG_VERSION:=0.10.3
 PKG_RELEASE:=1
+
 PKG_SOURCE:=Cython-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.cython.org/
 PKG_BUILD_DIR:=$(BUILD_DIR)/Cython-$(PKG_VERSION)
+PKG_MD5SUM:=684103ed37472d9beef3a38e0d5c431d
 
 PKG_BUILD_DEPENDS:=python
 
 include $(INCLUDE_DIR)/package.mk
--include $(if $(DUMP),,$(STAGING_DIR)/mk/python-package.mk)
+$(call include_mk, python-package.mk)
 
 define Package/cython
   SUBMENU:=Python

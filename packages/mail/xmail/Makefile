@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xmail
-PKG_VERSION:=1.26-pre05
+PKG_VERSION:=1.26
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.xmailserver.org/
-PKG_MD5SUM:=685e4b3e3652c9e82a13a56841c09201
+PKG_MD5SUM:=26d35c2fc104d79ebb6397c7dece5b15
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -37,7 +37,7 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		LD="\$$$$(CC)" \
 		CPPFLAGS="$(TARGET_CPPFLAGS) -I$(STAGING_DIR)/usr/include/uClibc++ -fno-builtin -fno-rtti -nostdinc++" \
-		LDFLAGS="$(TARGET_LDFLAGS) -nodefaultlibs -lcrypto -lssl -luClibc++ -ldl -lm -lpthread" \
+		LDFLAGS="$(TARGET_LDFLAGS) -nodefaultlibs -lcrypto -lssl -luClibc++ -ldl -lm -lpthread $(LIBGCC_S)" \
 		all
 	tar -cjf $(PKG_BUILD_DIR)/MailRoot.tar.bz2 -C $(PKG_BUILD_DIR)/MailRoot --exclude bin .
 endef

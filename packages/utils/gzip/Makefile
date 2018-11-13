@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,21 +8,20 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gzip
-PKG_VERSION:=1.3.3
+PKG_VERSION:=1.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.gzip.org/
-PKG_MD5SUM:=52eaf713673507d21f7abefee98ba662
+PKG_SOURCE_URL:=@GNU/gzip
+PKG_MD5SUM:=e381b8506210c794278f5527cba0e765
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/gzip
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=
   TITLE:=gzip (GNU zip) is a compression utility.
   URL:=http://www.gzip.org/
 endef
@@ -32,22 +31,29 @@ define Package/gzip/description
 	replacement for compress.
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		--prefix=/usr \
-	);
-endef
-
-define Build/Compile
-	$(call Build/Compile/Default, \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		LDFLAGS="$(TARGET_LDLAGS)" \
-	)
-endef
+CONFIGURE_VARS += \
+	gl_cv_func_getopt_gnu=yes \
 
 define Package/gzip/install
-	mkdir -p $(1)/usr/bin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/gzip $(1)/usr/bin/
+	$(SED) 's,/bin/bash,/bin/sh,g' $(PKG_INSTALL_DIR)/usr/bin/{gunzip,zcat}
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/{gunzip,gzip,zcat} $(1)/usr/bin/
+endef
+
+define Package/gzip/postinst
+#!/bin/sh
+for app in gunzip gzip zcat; do
+  ln -sf $${IPKG_INSTROOT}/usr/bin/$$app $${IPKG_INSTROOT}/bin/$$app
+done
+endef
+
+define Package/gzip/postrm
+#!/bin/sh
+for app in gunzip gzip zcat; do
+  ln -sf busybox $${IPKG_INSTROOT}/bin/$$app
+  $${IPKG_INSTROOT}/bin/$$app 2>&1 | grep 'applet not found' > /dev/null 2>&1 && rm $${IPKG_INSTROOT}/bin/$$app
+done
+exit 0
 endef
 
 $(eval $(call BuildPackage,gzip))

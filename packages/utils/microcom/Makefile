@@ -15,17 +15,16 @@ PKG_SOURCE:=m102.tar.gz
 PKG_SOURCE_URL:=http://microcom.port5.com/
 PKG_MD5SUM:=c7817035dc41cb02e7cfb565cf9b7401
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_UNPACK:=zcat $(DL_DIR)/$(PKG_SOURCE) | $(TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
-
 include $(INCLUDE_DIR)/package.mk
+
+PKG_UNPACK:=zcat $(DL_DIR)/$(PKG_SOURCE) | $(TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 
 define Package/microcom
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=A serial terminal emulation program
   URL:=http://microcomlinux.homestead.com/
-  SUBMENU:=terminal
+  SUBMENU:=Terminal
 endef
 
 define Package/microcom/description

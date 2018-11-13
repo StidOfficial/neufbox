@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.47
-PKG_RELEASE:=3
+PKG_VERSION:=2.55
+PKG_RELEASE:=6
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_MD5SUM:=4524081e56d0b935717d493e8e8d3e11
+PKG_MD5SUM:=b093d7c6bc7f97ae6fd35d048529232a
 
-PKG_BUILD_DEPENDS+=+efixo-libnbd
+PKG_BUILD_DEPENDS:=PACKAGE_efixo-libnbd:efixo-libnbd
+PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_efixo-libnbd
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -30,17 +31,18 @@ define Package/dnsmasq/description
  It is intended to provide coupled DNS and DHCP service to a LAN.
 endef
 
-#define Package/dnsmasq/conffiles
+define Package/dnsmasq/conffiles
 #/etc/config/dhcp
-#endef
+#/etc/dnsmasq.conf
+endef
 
 TARGET_CFLAGS+=$(if $(CONFIG_PACKAGE_efixo-libnbd),$(TARGET_CPPFLAGS) -DHAVE_LIBNBD)
-EXTRA_LIBS+=$(if $(CONFIG_PACKAGE_efixo-libnbd),-lnbu -lnbd -L$(STAGING_DIR)/usr/lib)
+EXTRA_LIBS+=$(if $(CONFIG_PACKAGE_efixo-libnbd),-lnbd -L$(STAGING_DIR)/usr/lib)
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -DHAVE_ISC_READER=1" \
+		CFLAGS="$(TARGET_CFLAGS)" \
 		LIBS="$(EXTRA_LIBS)" \
 		BINDIR="/usr/sbin" MANDIR="/usr/man" \
 		AWK="awk" \
@@ -52,6 +54,7 @@ define Package/dnsmasq/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dnsmasq $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/config
 	$(if $(CONFIG_PACKAGE_efixo-rcc),,$(INSTALL_DATA) ./files/dhcp.conf $(1)/etc/config/dhcp)
+	$(if $(CONFIG_PACKAGE_efixo-rcc),,$(INSTALL_DATA) ./files/dnsmasq.conf $(1)/etc/dnsmasq.conf)
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(if $(CONFIG_PACKAGE_efixo-rcc),,$(INSTALL_BIN) ./files/dnsmasq.init $(1)/etc/init.d/dnsmasq)
 endef

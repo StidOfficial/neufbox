@@ -10,7 +10,7 @@
  CONFIG_ARC=y
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -869,6 +869,10 @@ config GENERIC_TIME
+@@ -868,6 +868,10 @@ config GENERIC_TIME
  	bool
  	default y
  

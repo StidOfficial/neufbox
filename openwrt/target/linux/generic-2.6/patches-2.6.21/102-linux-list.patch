@@ -1,5 +1,5 @@
---- linux-2.6.21.7/include/linux/list.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/list.h	2008-09-02 18:00:20.000000000 +0200
+--- a/include/linux/list.h
++++ b/include/linux/list.h
 @@ -426,6 +426,17 @@ static inline void list_splice_init_rcu(
  	container_of(ptr, type, member)
  

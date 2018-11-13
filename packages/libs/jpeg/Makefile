@@ -16,7 +16,8 @@ PKG_SOURCE_URL:=http://www.ijg.org/files/ \
         ftp://ftp.uu.net/graphics/jpeg/
 PKG_MD5SUM:=dbd5f3b47ed13132f04c685d608a7547
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
@@ -51,32 +52,20 @@ HOST_CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
 
-define Build/Prepare
-	$(call Build/Prepare/Default)
-	# replace the old upstream libtool stuff with our own
-	ln -sf $(STAGING_DIR)/host/bin/libtool $(PKG_BUILD_DIR)/
-	ln -sf $(STAGING_DIR)/host/share/libtool/config.sub $(PKG_BUILD_DIR)/
-	ln -sf $(STAGING_DIR)/host/share/libtool/config.guess $(PKG_BUILD_DIR)/
-	ln -sf $(STAGING_DIR)/host/share/libtool/ltmain.sh $(PKG_BUILD_DIR)/
-	ln -sf /bin/true $(PKG_BUILD_DIR)/ltconfig
-endef
-
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)/usr/{include,lib,bin,man/man1}
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		LIBTOOL="./libtool --tag=CC" \
+	$(INSTALL_DIR) $(PKG_INSTALL_DIR)/usr/{include,lib,bin,man/man1}
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		prefix="$(PKG_INSTALL_DIR)/usr" \
 		exec_prefix="$(PKG_INSTALL_DIR)/usr" \
 		all install install-headers install-lib
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/jpeglib.h $(1)/usr/include/
 	$(CP) $(PKG_BUILD_DIR)/jpegint.h $(1)/usr/include/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/j{config,error,morecfg}.h $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libjpeg.{a,so*} $(1)/usr/lib/
 endef
 

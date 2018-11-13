@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,19 +9,22 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ipsec-tools
-PKG_VERSION:=0.7
-PKG_RELEASE:=1
+PKG_VERSION:=0.7.3
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/ipsec-tools
-PKG_MD5SUM:=c0a586924edde35264ecfe94ad1c261f
+PKG_MD5SUM:=821bd84e8d4ad5a93bf594b8b3d66e1e
+
+PKG_BUILD_PARALLEL:=1
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ipsec-tools
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@LINUX_2_6 +libopenssl
+  DEPENDS:=@!LINUX_2_4 +libopenssl +kmod-ipsec
   TITLE:=IPsec management tools
   URL:=http://ipsec-tools.sourceforge.net/
 endef
@@ -38,8 +41,11 @@ CONFIGURE_ARGS += \
 	--enable-hybrid \
 	--enable-security-context=no \
 	--enable-natt \
-	--enable-adminport \
-	--enable-ipv6
+	--enable-adminport
+
+# override CFLAGS holding "-Werror" that break builds on compile warnings
+MAKE_FLAGS+=\
+	CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)"
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
@@ -56,14 +62,6 @@ define Build/Configure
 	);
 	$(call Build/Configure/Default)
 	echo "#undef HAVE_SHADOW_H" >> $(PKG_BUILD_DIR)/config.h
-endef
-
-# override CFLAGS holding "-Werror" that break builds on compile warnings
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		all install
 endef
 
 define Package/ipsec-tools/install

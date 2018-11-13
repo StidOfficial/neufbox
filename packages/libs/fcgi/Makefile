@@ -15,15 +15,29 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.fastcgi.com/dist/
 PKG_MD5SUM:=d15060a813b91383a9f3c66faf84867e
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool-ucxx
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/fcgi
+define Package/libfcgi
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Shared library of FastCGI
   URL:=http://www.fastcgi.com/
+endef
+
+define Package/fcgi
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE:=FastCGI
+  DEPENDS:=+libfcgi +uclibcxx
+  URL:=http://www.fastcgi.com/
+endef
+
+define Package/libfcgi/description
+The FastCGI library
 endef
 
 define Package/fcgi/description
@@ -35,16 +49,17 @@ endef
 TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
+	--enable-shared \
 	--enable-static \
-	LDFLAGS="$(TARGET_LDFLAGS) -lm"
 
-#CONFIGURE_VARS += \
+CONFIGURE_VARS += \
+	LIBS="-lm"
 #	CPPFLAGS="$$$$CPPFLAGS -I$(STAGING_DIR)/usr/include/uClic++" \
-#	CXXFLAGS="$$$$CXXFLAGS -fno-builtin -fno-rtti -nostdinc++"  \
-#	LIBS="-nodefaultlibs -luClibc++ -lm" \
+	CXXFLAGS="$$$$CXXFLAGS -fno-builtin -fno-rtti -nostdinc++"  \
+	LIBS="-nodefaultlibs -luClibc++ -lm" \
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" all install
+	$(_SINGLE)$(MAKE) -C $(PKG_BUILD_DIR) all
 endef
 
 define Build/InstallDev
@@ -52,14 +67,18 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/fastcgi.h $(1)/usr/include/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/fcgi{app,_config,misc,o,os,_stdio}.h $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfcgi.a $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfcgi.{a,so*} $(1)/usr/lib/
+endef
+
+define Package/libfcgi/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfcgi.so.* $(1)/usr/lib/
 endef
 
 define Package/fcgi/install
 	$(INSTALL_DIR) $(1)/usr/bin
-#	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/cgi-fcgi $(1)/usr/bin/
-	$(INSTALL_DIR) $(1)/usr/lib
-#	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfcgi.so.* $(1)/usr/lib/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/cgi-fcgi $(1)/usr/bin/
 endef
 
+$(eval $(call BuildPackage,libfcgi))
 $(eval $(call BuildPackage,fcgi))

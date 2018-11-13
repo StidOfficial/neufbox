@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.orgv
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,37 +8,57 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mini_snmpd
-PKG_VERSION:=1.0
-PKG_RELEASE:=2
+PKG_VERSION:=1.2b
+PKG_RELEASE:=1
 
-PKG_SOURCE:=mini_snmpd.tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://members.aon.at/linuxfreak/linux/
-PKG_MD5SUM:=13f2202ff01ff6b6463989f34f453063
+PKG_MD5SUM:=9e432c50ba8216d7fab0983b11b7112a
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/$(PKG_NAME)
+PKG_BUILD_PARALLEL:=1
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/mini-snmpd
-  SECTION:=net
-  CATEGORY:=Network
+define Package/mini-snmpd/Default
   TITLE:=SNMP server for embedded systems
   URL:=http://members.aon.at/linuxfreak/linux/mini_snmpd.html
 endef
 
+define Package/mini-snmpd
+$(call Package/mini-snmpd/Default)
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE+= Mini Snmpd
+endef
+
+PKG_OFLAGS:=$(TARGET_CFLAGS) -DSYSLOG
+
+ifeq ($(CONFIG_IPV6),y)
+  PKG_OFLAGS+= -D__IPV6__
+else
+  PKG_OFLAGS+= -D__IPV4__
+endif
+
+MAKE_FLAGS+= \
+	OFLAGS="$(PKG_OFLAGS)" \
+	STRIP="/bin/true" \
+	INSTALL_ROOT="$(PKG_INSTALL_DIR)"
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC="$(TARGET_CC)" \
-		OFLAGS="$(TARGET_CFLAGS) -DSYSLOG" \
-		STRIP="/bin/true" \
-		INSTALL_ROOT="$(PKG_INSTALL_DIR)" \
-		mini_snmpd install
+	$(call Build/Compile/Default,mini_snmpd)
 endef
 
 define Package/mini-snmpd/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(CP) $(PKG_INSTALL_DIR)/sbin/mini_snmpd $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(CP) $(PKG_INSTALL_DIR)/sbin/mini_snmpd $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) ./files/mini_snmpd.config $(1)/etc/config/mini_snmpd
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/mini_snmpd.init $(1)/etc/init.d/mini_snmpd
 endef
+
+Package/mini-snmpd6/install=$(Package/mini-snmpd/install)
 
 $(eval $(call BuildPackage,mini-snmpd))

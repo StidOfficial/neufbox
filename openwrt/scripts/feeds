@@ -26,6 +26,10 @@ $valid_mk or die "Unsupported version of make found: $mk\n";
 my @feeds;
 my %build_packages;
 my %installed;
+my %feed_cache;
+
+my $feed_package = {};
+my $feed_src = {};
 
 sub parse_config() {
 	my $line = 0;
@@ -43,10 +47,10 @@ sub parse_config() {
 		$line++;
 
 		my $valid = 1;
-		$line[0] =~ /^src-\w+$/ or $valid = 0;
+		$line[0] =~ /^(src-\w+|ipk)$/ or $valid = 0;
 		$line[1] =~ /^\w+$/ or $valid = 0;
 		@src = split /\s+/, $line[2];
-		$valid or die "Syntax error in feeds.list, line: $line\n";
+		$valid or die "Syntax error in feeds.conf, line: $line\n";
 
 		$name{$line[1]} and die "Duplicate feed name '$line[1]', line: $line\n";
 		$name{$line[1]} = 1;
@@ -110,6 +114,7 @@ my %update_method = (
 		'update'	=> ""},
 	'src-git' => {
 		'init'		=> "git clone --depth 1 '%s' '%s'",
+		'init_branch'	=> "git clone --depth 1 --branch '%s' '%s' '%s'",
 		'update'	=> "git pull",
 		'controldir'	=> ".git"},
 	'src-bzr' => {
@@ -119,7 +124,10 @@ my %update_method = (
 	'src-hg' => {
 		'init'		=> "hg clone '%s' '%s'",
 		'update'	=> "hg pull --update",
-		'controldir'	=> ".hg"}
+		'controldir'	=> ".hg"},
+	'ipk' => {
+		'init'		=> "wget -r -l inf -np -nH -A *.ipk '%s' -P '%s'",
+		'update'	=> ""},
 );
 
 # src-git: pull broken
@@ -135,10 +143,15 @@ sub update_feed_via($$$$) {
 	my $localpath = "./feeds/$name";
 	my $safepath = $localpath;
 	$safepath =~ s/'/'\\''/;
+	my ($base, $branch) = split(/;/, $src, 2);
 
 	if( $relocate || !$m->{'update'} || !-d "$localpath/$m->{'controldir'}" ) {
 		system("rm -rf '$safepath'");
-		system(sprintf($m->{'init'}, $src, $safepath)) == 0 or return 1;
+		if ($m->{'init_branch'} and $branch) {
+			system(sprintf($m->{'init_branch'}, $branch, $base, $safepath)) == 0 or return 1;
+		} else {
+			system(sprintf($m->{'init'}, $src, $safepath)) == 0 or return 1;
+		}
 	} else {
 		system("cd '$safepath'; $m->{'update'}") == 0 or return 1;
 	}
@@ -148,16 +161,22 @@ sub update_feed_via($$$$) {
 
 sub get_feed($) {
 	my $feed = shift;
-	my $file = "./feeds/$feed.index";
 
-	clear_packages();
+	if (!defined($feed_cache{$feed})) {
+		my $file = "./feeds/$feed.index";
 
-	-f $file or do {
-		print "Ignoring feed '$feed' - index missing\n";
-		return;
-	};
-	parse_package_metadata($file) or return;
-	return { %package };
+		clear_packages();
+		-f $file or do {
+			print "Ignoring feed '$feed' - index missing\n";
+			return;
+		};
+		parse_package_metadata($file) or return;
+		$feed_cache{$feed} = [ { %package }, { %srcpackage } ];
+	}
+
+	$feed_package = $feed_cache{$feed}->[0];
+	$feed_src = $feed_cache{$feed}->[1];
+	return $feed_cache{$feed}->[0];
 }
 
 sub get_installed() {
@@ -174,8 +193,8 @@ sub search_feed {
 
 	return unless @substr > 0;
 	get_feed($feed);
-	foreach my $name (sort { lc($a) cmp lc($b) } keys %package) {
-		my $pkg = $package{$name};
+	foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_package) {
+		my $pkg = $feed_package->{$name};
 		my $substr;
 		my $pkgmatch = 1;
 
@@ -211,8 +230,8 @@ sub list_feed {
 	my $feed = shift;
 
 	get_feed($feed);
-	foreach my $name (sort { lc($a) cmp lc($b) } keys %package) {
-		my $pkg = $package{$name};
+	foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_package) {
+		my $pkg = $feed_package->{$name};
 		next if $pkg->{vdepends};
 		if($pkg->{name}) {
 			printf "\%-32s\t\%s\n", $pkg->{name}, $pkg->{title};
@@ -268,6 +287,7 @@ my %install_method = (
 	'src-git' => \&install_generic,
 	'src-bzr' => \&install_generic,
 	'src-hg' => \&install_generic,
+	'ipk' => \&install_generic,
 );
 
 my %feed;
@@ -293,9 +313,12 @@ sub install_package {
 	$feed or do {
 		$installed{$name} and return 0;
 		# TODO: check if it's already installed within ./package directory
-		$srcpackage{$name} or -d "./package/$name" or warn "WARNING: No feed for package '$name' found, maybe it's already part of the standard packages?\n";
+		$feed_src->{$name} or -d "./package/$name" or warn "WARNING: No feed for package '$name' found, maybe it's already part of the standard packages?\n";
 		return 0;
 	};
+
+	# switch to the metadata for the selected feed
+	get_feed($feed->[1]);
 
 	my $pkg = $feed{$feed->[1]}->{$name} or return 1;
 	$pkg->{name} or do {
@@ -327,8 +350,8 @@ sub install_package {
 		return 1;
 	};
 
-	# install all dependencies
-	foreach my $vpkg (@{$srcpackage{$src}}, $pkg) {
+	# install all dependencies referenced from the source package
+	foreach my $vpkg (@{$feed_src->{$src}}) {
 		foreach my $dep (@{$vpkg->{depends}}, @{$vpkg->{builddepends}}, @{$vpkg->{"builddepends/host"}}) {
 			next if $dep =~ /@/;
 			$dep =~ s/^\+//;
@@ -384,11 +407,12 @@ sub install {
 			if (!defined($opts{p}) or $opts{p} eq $f->[1]) {
 				printf "Installing all packages from feed %s.\n", $f->[1];
 				get_feed($f->[1]);
-				foreach my $name (sort { lc($a) cmp lc($b) } keys %package) {
-					my $p = $package{$name};
+				foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_package) {
+					my $p = $feed_package->{$name};
 					next if $p->{vdepends};
 					if( $p->{name} ) {
 						install_package($feed, $p->{name}) == 0 or $ret = 1;
+						get_feed($f->[1]);
 					}
 				}
 			}

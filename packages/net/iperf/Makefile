@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,21 +8,23 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iperf
-PKG_VERSION:=2.0.4
-PKG_RELEASE:=2
+PKG_VERSION:=2.0.5
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=8c5bc14cc2ea55f18f22afe3c23e3dcb
+PKG_MD5SUM:=44b5536b67719f4250faed632a3cd016
+
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/iperf/Default
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:= +libstdcpp
+  DEPENDS:= +uclibcxx
   TITLE:=Internet Protocol bandwidth measuring tool
-  URL:=http://dast.nlanr.net/Projects/Iperf/
+  URL:=http://sourceforge.net/projects/iperf/
 endef
 
 define Package/iperf/Default/description
@@ -30,7 +32,6 @@ define Package/iperf/Default/description
  performance, allowing the tuning of various parameters and
  characteristics.
 endef
-
 
 define Package/iperf
 $(call Package/iperf/Default)
@@ -41,7 +42,6 @@ define Package/iperf/description
 $(call Package/iperf/Default/description)
  This package is built with single thread support.
 endef
-
 
 define Package/iperf-mt
 $(call Package/iperf/Default)
@@ -54,13 +54,12 @@ $(call Package/iperf/Default/description)
  This package is built with multithread support.
 endef
 
-
 define Build/Template
 
 $(STAMP_BUILT)-$(2): $(STAMP_PREPARED)
 	-$(MAKE) -C $(PKG_BUILD_DIR) clean
 	$(call Build/Configure/Default,$(3))
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)
 	( cd $(PKG_BUILD_DIR)/src; mv -f iperf iperf-$(2) )
 	touch $$@
 
@@ -77,8 +76,8 @@ CONFIGURE_ARGS += \
 	--disable-multicast \
 
 CONFIGURE_VARS += \
-	CXXFLAGS="$$$$CXX_CFLAGS -fno-rtti" \
-
+	CXX="g++-uc" \
+	CXXFLAGS="$$$$CXXFLAGS -fno-rtti" \
 
 ifneq ($(SDK)$(CONFIG_PACKAGE_iperf),)
   define Build/singlethread

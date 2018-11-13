@@ -8,12 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dircproxy
-PKG_VERSION:=1.2.0-beta2
+PKG_VERSION:=1.2.0-RC1
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz
-PKG_SOURCE_URL:=http://dircproxy.securiweb.net/pub/1.2/
-PKG_MD5SUM:=850443437f709276ff21a173bbf98456
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://dircproxy.googlecode.com/files/
+PKG_MD5SUM:=4fe2e82619c7b575599bfb236adbd872
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -22,16 +24,10 @@ define Package/dircproxy
   SECTION:=net
   CATEGORY:=Network
   TITLE:=An IRC proxy server
-  URL:=http://dircproxy.securiweb.net/
+  URL:=http://dircproxy.googlecode.com/
 endef
 
 # uses Build/Configure/Default
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
 
 define Package/dircproxy/install
 	$(INSTALL_DIR) $(1)/usr/bin

@@ -11,7 +11,6 @@ PKG_NAME:=ustl
 PKG_VERSION:=0.8
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-0.8-0.tar.bz2
 PKG_SOURCE_URL:=@SF/ustl
 PKG_MD5SUM:=dd59483c327f1bd1356273bc5ae4dde0
@@ -42,8 +41,6 @@ endef
 TARGET_CFLAGS += $(FPIC)
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CROSS="$(TARGET_CROSS)" \
 		OPTFLAGS="$(TARGET_CFLAGS)" \
@@ -57,9 +54,9 @@ define Package/ustl/install
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/ustl* $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libustl.{a,so*} $(1)/usr/lib/
 endef
 

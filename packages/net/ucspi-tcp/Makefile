@@ -18,8 +18,6 @@ PKG_SOURCE:=${PKG_NAME}-${PKG_VERSION}.tar.gz
 PKG_SOURCE_URL:=http://cr.yp.to/ucspi-tcp/
 PKG_MD5SUM:=39b619147db54687c4a583a7a94c9163
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ucspi-tcp
@@ -39,6 +37,7 @@ define Build/Compile
 	TARGET_CC="$(TARGET_CC)" \
 	TARGET_CFLAGS="$(TARGET_CFLAGS)" \
 	TARGET_LDFLAGS="$(TARGET_LDFLAGS)" \
+	TARGET_RANLIB="$(TARGET_CROSS)ranlib" \
 	$(MAKE) -C $(PKG_BUILD_DIR)
 endef
 

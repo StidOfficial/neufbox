@@ -1,34 +1,39 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=libnetfilter_log
-PKG_VERSION:=0.0.15
+PKG_VERSION:=1.0.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=ftp://ftp.netfilter.org/pub/libnetfilter_log/
-PKG_MD5SUM:=310ddd9e0c2bb6108b5fa33cd2666008
+PKG_SOURCE_URL:= \
+	http://www.netfilter.org/projects/libnetfilter_log/files/ \
+	ftp://ftp.netfilter.org/pub/libnetfilter_log/ \
+	http://mirrors.evolva.ro/netfilter.org/libnetfilter_log/
+PKG_MD5SUM:=acdb188a1e7504e95636d0770ade393c
 
 PKG_FIXUP:=libtool
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libnetfilter-log
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=@LINUX_2_6 +libnfnetlink +kmod-nfnetlink-log
+  DEPENDS:=@!LINUX_2_4 +libnfnetlink +kmod-nfnetlink-log
   TITLE:=API to packets logged by the kernel packet filter
   URL:=http://www.netfilter.org/projects/libnetfilter_log/
 endef
 
 define Package/libnetfilter-log/description
- libnetfilter_log is a userspace library providing interface to 
+ libnetfilter_log is a userspace library providing interface to
  packets that have been logged by the kernel packet filter.
 endef
 
@@ -41,13 +46,6 @@ CONFIGURE_ARGS += \
 CONFIGURE_VARS += \
 	LIBNFNETLINK_CFLAGS="$(TARGET_CPPFLAGS)" \
 	LIBNFNETLINK_LIBS="$(TARGET_LDFLAGS)"
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) all
-	$(call libtool_fixup_libdir)
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" install
-endef
-
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/libnetfilter_log

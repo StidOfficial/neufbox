@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libgphoto2
-PKG_VERSION:=2.4.1
+PKG_VERSION:=2.4.9
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/gphoto
-PKG_MD5SUM:=70c7d2c3e84997f29b4e988e56bd02aa
+PKG_MD5SUM:=32b233189e3df7e5e67d2a81163682b8
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_LIBTOOL_PATHS:=. libgphoto2_port
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -38,8 +40,6 @@ define Package/libgphoto2-drivers
   TITLE:=Gphoto2 drivers for various cameras
 endef
 
-TARGET_CFLAGS += $(FPIC)
-
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
@@ -58,21 +58,19 @@ CONFIGURE_VARS += \
 	LIBUSB_LIBS="$$$$LDFLAGS -lusb" \
 	LIBS="-lltdl" \
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		LIBLTDL="" \
-		all install
-endef
+MAKE_FLAGS += \
+	LIBLTDL="" \
+
+TARGET_CFLAGS += $(FPIC)
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/gphoto2{,-port}-config $(1)/usr/bin/
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/gphoto2 $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgphoto2{,_port}.{a,so*} $(1)/usr/lib/
-	mkdir -p $(1)/usr/lib/pkgconfig
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libgphoto2.pc $(1)/usr/lib/pkgconfig/
 	$(SED) 's,-I$$$${prefix}/include/gphoto2,,g' $(1)/usr/bin/gphoto2{,-port}-config
 	$(SED) 's,-I$$$${prefix}/include,,g' $(1)/usr/bin/gphoto2{,-port}-config

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,12 +10,14 @@ include $(TOPDIR)/rules.mk
 # Make sure to also update the dbus package
 PKG_NAME:=dbus-x
 PKG_VERSION:=1.2.12
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/dbus-x/dbus-$(PKG_VERSION)
 PKG_SOURCE:=dbus-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://dbus.freedesktop.org/releases/dbus/
 PKG_MD5SUM:=39bd582c3b06a261cac44d4cab6fd60b
+
+PKG_FIXUP:=libtool
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -68,7 +70,6 @@ CONFIGURE_ARGS += \
 
 CONFIGURE_VARS+= \
 	ac_cv_have_abstract_sockets="yes" \
-	$(if $(CONFIG_LINUX_2_4),ac_cv_header_sys_inotify_h=no)
 
 define Package/dbus-launch-x/install
 	$(INSTALL_DIR) $(1)/usr/bin

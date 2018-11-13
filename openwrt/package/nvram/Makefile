@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 Jo-Philipp Wich <xm@subsignal.org>
+# Copyright (C) 2009-2010 Jo-Philipp Wich <xm@subsignal.org>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nvram
-PKG_RELEASE:=4
+PKG_RELEASE:=7
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
@@ -18,7 +18,7 @@ define Package/nvram
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=Userspace port of the Broadcom NVRAM manipulation tool
-  DEPENDS:=@TARGET_brcm_2_4||@TARGET_brcm47xx
+  DEPENDS:=@TARGET_brcm_2_4||@TARGET_brcm47xx||@TARGET_ar71xx
 endef
 
 define Package/nvram/description
@@ -39,6 +39,12 @@ define Build/Compile
 		CC="$(TARGET_CC)" \
 		CFLAGS="$(TARGET_CFLAGS) -Wall" \
 		LDFLAGS="$(TARGET_LDFLAGS)"
+endef
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libnvram.so.0.1 $(1)/usr/lib/
+	ln -s libnvram.so.0.1 $(1)/usr/lib/libnvram.so
 endef
 
 define Package/nvram/install

@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/usb/serial/option.c
-===================================================================
---- linux-2.6.21.7/drivers/usb/serial/option.c	2009-08-28 17:18:29.365258604 +0200
-+++ linux-2.6.21.7/drivers/usb/serial/option.c	2009-08-28 17:22:06.845258417 +0200
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
 @@ -28,7 +28,7 @@
    device features.
  */
@@ -19,7 +17,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  #include <linux/usb.h>
  #include <linux/usb/serial.h>
  
-@@ -107,11 +108,103 @@
+@@ -107,11 +108,103 @@ static int  option_send_setup(struct usb
  #define HUAWEI_VENDOR_ID			0x12D1
  #define HUAWEI_PRODUCT_E600			0x1001
  #define HUAWEI_PRODUCT_E220			0x1003
@@ -124,7 +122,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  
  static struct usb_device_id option_ids[] = {
  	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
-@@ -149,22 +242,86 @@
+@@ -149,22 +242,86 @@ static struct usb_device_id option_ids[]
  	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_ETNA_NETWORK_EX) },
  	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_ETNA_KOI_MODEM) },
  	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_ETNA_KOI_NETWORK) },
@@ -227,7 +225,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	{ } /* Terminating entry */
  };
  MODULE_DEVICE_TABLE(usb, option_ids);
-@@ -189,9 +346,6 @@
+@@ -189,9 +346,6 @@ static struct usb_serial_driver option_1
  	.description       = "GSM modem (1-port)",
  	.usb_driver        = &option_driver,
  	.id_table          = option_ids,
@@ -237,7 +235,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	.num_ports         = 1,
  	.open              = option_open,
  	.close             = option_close,
-@@ -219,17 +373,18 @@
+@@ -219,17 +373,18 @@ static int debug;
  /* per port private data */
  
  #define N_IN_URB 4
@@ -260,7 +258,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  
  	/* Settings for the port */
  	int rts_state;	/* Handshaking pins (outputs) */
-@@ -274,25 +429,25 @@
+@@ -274,25 +429,25 @@ module_exit(option_exit);
  
  static void option_rx_throttle(struct usb_serial_port *port)
  {
@@ -291,7 +289,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	option_send_setup(port);
  }
  
-@@ -320,6 +475,7 @@
+@@ -320,6 +475,7 @@ static int option_tiocmset(struct usb_se
  
  	portdata = usb_get_serial_port_data(port);
  
@@ -299,7 +297,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	if (set & TIOCM_RTS)
  		portdata->rts_state = 1;
  	if (set & TIOCM_DTR)
-@@ -350,7 +506,7 @@
+@@ -350,7 +506,7 @@ static int option_write(struct usb_seria
  
  	portdata = usb_get_serial_port_data(port);
  
@@ -308,7 +306,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  
  	i = 0;
  	left = count;
-@@ -360,7 +516,7 @@
+@@ -360,7 +516,7 @@ static int option_write(struct usb_seria
  			todo = OUT_BUFLEN;
  
  		this_urb = portdata->out_urbs[i];
@@ -317,7 +315,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  			if (time_before(jiffies,
  					portdata->tx_start_time[i] + 10 * HZ))
  				continue;
-@@ -371,7 +527,7 @@
+@@ -371,7 +527,7 @@ static int option_write(struct usb_seria
  			dbg("usb_write %p failed (err=%d)",
  				this_urb, this_urb->status);
  
@@ -326,7 +324,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  			usb_pipeendpoint(this_urb->pipe), i);
  
  		/* send the data */
-@@ -384,6 +540,7 @@
+@@ -384,6 +540,7 @@ static int option_write(struct usb_seria
  			dbg("usb_submit_urb %p (write bulk) failed "
  				"(%d, has %d)", this_urb,
  				err, this_urb->status);
@@ -334,7 +332,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  			continue;
  		}
  		portdata->tx_start_time[i] = jiffies;
-@@ -392,7 +549,7 @@
+@@ -392,7 +549,7 @@ static int option_write(struct usb_seria
  	}
  
  	count -= left;
@@ -343,7 +341,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	return count;
  }
  
-@@ -403,15 +560,16 @@
+@@ -403,15 +560,16 @@ static void option_indat_callback(struct
  	struct usb_serial_port *port;
  	struct tty_struct *tty;
  	unsigned char *data = urb->transfer_buffer;
@@ -364,7 +362,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	} else {
  		tty = port->tty;
  		if (urb->actual_length) {
-@@ -419,47 +577,58 @@
+@@ -419,47 +577,58 @@ static void option_indat_callback(struct
  			tty_insert_flip_string(tty, data, urb->actual_length);
  			tty_flip_buffer_push(tty);
  		} else {
@@ -381,7 +379,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
 -					"(%d)", __FUNCTION__, err);
 -		}
 +	/* Resubmit urb so we continue receiving */
-+	if (port->open_count && status != -ESHUTDOWN) {
++	if (port->open_count && status != -ESHUTDOWN && status != -EPROTO) {
 +		err = usb_submit_urb(urb, GFP_ATOMIC);
 +		if (err)
 +			printk(KERN_ERR "%s: resubmit read urb failed. "
@@ -439,7 +437,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  			return;
  		}
  		if ((req_pkt->bRequestType == 0xA1) &&
-@@ -469,7 +638,7 @@
+@@ -469,7 +638,7 @@ static void option_instat_callback(struc
  					urb->transfer_buffer +
  					sizeof(struct usb_ctrlrequest));
  
@@ -448,7 +446,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  
  			old_dcd_state = portdata->dcd_state;
  			portdata->cts_state = 1;
-@@ -481,19 +650,19 @@
+@@ -481,19 +650,19 @@ static void option_instat_callback(struc
  					old_dcd_state && !portdata->dcd_state)
  				tty_hangup(port->tty);
  		} else {
@@ -462,7 +460,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  
  	/* Resubmit urb so we continue receiving IRQ data */
 -	if (urb->status != -ESHUTDOWN) {
-+	if (status != -ESHUTDOWN) {
++	if (status != -ESHUTDOWN && status != -EPROTO) {
  		urb->dev = serial->dev;
  		err = usb_submit_urb(urb, GFP_ATOMIC);
  		if (err)
@@ -472,7 +470,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	}
  }
  
-@@ -506,13 +675,14 @@
+@@ -506,13 +675,14 @@ static int option_write_room(struct usb_
  
  	portdata = usb_get_serial_port_data(port);
  
@@ -489,7 +487,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	return data_len;
  }
  
-@@ -527,10 +697,12 @@
+@@ -527,10 +697,12 @@ static int option_chars_in_buffer(struct
  
  	for (i=0; i < N_OUT_URB; i++) {
  		this_urb = portdata->out_urbs[i];
@@ -504,7 +502,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	return data_len;
  }
  
-@@ -543,7 +715,7 @@
+@@ -543,7 +715,7 @@ static int option_open(struct usb_serial
  
  	portdata = usb_get_serial_port_data(port);
  
@@ -513,7 +511,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  
  	/* Set some sane defaults */
  	portdata->rts_state = 1;
-@@ -555,7 +727,7 @@
+@@ -555,7 +727,7 @@ static int option_open(struct usb_serial
  		if (! urb)
  			continue;
  		if (urb->dev != serial->dev) {
@@ -522,7 +520,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  				urb->dev, serial->dev);
  			continue;
  		}
-@@ -569,7 +741,7 @@
+@@ -569,7 +741,7 @@ static int option_open(struct usb_serial
  		err = usb_submit_urb(urb, GFP_KERNEL);
  		if (err) {
  			dbg("%s: submit urb %d failed (%d) %d",
@@ -531,7 +529,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  				urb->transfer_buffer_length);
  		}
  	}
-@@ -582,6 +754,12 @@
+@@ -582,6 +754,12 @@ static int option_open(struct usb_serial
  		urb->dev = serial->dev;
  		/* usb_settoggle(urb->dev, usb_pipeendpoint(urb->pipe),
  				usb_pipeout(urb->pipe), 0); */
@@ -544,7 +542,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	}
  
  	port->tty->low_latency = 1;
-@@ -591,19 +769,13 @@
+@@ -591,19 +769,13 @@ static int option_open(struct usb_serial
  	return (0);
  }
  
@@ -565,7 +563,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	portdata = usb_get_serial_port_data(port);
  
  	portdata->rts_state = 0;
-@@ -614,9 +786,9 @@
+@@ -614,9 +786,9 @@ static void option_close(struct usb_seri
  
  		/* Stop reading/writing urbs */
  		for (i = 0; i < N_IN_URB; i++)
@@ -577,7 +575,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	}
  	port->tty = NULL;
  }
-@@ -633,7 +805,7 @@
+@@ -633,7 +805,7 @@ static struct urb *option_setup_urb(stru
  
  	urb = usb_alloc_urb(0, GFP_KERNEL);		/* No ISO */
  	if (urb == NULL) {
@@ -586,7 +584,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  		return NULL;
  	}
  
-@@ -652,7 +824,7 @@
+@@ -652,7 +824,7 @@ static void option_setup_urbs(struct usb
  	struct usb_serial_port *port;
  	struct option_port_private *portdata;
  
@@ -595,7 +593,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  
  	for (i = 0; i < serial->num_ports; i++) {
  		port = serial->port[i];
-@@ -674,15 +846,18 @@
+@@ -674,15 +846,18 @@ static void option_setup_urbs(struct usb
  	}
  }
  
@@ -619,7 +617,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  
  	portdata = usb_get_serial_port_data(port);
  
-@@ -695,7 +870,7 @@
+@@ -695,7 +870,7 @@ static int option_send_setup(struct usb_
  
  		return usb_control_msg(serial->dev,
  				usb_rcvctrlpipe(serial->dev, 0),
@@ -628,7 +626,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	}
  
  	return 0;
-@@ -703,11 +878,12 @@
+@@ -703,11 +878,12 @@ static int option_send_setup(struct usb_
  
  static int option_startup(struct usb_serial *serial)
  {
@@ -643,7 +641,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  
  	/* Now setup per port private data */
  	for (i = 0; i < serial->num_ports; i++) {
-@@ -715,10 +891,24 @@
+@@ -715,10 +891,24 @@ static int option_startup(struct usb_ser
  		portdata = kzalloc(sizeof(*portdata), GFP_KERNEL);
  		if (!portdata) {
  			dbg("%s: kmalloc for option_port_private (%d) failed!.",
@@ -669,7 +667,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  		usb_set_serial_port_data(port, portdata);
  
  		if (! port->interrupt_in_urb)
-@@ -726,12 +916,22 @@
+@@ -726,12 +916,22 @@ static int option_startup(struct usb_ser
  		err = usb_submit_urb(port->interrupt_in_urb, GFP_KERNEL);
  		if (err)
  			dbg("%s: submit irq_in urb failed %d",
@@ -693,7 +691,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  }
  
  static void option_shutdown(struct usb_serial *serial)
-@@ -740,16 +940,16 @@
+@@ -740,16 +940,16 @@ static void option_shutdown(struct usb_s
  	struct usb_serial_port *port;
  	struct option_port_private *portdata;
  
@@ -713,7 +711,7 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  	}
  
  	/* Now free them */
-@@ -760,12 +960,14 @@
+@@ -760,12 +960,14 @@ static void option_shutdown(struct usb_s
  		for (j = 0; j < N_IN_URB; j++) {
  			if (portdata->in_urbs[j]) {
  				usb_free_urb(portdata->in_urbs[j]);
@@ -728,11 +726,9 @@ Index: linux-2.6.21.7/drivers/usb/serial/option.c
  				portdata->out_urbs[j] = NULL;
  			}
  		}
-Index: linux-2.6.21.7/drivers/usb/storage/unusual_devs.h
-===================================================================
---- linux-2.6.21.7/drivers/usb/storage/unusual_devs.h	2009-08-28 17:18:59.993261466 +0200
-+++ linux-2.6.21.7/drivers/usb/storage/unusual_devs.h	2009-09-15 18:15:50.502167608 +0200
-@@ -1374,11 +1374,18 @@
+--- a/drivers/usb/storage/unusual_devs.h
++++ b/drivers/usb/storage/unusual_devs.h
+@@ -1374,11 +1374,24 @@ UNUSUAL_DEV(  0x1210, 0x0003, 0x0100, 0x
  /* This prevents the kernel from detecting the virtual cd-drive with the
   * Windows drivers.  <johann.wilhelm@student.tugraz.at>
  */
@@ -752,10 +748,16 @@ Index: linux-2.6.21.7/drivers/usb/storage/unusual_devs.h
 +        US_SC_DEVICE, US_PR_DEVICE, usb_stor_zte_init,
 +        0 ),
 +
++UNUSUAL_DEV( 0x19d2, 0x2003, 0x0000, 0x0000,
++		"ZTE",
++		"ZTE MOBILE Mass Storage",
++        US_SC_DEVICE, US_PR_DEVICE, usb_stor_zte_init,
++        0 ),
++
  
  /* Reported by Vilius Bilinkevicius <vilisas AT xxx DOT lt) */
  UNUSUAL_DEV(  0x132b, 0x000b, 0x0001, 0x0001,
-@@ -1409,6 +1416,16 @@
+@@ -1409,6 +1422,16 @@ UNUSUAL_DEV(  0x1652, 0x6600, 0x0201, 0x
  		US_SC_DEVICE, US_PR_DEVICE, NULL,
  		US_FL_IGNORE_RESIDUE ),
  
@@ -766,17 +768,15 @@ Index: linux-2.6.21.7/drivers/usb/storage/unusual_devs.h
 +UNUSUAL_DEV(  0x19d2, 0x2000, 0x0000, 0x0000,
 +		"Onda ET502HS",
 +		"USB MMC Storage",
-+		US_SC_DEVICE, US_PR_DEVICE, NULL,
-+		US_FL_IGNORE_DEVICE),
++		US_SC_DEVICE, US_PR_DEVICE, usb_stor_zte_init,
++		0),
 +
  /* patch submitted by Davide Perini <perini.davide@dpsoftware.org>
   * and Renato Perini <rperini@email.it>
   */
-Index: linux-2.6.21.7/include/linux/usb.h
-===================================================================
---- linux-2.6.21.7/include/linux/usb.h	2009-08-28 17:19:19.709258273 +0200
-+++ linux-2.6.21.7/include/linux/usb.h	2009-08-28 17:23:51.433259432 +0200
-@@ -740,6 +740,29 @@
+--- a/include/linux/usb.h
++++ b/include/linux/usb.h
+@@ -740,6 +740,29 @@ static inline int usb_endpoint_is_isoc_o
  	.match_flags = USB_DEVICE_ID_MATCH_INT_INFO, .bInterfaceClass = (cl), \
  	.bInterfaceSubClass = (sc), .bInterfaceProtocol = (pr)
  
@@ -806,11 +806,9 @@ Index: linux-2.6.21.7/include/linux/usb.h
  /* ----------------------------------------------------------------------- */
  
  /* Stuff for dynamic usb ids */
-Index: linux-2.6.21.7/drivers/usb/storage/initializers.c
-===================================================================
---- linux-2.6.21.7/drivers/usb/storage/initializers.c	2009-08-28 17:18:43.429262807 +0200
-+++ linux-2.6.21.7/drivers/usb/storage/initializers.c	2009-09-17 16:12:53.293419882 +0200
-@@ -90,3 +90,60 @@
+--- a/drivers/usb/storage/initializers.c
++++ b/drivers/usb/storage/initializers.c
+@@ -90,3 +90,60 @@ int usb_stor_ucr61s2b_init(struct us_dat
  
  	return (res ? -1 : 0);
  }
@@ -869,23 +867,20 @@ Index: linux-2.6.21.7/drivers/usb/storage/initializers.c
 +    result = usb_stor_bulk_transfer_buf(us, us->send_bulk_pipe, bcb,
 +                                        US_BULK_CB_WRAP_LEN, &partial);
 +    US_DEBUGP("usb_stor_bulk_transfer_buf result is %d\n", result);
-+    return (result ? 0 : -1);
++    return -1;
 +}
-Index: linux-2.6.21.7/drivers/usb/storage/initializers.h
-===================================================================
---- linux-2.6.21.7/drivers/usb/storage/initializers.h	2009-08-28 17:18:52.573258647 +0200
-+++ linux-2.6.21.7/drivers/usb/storage/initializers.h	2009-09-17 16:13:48.889418579 +0200
-@@ -47,3 +47,12 @@
+--- a/drivers/usb/storage/initializers.h
++++ b/drivers/usb/storage/initializers.h
+@@ -47,3 +47,12 @@ int usb_stor_euscsi_init(struct us_data
  /* This function is required to activate all four slots on the UCR-61S2B
   * flash reader */
  int usb_stor_ucr61s2b_init(struct us_data *us);
 +
 +
-+/* This function initializes HUAWEI 3G modems (autorun - cdrom)
++/* This function initialize HUAWEI mass storage
 + */
 +int usb_stor_huawei_init(struct us_data *us);
 +
 +/* This function initializes ZTE 3G modems (autorun - cdrom)
 + */
 +int usb_stor_zte_init(struct us_data *us);
-

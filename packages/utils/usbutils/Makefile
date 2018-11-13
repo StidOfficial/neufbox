@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=usbutils
-PKG_VERSION:=0.73
+PKG_VERSION:=0.90
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/linux-usb
-PKG_MD5SUM:=88978b4ad891f610620b1b8e5e0f43eb
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=@KERNEL/linux/utils/usb/usbutils
+PKG_MD5SUM:=cf542098627c77484c671be4fc5e7271
 
-PKG_BUILD_DEPENDS:=zlib
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -24,26 +24,23 @@ define Package/usbutils
   CATEGORY:=Utilities
   DEPENDS:=+libusb +zlib
   TITLE:=USB devices listing utilities
-  URL:=http://linux-usb.sourceforge.net/
+  URL:=http://www.linux-usb.org/
 endef
 
 define Package/usbutils/postinst
 #!/bin/sh
-$${IPKG_INSTROOT}/usr/sbin/update-usbids.sh
+(cd $${IPKG_INSTROOT}/usr/share; $${PKG_ROOT}/usr/sbin/update-usbids.sh)
+exit 0
 endef
 
 # uses GNU configure
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
-
 define Package/usbutils/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/usb-devices $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/lsusb $(1)/usr/sbin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/update-usbids.sh $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/update-usbids.sh $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/share
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/usb.ids.gz $(1)/usr/share/
 endef

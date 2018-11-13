@@ -42,7 +42,7 @@ scan_broadcom() {
 
 	local _c=
 	for vif in ${adhoc_if:-$sta_if $ap_if $mon_if}; do
-		config_set "$vif" ifname "wl0${_c:+.$_c}"
+		config_set "$vif" ifname "${device}${_c:+.$_c}"
 		_c=$((${_c:-0} + 1))
 	done
 	config_set "$device" vifs "${adhoc_if:-$sta_if $ap_if $mon_if}"
@@ -93,13 +93,14 @@ scan_broadcom() {
 }
 
 disable_broadcom() {
-	set_wifi_down "$1"
-	wlc down
+	local device="$1"
+	set_wifi_down "$device"
+	wlc ifname "$device" down
 	(
 		include /lib/network
 
 		# make sure the interfaces are down and removed from all bridges
-		for dev in wl0 wl0.1 wl0.2 wl0.3; do
+		for dev in $device ${device}.1 ${device}.2 ${device}.3; do
 			ifconfig "$dev" down 2>/dev/null >/dev/null && {
 				unbridge "$dev"
 			}
@@ -109,6 +110,7 @@ disable_broadcom() {
 }
 
 enable_broadcom() {
+	local device="$1"
 	local _c
 	config_get channel "$device" channel
 	config_get country "$device" country
@@ -124,10 +126,16 @@ enable_broadcom() {
 	config_get maclist "$device" maclist
 	config_get macaddr "$device" macaddr
 	config_get txpower "$device" txpower
+	config_get frag "$device" frag
+	config_get rts "$device" rts
+	config_get hwmode "$device" hwmode
 	local vif_pre_up vif_post_up vif_do_up vif_txpower
+	local doth=0
+	local wmm=0
 
 	_c=0
 	nas="$(which nas)"
+	[ -n "$nas" ] && nas="start-stop-daemon -S -b -x $nas -- "
 	nas_cmd=
 	if_up=
 
@@ -139,7 +147,7 @@ enable_broadcom() {
 	} || {
 		slottime="${slottime:--1}"
 	}
-	
+
 	case "$macfilter" in
 		allow|2)
 			macfilter=2;
@@ -152,6 +160,15 @@ enable_broadcom() {
 		;;
 	esac
 
+	case "$hwmode" in
+		*b)   hwmode=0;;
+		*bg)  hwmode=1;;
+		*g)   hwmode=2;;
+		*gst) hwmode=4;;
+		*lrs) hwmode=5;;
+		*)    hwmode=1;;
+	esac
+
 	for vif in $vifs; do
 		config_get vif_txpower "$vif" txpower
 
@@ -159,7 +176,10 @@ enable_broadcom() {
 		append vif_pre_up "vif $_c" "$N"
 		append vif_post_up "vif $_c" "$N"
 		append vif_do_up "vif $_c" "$N"
-		
+
+		config_get_bool wmm "$vif" wmm "$wmm"
+		config_get_bool doth "$vif" doth "$doth"
+
 		[ "$mode" = "sta" ] || {
 			config_get_bool hidden "$vif" hidden 0
 			append vif_pre_up "closed $hidden" "$N"
@@ -174,11 +194,15 @@ enable_broadcom() {
 		nasopts=
 		config_get enc "$vif" encryption
 		case "$enc" in
-			WEP|wep)
+			*WEP*|*wep*)
 				wsec_r=1
 				wsec=1
 				defkey=1
 				config_get key "$vif" key
+				case "$enc" in
+					*shared*) append vif_do_up "wepauth 1" "$N";;
+					*) append vif_do_up "wepauth 0" "$N";;
+				esac
 				case "$key" in
 					[1234])
 						defkey="$key"
@@ -199,6 +223,7 @@ enable_broadcom() {
 				case "$enc" in
 					wpa*+wpa2*|WPA*+WPA2*|*psk+*psk2|*PSK+*PSK2) auth=132; wsec=6;;
 					wpa2*|WPA2*|*PSK2|*psk2) auth=128; wsec=4;;
+					*aes|*AES) auth=4; wsec=4;;
 					*) auth=4; wsec=2;;
 				esac
 				eval "${vif}_key=\"\$key\""
@@ -223,7 +248,7 @@ enable_broadcom() {
 		append vif_do_up "wpa_auth $auth" "$N"
 		append vif_do_up "wsec_restrict $wsec_r" "$N"
 		append vif_do_up "eap_restrict $eap_r" "$N"
-		
+
 		config_get ssid "$vif" ssid
 		append vif_post_up "vlan_mode 0" "$N"
 		append vif_post_up "ssid $ssid" "$N"
@@ -241,9 +266,9 @@ enable_broadcom() {
 				append vif_pre_up "allow_mode 1" "$N"
 			}
 		} || append vif_pre_up "allow_mode 0" "$N"
-		
+
 		append vif_post_up "enabled 1" "$N"
-		
+
 		config_get ifname "$vif" ifname
 		#append if_up "ifconfig $ifname up" ";$N"
 
@@ -263,7 +288,7 @@ enable_broadcom() {
 				[ -z "$bridge" ] || {
 					append vif_post_up "supplicant 1" "$N"
 					append vif_post_up "passphrase $key" "$N"
-					
+
 					use_nas=0
 				}
 			}
@@ -272,18 +297,22 @@ enable_broadcom() {
 		_c=$(($_c + 1))
 	done
 	killall -KILL nas >&- 2>&-
-	wlc stdin <<EOF
+	wlc ifname "$device" stdin <<EOF
 $ifdown
 
+gmode ${hwmode:-1}
+apsta $apsta
 ap $ap
 ${mssid:+mssid $mssid}
-apsta $apsta
 infra $infra
 ${wet:+wet 1}
 802.11d 0
-802.11h 0
+802.11h ${doth:-0}
+wme ${wmm:-0}
 rxant ${rxantenna:-3}
 txant ${txantenna:-3}
+fragthresh ${frag:-2346}
+rtsthresh ${rts:-2347}
 monitor ${monitor:-0}
 passive ${passive:-0}
 
@@ -303,7 +332,7 @@ up
 $vif_post_up
 EOF
 	eval "$if_up"
-	wlc stdin <<EOF
+	wlc ifname "$device" stdin <<EOF
 $vif_do_up
 EOF
 
@@ -317,22 +346,26 @@ EOF
 
 
 detect_broadcom() {
-	[ -f /proc/net/wl0 ] || return
-	config_get type wl0 type
-	[ "$type" = broadcom ] && return
-	cat <<EOF
-config wifi-device  wl0
+	local i=-1
+
+	while [ -f /proc/net/wl$((++i)) ]; do
+		config_get type wl${i} type
+		[ "$type" = broadcom ] && continue
+		cat <<EOF
+config wifi-device  wl${i}
 	option type     broadcom
-	option channel  5
+	option channel  11
 
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
 
 config wifi-iface
-	option device   wl0
+	option device   wl${i}
 	option network	lan
 	option mode     ap
-	option ssid     OpenWrt
+	option ssid     OpenWrt${i#0}
 	option encryption none
+
 EOF
+	done
 }

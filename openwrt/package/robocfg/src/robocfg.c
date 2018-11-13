@@ -15,44 +15,52 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA.
  */
- 
-#include <errno.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
 /* linux stuff */
-typedef u_int64_t u64;
-typedef u_int32_t u32;
-typedef u_int16_t u16;
-typedef u_int8_t u8;
-
-#include <linux/if.h>
-#include <linux/sockios.h>
-#include <linux/ethtool.h>
 #include <linux/mii.h>
+#include <linux/ethtool.h>
 
-#include "etc53xx.h"
-#define ROBO_PHY_ADDR	0x1E	/* robo switch phy address */
+#include <bcm53xx.h>
 
-/* MII registers */
-#define REG_MII_PAGE	0x10	/* MII Page register */
-#define REG_MII_ADDR	0x11	/* MII Address register */
-#define REG_MII_DATA0	0x18	/* MII Data register 0 */
+#define ROBO_PHY_ADDR	0x01	/* robo switch phy address */
 
-#define REG_MII_PAGE_ENABLE	1
-#define REG_MII_ADDR_WRITE	1
-#define REG_MII_ADDR_READ	2
+#define __unused __attribute__ ( ( unused ) )
 
-/* Private et.o ioctls */
-#define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
-#define SIOCSETCPHYWR           (SIOCDEVPRIVATE + 10)
+/*! \def ARRAY_SIZE
+ *  \brief Count elements in static array
+ */
+#define ARRAY_SIZE( x ) (sizeof ( x ) / sizeof ( ( x ) [0] ) )
+
+/*! \def matches( s, c_str )
+ *  \brief Compare strings.
+ *  \param data Data strings
+ *  \param cstr C-Strings
+ */
+#define matches( s, c_str ) \
+({ \
+	const char __dummy[] = c_str; \
+	(void)(&__dummy); \
+	( memcmp ( s, c_str, sizeof( c_str ) ) == 0 ); \
+})
+
+/*! \def err( fmt, ... )
+ *  \brief Log message.
+ *  \param fmt Log message
+ *  \param ... Arguments list
+ */
+#define err( fmt, ... ) \
+	fprintf( stderr, fmt,  ##__VA_ARGS__ )
 
 typedef struct {
 	struct ifreq ifr;
@@ -60,522 +68,516 @@ typedef struct {
 	int et;			/* use private ioctls */
 } robo_t;
 
-static u16 mdio_read(robo_t *robo, u16 phy_id, u8 reg)
+static uint16_t mdio_read(robo_t * robo, uint16_t phy_id, uint8_t reg)
 {
-	if (robo->et) {
-		int args[2] = { reg };
-		
-		if (phy_id != ROBO_PHY_ADDR) {
-			fprintf(stderr,
-				"Access to real 'phy' registers unavaliable.\n"
-				"Upgrade kernel driver.\n");
+	struct mii_ioctl_data *mii = (void *)&robo->ifr.ifr_data;
+	mii->phy_id = phy_id;
+	mii->reg_num = reg;
+	if (ioctl(robo->fd, SIOCGMIIREG, &robo->ifr) < 0) {
+		err("%s( %d, %s, %p ) %m\n", "ioctl", robo->fd, "SIOGSMIIREG",
+		    &robo->ifr);
+		exit(EXIT_FAILURE);
+	}
+	return mii->val_out;
+}
 
-			return 0xffff;
-		}
-	
-		robo->ifr.ifr_data = (caddr_t) args;
-		if (ioctl(robo->fd, SIOCGETCPHYRD, (caddr_t)&robo->ifr) < 0) {
-			perror("SIOCGETCPHYRD");
-			exit(1);
-		}
-	
-		return args[1];
-	} else {
-		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&robo->ifr.ifr_data;
-		mii->phy_id = phy_id;
-		mii->reg_num = reg;
-		if (ioctl(robo->fd, SIOCGMIIREG, &robo->ifr) < 0) {
-			perror("SIOCGMIIREG");
-			exit(1);
-		}
-		return mii->val_out;
+static void mdio_write(robo_t * robo, uint16_t phy_id, uint8_t reg,
+		       uint16_t val)
+{
+	struct mii_ioctl_data *mii = (void *)&robo->ifr.ifr_data;
+	mii->phy_id = phy_id;
+	mii->reg_num = reg;
+	mii->val_in = val;
+	if (ioctl(robo->fd, SIOCSMIIREG, &robo->ifr) < 0) {
+		err("%s( %d, %s, %p ) %m\n", "ioctl", robo->fd, "SIOCSMIIREG",
+		    &robo->ifr);
+		exit(EXIT_FAILURE);
 	}
 }
 
-static void mdio_write(robo_t *robo, u16 phy_id, u8 reg, u16 val)
-{
-	if (robo->et) {
-		int args[2] = { reg, val };
-
-		if (phy_id != ROBO_PHY_ADDR) {
-			fprintf(stderr,
-				"Access to real 'phy' registers unavaliable.\n"
-				"Upgrade kernel driver.\n");
-			return;
-		}
-		
-		robo->ifr.ifr_data = (caddr_t) args;
-		if (ioctl(robo->fd, SIOCSETCPHYWR, (caddr_t)&robo->ifr) < 0) {
-			perror("SIOCGETCPHYWR");
-			exit(1);
-		}
-	} else {
-		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&robo->ifr.ifr_data;
-		mii->phy_id = phy_id;
-		mii->reg_num = reg;
-		mii->val_in = val;
-		if (ioctl(robo->fd, SIOCSMIIREG, &robo->ifr) < 0) {
-			perror("SIOCSMIIREG");
-			exit(1);
-		}
-	}
-}
-
-static int robo_reg(robo_t *robo, u8 page, u8 reg, u8 op)
-{
-	int i = 3;
-	
-	/* set page number */
-	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_PAGE, 
-		(page << 8) | REG_MII_PAGE_ENABLE);
-	
-	/* set register address */
-	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_ADDR, 
-		(reg << 8) | op);
-
-	/* check if operation completed */
-	while (i--) {
-		if ((mdio_read(robo, ROBO_PHY_ADDR, REG_MII_ADDR) & 3) == 0)
-			return 0;
-	}
-
-	fprintf(stderr, "robo_reg: timeout\n");
-	exit(1);
-	
-	return 0;
-}
-
-static void robo_read(robo_t *robo, u8 page, u8 reg, u16 *val, int count)
-{
-	int i;
-	
-	robo_reg(robo, page, reg, REG_MII_ADDR_READ);
-	
-	for (i = 0; i < count; i++)
-		val[i] = mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + i);
-}
-
-static u16 robo_read16(robo_t *robo, u8 page, u8 reg)
-{
-	robo_reg(robo, page, reg, REG_MII_ADDR_READ);
-	
-	return mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0);
-}
-
-static u32 robo_read32(robo_t *robo, u8 page, u8 reg)
-{
-	robo_reg(robo, page, reg, REG_MII_ADDR_READ);
-	
-	return mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0) +
-		(mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + 1) << 16);
-}
-
-static void robo_write16(robo_t *robo, u8 page, u8 reg, u16 val16)
-{
-	/* write data */
-	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0, val16);
-
-	robo_reg(robo, page, reg, REG_MII_ADDR_WRITE);
-}
-
-static void robo_write32(robo_t *robo, u8 page, u8 reg, u32 val32)
-{
-	/* write data */
-	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0, val32 & 65535);
-	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + 1, val32 >> 16);
-	
-	robo_reg(robo, page, reg, REG_MII_ADDR_WRITE);
-}
-
-/* checks that attached switch is 5325E/5350 */
-static int robo_vlan5350(robo_t *robo)
-{
-	/* set vlan access id to 15 and read it back */
-	u16 val16 = 15;
-	robo_write16(robo, ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
-	
-	/* 5365 will refuse this as it does not have this reg */
-	return (robo_read16(robo, ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350) == val16);
-}
-
-u8 port[6] = { 0, 1, 2, 3, 4, 8 };
-char ports[6] = { 'W', '4', '3', '2', '1', 'C' };
-char *rxtx[4] = { "enabled", "rx_disabled", "tx_disabled", "disabled" };
-char *stp[8] = { "none", "disable", "block", "listen", "learn", "forward", "6", "7" };
+uint8_t port[] = { 0, 1, 2, 3, 4, 8 };
+char ports[] = { 'W', '4', '3', '2', '1', 'C' };
+char *rxtx[] = { "enabled", "rx_disabled", "tx_disabled", "disabled" };
+char *stp[] =
+    { "none", "disable", "block", "listen", "learn", "forward", "6", "7" };
 
 struct {
 	char *name;
-	u16 bmcr;
-} media[5] = { { "auto", BMCR_ANENABLE | BMCR_ANRESTART }, 
-	{ "10HD", 0 }, { "10FD", BMCR_FULLDPLX },
-	{ "100HD", BMCR_SPEED100 }, { "100FD", BMCR_SPEED100 | BMCR_FULLDPLX } };
+	uint16_t bmcr;
+} media[] = {
+	{
+	"auto", BMCR_ANENABLE | BMCR_ANRESTART}, {
+	"10HD", 0}, {
+	"10FD", BMCR_FULLDPLX}, {
+	"100HD", BMCR_SPEED100}, {
+	"100FD", BMCR_SPEED100 | BMCR_FULLDPLX}, {
+	"1000HD", BMCR_SPEED1000}, {
+	"1000FD", BMCR_SPEED1000 | BMCR_FULLDPLX}
+};
 
 struct {
 	char *name;
-	u16 value;
-} mdix[3] = { { "auto", 0x0000 }, { "on", 0x1800 }, { "off", 0x0800 } };
+	uint16_t value;
+} mdix[] = {
+	{
+	"auto", 0x0000}, {
+	"on", 0x1800}, {
+	"off", 0x0800}
+};
 
-void usage()
+static void __attribute__ ((noreturn)) usage(void)
 {
-	fprintf(stderr, "Broadcom BCM5325E/536x switch configuration utility\n"
-		"Copyright (C) 2005 Oleg I. Vdovikin\n\n"
-		"This program is distributed in the hope that it will be useful,\n"
-		"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the\n"
-		"GNU General Public License for more details.\n\n");
+	err("Broadcom BCM5325E/536x switch configuration utility\n"
+	    "Copyright (C) 2005 Oleg I. Vdovikin\n\n"
+	    "This program is distributed in the hope that it will be useful,\n"
+	    "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+	    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the\n"
+	    "GNU General Public License for more details.\n\n");
 
-	fprintf(stderr, "Usage: robocfg <op> ... <op>\n"
-			"Operations are as below:\n"
-			"\tshow\n"
-			"\tswitch <enable|disable>\n"
-			"\tport <port_number> [state <%s|%s|%s|%s>]\n\t\t[stp %s|%s|%s|%s|%s|%s] [tag <vlan_tag>]\n"
-			"\t\t[media %s|%s|%s|%s|%s] [mdi-x %s|%s|%s]\n"
-			"\tvlan <vlan_number> [ports <ports_list>]\n"
-			"\tvlans <enable|disable|reset>\n\n"
-			"\tports_list should be one argument, space separated, quoted if needed,\n"
-			"\tport number could be followed by 't' to leave packet vlan tagged (CPU \n"
-			"\tport default) or by 'u' to untag packet (other ports default) before \n"
-			"\tbringing it to the port, '*' is ignored\n"
-			"\nSamples:\n"
-			"1) ASUS WL-500g Deluxe stock config (eth0 is WAN, eth0.1 is LAN):\n"
-			"robocfg switch disable vlans enable reset vlan 0 ports \"0 5u\" vlan 1 ports \"1 2 3 4 5t\""
-			" port 0 state enabled stp none switch enable\n"
-			"2) WRT54g, WL-500g Deluxe OpenWRT config (vlan0 is LAN, vlan1 is WAN):\n"
-			"robocfg switch disable vlans enable reset vlan 0 ports \"1 2 3 4 5t\" vlan 1 ports \"0 5t\""
-			" port 0 state enabled stp none switch enable\n",
-			rxtx[0], rxtx[1], rxtx[2], rxtx[3], stp[0], stp[1], stp[2], stp[3], stp[4], stp[5],
-			media[0].name, media[1].name, media[2].name, media[3].name, media[4].name,
-			mdix[0].name, mdix[1].name, mdix[2].name);
+	err("Usage: robocfg <op> ... <op>\n"
+	    "Operations are as below:\n"
+	    "\tshow\n"
+	    "\tswitch <enable|disable>\n"
+	    "\tport <port_number> [state <%s|%s|%s|%s>]\n\t\t[stp %s|%s|%s|%s|%s|%s] [tag <vlan_tag>]\n"
+	    "\t\t[media %s|%s|%s|%s|%s|%s|%s] [mdi-x %s|%s|%s]\n"
+	    "\tvlan <vlan_number> [ports <ports_list>]\n"
+	    "\tvlans <enable|disable|reset>\n\n"
+	    "\tports_list should be one argument, space separated, quoted if needed,\n"
+	    "\tport number could be followed by 't' to leave packet vlan tagged (CPU \n"
+	    "\tport default) or by 'u' to untag packet (other ports default) before \n"
+	    "\tbringing it to the port, '*' is ignored\n"
+	    "\nSamples:\n"
+	    "1) ASUS WL-500g Deluxe stock config (eth0 is WAN, eth0.1 is LAN):\n"
+	    "robocfg switch disable vlans enable reset vlan 0 ports \"0 5u\" vlan 1 ports \"1 2 3 4 5t\""
+	    " port 0 state enabled stp none switch enable\n"
+	    "2) WRT54g, WL-500g Deluxe OpenWRT config (vlan0 is LAN, vlan1 is WAN):\n"
+	    "robocfg switch disable vlans enable reset vlan 0 ports \"1 2 3 4 5t\" vlan 1 ports \"0 5t\""
+	    " port 0 state enabled stp none switch enable\n",
+	    rxtx[0], rxtx[1], rxtx[2], rxtx[3], stp[0], stp[1], stp[2],
+	    stp[3], stp[4], stp[5], media[0].name, media[1].name,
+	    media[2].name, media[3].name, media[4].name, media[5].name,
+	    media[6].name, mdix[0].name, mdix[1].name, mdix[2].name);
+
+	exit(EXIT_FAILURE);
 }
 
-static robo_t robo;
-int bcm53xx_probe(const char *dev)
+static int cmd_port_state(robo_t * robo, int argc __unused, char *argv[],
+			  int i, int n)
 {
-	struct ethtool_drvinfo info;
-	unsigned int phyid;
-	int ret;
+	unsigned j;
 
-	fprintf(stderr, "probing %s\n", dev);
+	for (j = 0; j < ARRAY_SIZE(rxtx) && strcasecmp(argv[i], rxtx[j]); j++) ;
 
-	strcpy(robo.ifr.ifr_name, dev);
-	memset(&info, 0, sizeof(info));
-	info.cmd = ETHTOOL_GDRVINFO;
-	robo.ifr.ifr_data = (caddr_t)&info;
-	ret = ioctl(robo.fd, SIOCETHTOOL, (caddr_t)&robo.ifr);
-	if (ret < 0) {
-		perror("SIOCETHTOOL");
-		return ret;
-	}
+	if (j < ARRAY_SIZE(rxtx)) {
+		uint16_t v16;
 
-	if (	strcmp(info.driver, "et0") &&
-		strcmp(info.driver, "b44") &&
-		strcmp(info.driver, "bcm63xx_enet") ) {
-			fprintf(stderr, "driver not supported %s\n", info.driver);
-			return -ENOSYS;
-	}
-
-	/* try access using MII ioctls - get phy address */
-	robo.et = 0;
-	if (ioctl(robo.fd, SIOCGMIIPHY, &robo.ifr) < 0)
-		robo.et = 1;
-
-	if (robo.et) {
-		unsigned int args[2] = { 2 };
-		
-		robo.ifr.ifr_data = (caddr_t) args;
-		ret = ioctl(robo.fd, SIOCGETCPHYRD, (caddr_t)&robo.ifr);
-		if (ret < 0) {
-			perror("SIOCGETCPHYRD");
-			return ret;
-		}
-		phyid = args[1] & 0xffff;
-	
-		args[0] = 3;
-		robo.ifr.ifr_data = (caddr_t) args;
-		ret = ioctl(robo.fd, SIOCGETCPHYRD, (caddr_t)&robo.ifr);
-		if (ret < 0) {
-			perror("SIOCGETCPHYRD");
-			return ret;
-		}
-		phyid |= args[1] << 16;
+		v16 = bcm53xx_r16(robo->fd, PAGE_CONTROL, port[n]);
+		/* change state */
+		v16 &= ~(3 << 0);
+		v16 |= (j << 0);
+		bcm53xx_w16(robo->fd, PAGE_CONTROL, port[n], v16);
 	} else {
-		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&robo.ifr.ifr_data;
-		mii->phy_id = ROBO_PHY_ADDR;
-		mii->reg_num = 2;
-		ret = ioctl(robo.fd, SIOCGMIIREG, &robo.ifr);
-		if (ret < 0) {
-			perror("SIOCGMIIREG");
-			return ret;
-		}
-		phyid = mii->val_out & 0xffff;
-
-		mii->phy_id = ROBO_PHY_ADDR;
-		mii->reg_num = 3;
-		ret = ioctl(robo.fd, SIOCGMIIREG, &robo.ifr);
-		if (ret < 0) {
-			perror("SIOCGMIIREG");
-			return ret;
-		}
-		phyid |= mii->val_out << 16;
+		err("Invalid state '%s'.\n", argv[i]);
+		exit(EXIT_FAILURE);
 	}
 
-	if (phyid == 0xffffffff || phyid == 0x55210022) {
-		perror("phyid");
-		return -EIO;
+	return i;
+}
+
+static int cmd_port_stp(robo_t * robo, int argc __unused, char *argv[], int i,
+			int n)
+{
+	unsigned j;
+
+	for (j = 0; j < ARRAY_SIZE(stp)
+	     && strcasecmp(argv[i], stp[j]); j++) ;
+
+	if (j < ARRAY_SIZE(stp)) {
+		uint16_t v16;
+
+		v16 = bcm53xx_r16(robo->fd, PAGE_CONTROL, port[n]);
+		/* change stp */
+		v16 &= ~(7 << 5);
+		v16 |= (j << 5);
+		bcm53xx_w16(robo->fd, PAGE_CONTROL, port[n], v16);
+	} else {
+		err("Invalid stp '%s'.\n", argv[i]);
+		exit(EXIT_FAILURE);
 	}
-	
+
+	return i;
+}
+
+static int cmd_port_media(robo_t * robo, int argc __unused, char *argv[],
+			  int i, int n)
+{
+	unsigned j;
+
+	for (j = 0; j < ARRAY_SIZE(media)
+	     && strcasecmp(argv[i], media[j].name); j++) ;
+
+	if (j < ARRAY_SIZE(media)) {
+		mdio_write(robo, port[n], MII_BMCR, media[j].bmcr);
+	} else {
+		err("Invalid media '%s'.\n", argv[i]);
+		exit(EXIT_FAILURE);
+	}
+
+	return i;
+}
+
+static int cmd_port_mdix(robo_t * robo, int argc __unused, char *argv[], int i,
+			 int n)
+{
+	unsigned j;
+
+	for (j = 0; j < ARRAY_SIZE(mdix)
+	     && strcasecmp(argv[i], mdix[j].name); j++) ;
+
+	if (j < ARRAY_SIZE(mdix)) {
+		uint16_t v16;
+
+		v16 = mdio_read(robo, port[n], 0x1c);
+		v16 &= ~0x1800;
+		v16 |= mdix[j].value, mdio_write(robo, port[n], 0x1c, v16);
+	} else {
+		err("Invalid mdi-x '%s'.\n", argv[i]);
+		exit(EXIT_FAILURE);
+	}
+
+	return i;
+}
+
+static int cmd_port_tag(robo_t * robo, int argc __unused, char *argv[], int i,
+			int n)
+{
+	unsigned j;
+
+	j = atoi(argv[i]);
+	/* change n tag */
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_PTAG0 + (n << 1), j);
+
+	return i;
+}
+
+static int cmd_port(robo_t * robo, int argc, char *argv[], int i)
+{
+	int n = atoi(argv[++i]);
+
+	/* read port specs */
+	while (++i < argc) {
+		if (matches(argv[i], "state") && ++i < argc) {
+			i = cmd_port_state(robo, argc, argv, i, n);
+		} else if (matches(argv[i], "stp") && ++i < argc) {
+			i = cmd_port_stp(robo, argc, argv, i, n);
+		} else if (matches(argv[i], "media") && ++i < argc) {
+			i = cmd_port_media(robo, argc, argv, i, n);
+		} else if (matches(argv[i], "mdi-x") && ++i < argc) {
+			i = cmd_port_mdix(robo, argc, argv, i, n);
+		} else if (matches(argv[i], "tag") && ++i < argc) {
+			i = cmd_port_tag(robo, argc, argv, i, n);
+		} else {
+			break;
+		}
+	}
+
+	return i;
+}
+
+static int cmd_vlan_ports(robo_t * robo, int argc __unused, char *argv[],
+			  int i, int vlan)
+{
+	char *pports = argv[i];
+	int untag = 0;
+	int member = 0;
+	int j;
+	uint32_t v32;
+	uint16_t v16;
+
+	while (*pports >= '0' && *pports <= '9') {
+		j = *pports++ - '0';
+		member |= 1 << j;
+
+		/* untag if needed, CPU port requires special handling */
+		if (*pports == 'u'
+		    || (j != 5 && (*pports == ' ' || *pports == 0))) {
+			untag |= 1 << j;
+			if (*pports)
+				pports++;
+			/* change default vlan tag */
+			bcm53xx_w16(robo->fd, PAGE_VLAN,
+				    ROBO_VLAN_PTAG0 + (j << 1), vlan);
+		} else if (*pports == '*' || *pports == 't' || *pports == ' ')
+			pports++;
+		else
+			break;
+
+		while (*pports == ' ')
+			pports++;
+	}
+
+	if (*pports) {
+		err("Invalid pports '%s'.\n", argv[i]);
+		exit(EXIT_FAILURE);
+	}
+
+	/* write config now */
+	v32 = ROBO_VLAN_WRITE_VALID | ((vlan & 0x0ff0) << 8) |
+	    (untag << ROBO_VLAN_UNTAG_SHIFT) | member;
+	v16 = vlan | ROBO_VLAN_ACCESS_START_DONE | ROBO_VLAN_ACCESS_WRITE_STATE;
+	bcm53xx_w32(robo->fd, PAGE_VLAN, ROBO_VLAN_WRITE, v32);
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_ACCESS, v16);
+
+	return i;
+}
+
+static int cmd_vlan(robo_t * robo, int argc, char *argv[], int i)
+{
+	int vlan = atoi(argv[++i]);
+
+	while (++i < argc) {
+		if (matches(argv[i], "ports") && ++i < argc) {
+			i = cmd_vlan_ports(robo, argc, argv, i, vlan);
+		} else {
+			break;
+		}
+	}
+
+	return i;
+}
+
+static int cmd_switch(robo_t * robo, int argc __unused, char *argv[], int i)
+{
+	/* enable/disable switching */
+	bcm53xx_w16(robo->fd, PAGE_CONTROL, ROBO_SWITCH_MODE,
+		    (bcm53xx_r16(robo->fd, PAGE_CONTROL, ROBO_SWITCH_MODE)
+		     & ~2) | (*argv[++i] == 'e' ? 2 : 0));
+
+	return ++i;
+}
+
+static int cmd_vlans_reset(robo_t * robo)
+{
+	int vlan;
+
+	/* reset vlan validity bit */
+	for (vlan = 0; vlan <= VLAN_ID_MAX5350; ++vlan) {
+		uint16_t v16;
+
+		/* write config now */
+		v16 =
+		    vlan | ROBO_VLAN_ACCESS_START_DONE |
+		    ROBO_VLAN_ACCESS_WRITE_STATE;
+		bcm53xx_w32(robo->fd, PAGE_VLAN, ROBO_VLAN_WRITE, 0);
+		bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_ACCESS, v16);
+	}
+
 	return 0;
 }
 
-int
-main(int argc, char *argv[])
+static int cmd_vlans_disable(robo_t * robo)
 {
-	u16 val16;
-	u16 mac[3];
-	int i = 0, j;
-	int robo5350 = 0;
-	u32 phyid;
-	
+#ifdef NB4
+	if (ioctl(robo->fd, SIOCDEVPRIVATE + 7, &robo->ifr) < 0) {
+		err("%s( %d, %s, %p ) %m\n", "ioctl", robo->fd,
+		    "SIOCGDISABLEVLAN", &robo->ifr);
+		exit(EXIT_FAILURE);
+	}
+#endif				/* NB4 */
+
+	/* disable vlans */
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_CTRL0, 0);
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_CTRL1, 0);
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_CTRL4, 0);
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_CTRL5, 0);
+
+	return 0;
+}
+
+static int cmd_vlans_enable(robo_t * robo)
+{
+	uint16_t v16;
+
+#ifdef NB4
+	if (ioctl(robo->fd, SIOCDEVPRIVATE + 6, &robo->ifr) < 0) {
+		err("%s( %d, %s, %p ) %m\n", "ioctl", robo->fd,
+		    "SIOCGENABLEVLAN", &robo->ifr);
+		exit(EXIT_FAILURE);
+	}
+#endif				/* NB4 */
+
+	/* enable vlans */
+	v16 = ROBO_VLAN_CTRL0_ENABLE_1Q | ROBO_VLAN_CTRL0_IVLM;
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_CTRL0, v16);
+
+	v16 = (1 << 1) | (1 << 2) | (1 << 3) /* RSV multicast */ ;
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_CTRL1, v16);
+
+	v16 = (1 << 6) /* drop invalid VID frames */ ;
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_CTRL4, v16);
+
+	v16 = (1 << 3) /* drop miss V table frames */ ;
+	bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_CTRL5, v16);
+
+	return 0;
+}
+
+static int cmd_vlans(robo_t * robo, int argc, char *argv[], int i)
+{
+	while (++i < argc) {
+		if (matches(argv[i], "reset")) {
+			cmd_vlans_reset(robo);
+		} else if (matches(argv[i], "disable")) {
+			cmd_vlans_disable(robo);
+		} else if (matches(argv[i], "enable")) {
+			cmd_vlans_enable(robo);
+		} else {
+			break;
+		}
+	}
+
+	return i;
+}
+
+static void cmd_show(robo_t * robo)
+{
+	unsigned int i, j;
+	int vlan;
+	uint8_t mac[6];
+	uint16_t v16;
+#ifdef BROADCOM_5325E_SWITCH
+	uint16_t speed;
+#else				/* BROADCOM_5395S_SWITCH */
+	uint32_t speed;
+#endif				/* BROADCOM_5395S_SWITCH */
+	uint16_t duplex;
+
+#ifdef BROADCOM_5325E_SWITCH
+	speed = bcm53xx_r16(robo->fd, PAGE_STATUS, ROBO_PORT_SPEED_SUMMARY);
+	duplex =
+	    bcm53xx_r16(robo->fd, PAGE_STATUS, ROBO_5325_DUPLEX_STATUS_SUMMARY);
+#else
+	speed = bcm53xx_r32(robo->fd, PAGE_STATUS, ROBO_PORT_SPEED_SUMMARY);
+	duplex =
+	    bcm53xx_r16(robo->fd, PAGE_STATUS, ROBO_5395_DUPLEX_STATUS_SUMMARY);
+#endif
+
+	printf("Switch: %sabled\n",
+	       bcm53xx_r8(robo->fd, PAGE_CONTROL,
+			  ROBO_SWITCH_MODE) & 2 ? "en" : "dis");
+
+	for (i = 0; i < ARRAY_SIZE(port); i++) {
+		char const *port_speed[] = {
+			"10", "100", "1000", "?"
+		};
+		char const *port_duplex[] = {
+			"HD", "FD"
+		};
+
+		v16 = bcm53xx_r16(robo->fd, PAGE_STATUS, ROBO_LINK_STATUS);
+		printf(v16 & (1 << port[i]) ? "Port %d(%c): %s%s " :
+		       "Port %d(%c):  DOWN ", i, ports[i],
+#ifdef BROADCOM_5325E_SWITCH
+		       port_speed[(speed >> (1 * port[i])) & 0x01],
+#else				/* BROADCOM_5395S_SWITCH */
+		       port_speed[(speed >> (2 * port[i])) & 0x03],
+#endif				/* BROADCOM_5395S_SWITCH */
+		       port_duplex[(duplex >> port[i]) & 0x01]);
+
+		v16 = bcm53xx_r16(robo->fd, PAGE_CONTROL, port[i]);
+		printf("%s stp: %s vlan: %d ", rxtx[v16 & 3],
+		       stp[(v16 >> 5) & 7],
+		       bcm53xx_r16(robo->fd, PAGE_VLAN,
+				   ROBO_VLAN_PTAG0 + (i << 1)));
+
+		bcm53xx_r48(robo->fd, PAGE_STATUS,
+			    ROBO_LAST_SOURCE_ADDRESS_PORT0 + port[i] * 6, mac);
+		printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1],
+		       mac[2], mac[3], mac[4], mac[5]);
+	}
+
+	v16 = bcm53xx_r16(robo->fd, PAGE_VLAN, ROBO_VLAN_CTRL0);
+	printf("VLANs: %s %sabled%s%s\n", "BCM53xx",
+	       (v16 & (1 << 7)) ? "en" : "dis",
+	       (v16 & (1 << 6)) ? " mac_check" : "",
+	       (v16 & (1 << 5)) ? " mac_hash" : "");
+
+	/* scan VLANs */
+	for (vlan = 0; vlan <= VLAN_ID_MAX5350; ++vlan) {
+		uint32_t v32;
+
+		/* issue read */
+		v16 =
+		    vlan | (0 << ROBO_VLAN_HIGH_8BIT_VID_SHIFT) |
+		    ROBO_VLAN_ACCESS_START_DONE;
+		bcm53xx_w16(robo->fd, PAGE_VLAN, ROBO_VLAN_ACCESS, v16);
+		/* actual read */
+		v32 = bcm53xx_r32(robo->fd, PAGE_VLAN, ROBO_VLAN_READ);
+		if (v32 & ROBO_VLAN_READ_VALID) {
+			printf("vlan%d:", vlan);
+			for (j = 0; j < ARRAY_SIZE(port); j++) {
+				if (v32 & (1 << j)) {
+					printf(" %d%s", j,
+					       (v32 &
+						(1 <<
+						 (j + ROBO_VLAN_UNTAG_SHIFT)))
+					       ? (j == 5 ? "u" : "") : "t");
+				}
+			}
+			printf("\n");
+		}
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	int i = 0;
+	uint32_t phyid;
+	robo_t robo;
 	if ((robo.fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		perror("socket");
-		exit(1);
+		err("%s( %d, %d, %d ) %m\n", "socket", AF_INET, SOCK_DGRAM, 0);
+		exit(EXIT_FAILURE);
 	}
 
-	if (bcm53xx_probe("eth1")) {
-		if (bcm53xx_probe("eth0")) {
-			perror("bcm53xx_probe");
-			exit(1);
-		}
+	/* the only interface for now */
+	strcpy(robo.ifr.ifr_name, "eth1");
+	phyid = mdio_read(&robo, ROBO_PHY_ADDR, 0x2) |
+	    (mdio_read(&robo, ROBO_PHY_ADDR, 0x3) << 16);
+	if (phyid == 0xffffffff || phyid == 0x55210022) {
+		err("No Robo switch in managed mode found\n");
+		exit(EXIT_FAILURE);
 	}
 
-	robo5350 = robo_vlan5350(&robo);
-	
+	robo.fd = bcm53xx_open("eth1");
 	for (i = 1; i < argc;) {
-		if (strcasecmp(argv[i], "port") == 0 && (i + 1) < argc)
-		{
-			int index = atoi(argv[++i]);
-			/* read port specs */
-			while (++i < argc) {
-				if (strcasecmp(argv[i], "state") == 0 && ++i < argc) {
-					for (j = 0; j < 4 && strcasecmp(argv[i], rxtx[j]); j++);
-					if (j < 4) {
-						/* change state */
-						robo_write16(&robo,ROBO_CTRL_PAGE, port[index],
-							(robo_read16(&robo, ROBO_CTRL_PAGE, port[index]) & ~(3 << 0)) | (j << 0));
-					} else {
-						fprintf(stderr, "Invalid state '%s'.\n", argv[i]);
-						exit(1);
-					}
-				} else
-				if (strcasecmp(argv[i], "stp") == 0 && ++i < argc) {
-					for (j = 0; j < 8 && strcasecmp(argv[i], stp[j]); j++);
-					if (j < 8) {
-						/* change stp */
-						robo_write16(&robo,ROBO_CTRL_PAGE, port[index],
-							(robo_read16(&robo, ROBO_CTRL_PAGE, port[index]) & ~(7 << 5)) | (j << 5));
-					} else {
-						fprintf(stderr, "Invalid stp '%s'.\n", argv[i]);
-						exit(1);
-					}
-				} else
-				if (strcasecmp(argv[i], "media") == 0 && ++i < argc) {
-					for (j = 0; j < 5 && strcasecmp(argv[i], media[j].name); j++);
-					if (j < 5) {
-                                    		mdio_write(&robo, port[index], MII_BMCR, media[j].bmcr);
-					} else {
-						fprintf(stderr, "Invalid media '%s'.\n", argv[i]);
-						exit(1);
-					}
-				} else
-				if (strcasecmp(argv[i], "mdi-x") == 0 && ++i < argc) {
-					for (j = 0; j < 3 && strcasecmp(argv[i], mdix[j].name); j++);
-					if (j < 3) {
-                                    		mdio_write(&robo, port[index], 0x1c, mdix[j].value |
-						    (mdio_read(&robo, port[index], 0x1c) & ~0x1800));
-					} else {
-						fprintf(stderr, "Invalid mdi-x '%s'.\n", argv[i]);
-						exit(1);
-					}
-				} else
-				if (strcasecmp(argv[i], "tag") == 0 && ++i < argc) {
-					j = atoi(argv[i]);
-					/* change vlan tag */
-					robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (index << 1), j);
-				} else break;
-			}
-		} else
-		if (strcasecmp(argv[i], "vlan") == 0 && (i + 1) < argc)
-		{
-			int index = atoi(argv[++i]);
-			while (++i < argc) {
-				if (strcasecmp(argv[i], "ports") == 0 && ++i < argc) {
-					char *ports = argv[i];
-					int untag = 0;
-					int member = 0;
-					
-					while (*ports >= '0' && *ports <= '9') {
-						j = *ports++ - '0';
-						member |= 1 << j;
-						
-						/* untag if needed, CPU port requires special handling */
-						if (*ports == 'u' || (j != 5 && (*ports == ' ' || *ports == 0))) 
-						{
-							untag |= 1 << j;
-							if (*ports) ports++;
-							/* change default vlan tag */
-							robo_write16(&robo, ROBO_VLAN_PAGE, 
-								ROBO_VLAN_PORT0_DEF_TAG + (j << 1), index);
-						} else 
-						if (*ports == '*' || *ports == 't' || *ports == ' ') ports++;
-						else break;
-						
-						while (*ports == ' ') ports++;
-					}
-					
-					if (*ports) {
-						fprintf(stderr, "Invalid ports '%s'.\n", argv[i]);
-						exit(1);
-					} else {
-						/* write config now */
-						val16 = (index) /* vlan */ | (1 << 12) /* write */ | (1 << 13) /* enable */;
-						if (robo5350) {
-							robo_write32(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_WRITE_5350,
-								(1 << 20) /* valid */ | (untag << 6) | member);
-							robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
-						} else {
-							robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_WRITE,
-								(1 << 14)  /* valid */ | (untag << 7) | member);
-							robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
-						}
-					}
-				} else break;
-			}
-		} else
-		if (strcasecmp(argv[i], "switch") == 0 && (i + 1) < argc)
-		{
-			/* enable/disable switching */
-			robo_write16(&robo, ROBO_CTRL_PAGE, ROBO_SWITCH_MODE,
-				(robo_read16(&robo, ROBO_CTRL_PAGE, ROBO_SWITCH_MODE) & ~2) |
-				(*argv[++i] == 'e' ? 2 : 0));
-			i++;
-		} else
-		if (strcasecmp(argv[i], "vlans") == 0 && (i + 1) < argc)
-		{
-			while (++i < argc) {
-				if (strcasecmp(argv[i], "reset") == 0) {
-					/* reset vlan validity bit */
-					for (j = 0; j <= (robo5350 ? VLAN_ID_MAX5350 : VLAN_ID_MAX); j++) 
-					{
-						/* write config now */
-						val16 = (j) /* vlan */ | (1 << 12) /* write */ | (1 << 13) /* enable */;
-						if (robo5350) {
-							robo_write32(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_WRITE_5350, 0);
-							robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
-						} else {
-							robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_WRITE, 0);
-							robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
-						}
-					}
-				} else 
-				if (strcasecmp(argv[i], "enable") == 0 || strcasecmp(argv[i], "disable") == 0) 
-				{
-					int disable = (*argv[i] == 'd') || (*argv[i] == 'D');
-					/* enable/disable vlans */
-					robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, disable ? 0 :
-						(1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
-
-					robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1, disable ? 0 :
-						(1 << 1) | (1 << 2) | (1 << 3) /* RSV multicast */);
-
-					robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL4, disable ? 0 :
-						(1 << 6) /* drop invalid VID frames */);
-
-					robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5, disable ? 0 :
-						(1 << 3) /* drop miss V table frames */);
-
-				} else break;
-			}
-		} else
-		if (strcasecmp(argv[i], "show") == 0)
-		{
+		if (matches(argv[i], "port")
+		    && (i + 1) < argc) {
+			i = cmd_port(&robo, argc, argv, i);
+		} else if (matches(argv[i], "vlan")
+			   && (i + 1) < argc) {
+			i = cmd_vlan(&robo, argc, argv, i);
+		} else if (matches(argv[i], "switch")
+			   && (i + 1) < argc) {
+			i = cmd_switch(&robo, argc, argv, i);
+		} else if (matches(argv[i], "vlans")
+			   && (i + 1) < argc) {
+			i = cmd_vlans(&robo, argc, argv, i);
+		} else if (matches(argv[i], "show")) {
 			break;
 		} else {
-			fprintf(stderr, "Invalid option %s\n", argv[i]);
+			err("Invalid option %s\n", argv[i]);
 			usage();
-			exit(1);
 		}
 	}
 
 	if (i == argc) {
-		if (argc == 1) usage();
-		return 0;
+		if (argc == 1)
+			usage();
 	}
-	
-	/* show config */
-		
-	printf("Switch: %sabled\n", robo_read16(&robo, ROBO_CTRL_PAGE, ROBO_SWITCH_MODE) & 2 ? "en" : "dis");
 
-	for (i = 0; i < 6; i++) {
-		printf(robo_read16(&robo, ROBO_STAT_PAGE, ROBO_LINK_STAT_SUMMARY) & (1 << port[i]) ?
-			"Port %d(%c): %s%s " : "Port %d(%c):  DOWN ", i, ports[i],
-			robo_read16(&robo, ROBO_STAT_PAGE, ROBO_SPEED_STAT_SUMMARY) & (1 << port[i]) ? "100" : " 10",
-			robo_read16(&robo, ROBO_STAT_PAGE, ROBO_DUPLEX_STAT_SUMMARY) & (1 << port[i]) ? "FD" : "HD");
-		
-		val16 = robo_read16(&robo, ROBO_CTRL_PAGE, port[i]);
-		
-		printf("%s stp: %s vlan: %d ", rxtx[val16 & 3], stp[(val16 >> 5) & 7],
-			robo_read16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (i << 1)));
-			
-		robo_read(&robo, ROBO_STAT_PAGE, ROBO_LSA_PORT0 + port[i] * 6, mac, 3);
-		
-		printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n",
-			mac[2] >> 8, mac[2] & 255, mac[1] >> 8, mac[1] & 255, mac[0] >> 8, mac[0] & 255);
-	}
-	
-	val16 = robo_read16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0);
-	
-	printf("VLANs: %s %sabled%s%s\n", 
-		robo5350 ? "BCM5325/535x" : "BCM536x",
-		(val16 & (1 << 7)) ? "en" : "dis", 
-		(val16 & (1 << 6)) ? " mac_check" : "", 
-		(val16 & (1 << 5)) ? " mac_hash" : "");
-	
-	/* scan VLANs */
-	for (i = 0; i <= (robo5350 ? VLAN_ID_MAX5350 : VLAN_ID_MAX); i++) {
-		/* issue read */
-		val16 = (i) /* vlan */ | (0 << 12) /* read */ | (1 << 13) /* enable */;
-		
-		if (robo5350) {
-			u32 val32;
-			robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
-			/* actual read */
-			val32 = robo_read32(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_READ);
-			if ((val32 & (1 << 20)) /* valid */) {
-				printf("vlan%d:", i);
-				for (j = 0; j < 6; j++) {
-					if (val32 & (1 << j)) {
-						printf(" %d%s", j, (val32 & (1 << (j + 6))) ? 
-							(j == 5 ? "u" : "") : "t");
-					}
-				}
-				printf("\n");
-			}
-		} else {
-			robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
-			/* actual read */
-			val16 = robo_read16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_READ);
-			if ((val16 & (1 << 14)) /* valid */) {
-				printf("vlan%d:", i);
-				for (j = 0; j < 6; j++) {
-					if (val16 & (1 << j)) {
-						printf(" %d%s", j, (val16 & (1 << (j + 7))) ? 
-							(j == 5 ? "u" : "") : "t");
-					}
-				}
-				printf("\n");
-			}
-		}
-	}
-	
-	return (0);
+	/* show config */
+	cmd_show(&robo);
+	bcm53xx_close(robo.fd);
+
+	return (EXIT_SUCCESS);
 }

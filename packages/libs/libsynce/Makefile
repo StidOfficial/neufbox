@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -9,24 +9,24 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libsynce
 PKG_VERSION:=0.12
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/synce
 PKG_MD5SUM:=fd473d3deceda7912af4427dede1736f
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 PKG_BUILD_DEPENDS:=libiconv
+PKG_BUILD_PARALLEL:=1
+PKG_INSTALL:=1
+PKG_FIXUP:=libtool
 
 define Package/libsynce
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=SynCE library
-  URL:=http://libsynce.sourceforge.net/
+  URL:=http://synce.sourceforge.net/
 endef
 
 define Package/libsynce/description
@@ -37,8 +37,7 @@ endef
 MAKE_FLAGS += \
 	OPTIM="$(TARGET_CFLAGS)" \
 	CFLAGS="$(TARGET_CFLAGS)" \
-	DESTDIR="$(PKG_INSTALL_DIR)" \
-	all install 
+	DESTDIR="$(PKG_INSTALL_DIR)"
 
 CONFIGURE_ARGS += \
 	--enable-hal-support=no \
@@ -51,9 +50,9 @@ CONFIGURE_VARS+= \
 	LDFLAGS="$$$$LDFLAGS -L$(STAGING_DIR)/usr/lib/libintl/lib" \
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/*.h $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsynce.so* $(1)/usr/lib/
 endef
 

@@ -87,7 +87,7 @@ unsigned long flash_init (void)
 	for (i=0; i < CFG_MAX_FLASH_BANKS; ++i) {         // 1 bank 
 		ulong flashbase = (i == 0) ? PHYS_FLASH_1 : PHYS_FLASH_2;      // 0xb0000000,  0xb4000000
 
-       volatile ulong * buscon = (ulong *)
+	   volatile ulong * buscon = (ulong *)
 			((i == 0) ? DANUBE_EBU_BUSCON0 : DANUBE_EBU_BUSCON1);
 
 		/* Disable write protection */
@@ -221,6 +221,22 @@ static void flash_get_offsets (ulong base, flash_info_t *info)
 //joelin add for MX29LV320AB-- SA0~SA7:sector size=8K bytes ,SA9~SA70 :sector size=64k bytes	
 	else if(((info->flash_id & FLASH_VENDMASK) == FLASH_MAN_MX)
 		&& ((info->flash_id & FLASH_TYPEMASK)==FLASH_29LV320AB)){
+		int bootsect_size;	/* number of bytes/boot sector	*/
+		int sect_size;		/* number of bytes/regular sector */
+
+		bootsect_size = 0x00002000 * (sizeof(FPW)/2);
+		sect_size =     0x00010000 * (sizeof(FPW)/2);
+
+		/* set sector offsets for bottom boot block type	*/
+		for (i = 0; i < 8; ++i) {
+			info->start[i] = base + (i * bootsect_size);
+		}
+		for (i = 8; i < info->sector_count; i++) {
+			info->start[i] = base + ((i - 7) * sect_size);
+		}
+	}	
+	else if(((info->flash_id & FLASH_VENDMASK) == FLASH_MAN_AMD)
+		&& ((info->flash_id & FLASH_TYPEMASK)==FLASH_29LV320B)){
 		int bootsect_size;	/* number of bytes/boot sector	*/
 		int sect_size;		/* number of bytes/regular sector */
 
@@ -378,6 +394,7 @@ void flash_print_info (flash_info_t *info)
 	case FLASH_29LV640BB:		//liupeng for MXIC FLASH_29LV640BB
 		fmt = "29LV640BB (64 Mbit, boot sector SA0~SA126 size 64k bytes,other sectors SA127~SA135 size 8k bytes)\n";
 		break;	
+	case FLASH_29LV320B:		//joelin for MXIC FLASH_29LV320AB
 	case FLASH_29LV320AB:		//joelin for MXIC FLASH_29LV320AB
 		fmt = "29LV320AB (32 Mbit, boot sector SA0~SA7 size 8K bytes,other sectors SA8~SA70 size 64K bytes)\n";
 		break;	
@@ -437,8 +454,8 @@ ulong flash_get_size (FPWV *addr, flash_info_t *info)
 	 * This works for any bus width and any FLASH device width.
 	 */
  
-//	printf("\n type is %08lx", addr[1] & 0xff); 	//joelin 10/06/2004 flash type
-//	printf("\n type is %08lx", addr[0] & 0xff); 	//joelin 10/06/2004 flash type
+	printf("\n type is %08lx", addr[1] & 0xff); 	//joelin 10/06/2004 flash type
+	printf("\n type is %08lx", addr[0] & 0xff); 	//joelin 10/06/2004 flash type
 //		asm("SYNC");	 
 	switch (addr[1] & 0xff) {
 	case (uchar)AMD_MANUFACT:
@@ -466,6 +483,11 @@ ulong flash_get_size (FPWV *addr, flash_info_t *info)
 
 	/* Check 16 bits or 32 bits of ID so work on 32 or 16 bit bus. */
 	if (info->flash_id != FLASH_UNKNOWN) switch (addr[0]) {
+	case (FPW)EON_ID_EN29LV320B:
+		info->flash_id += FLASH_29LV320B;
+		info->sector_count = 71;
+		info->size = 0x00400000 * (sizeof(FPW)/2);
+		break;
 	case (FPW)AMD_ID_LV640U:	/* 29LV640 and 29LV641 have same ID */
 		info->flash_id += FLASH_AM640U;
 		info->sector_count = 128;
@@ -606,6 +628,7 @@ int	flash_erase (flash_info_t *info, int s_first, int s_last)
 	case FLASH_28F320J3A:
 	case FLASH_AM640U:
 	case FLASH_29LV640BB:	//liupeng for MXIC MX29LV640BB
+	case FLASH_29LV320B:
 	case FLASH_29LV320AB:	//joelin for MXIC MX29LV320AB
 	case FLASH_29LV160BB:	//joelin for MXIC MX29LV160BB
 		break;
@@ -720,7 +743,9 @@ int	flash_erase (flash_info_t *info, int s_first, int s_last)
 
 	(*DANUBE_EBU_BUSCON0)|=0x80000000;	// disable writing
 	(*DANUBE_EBU_BUSCON1)|=0x80000000;	// disable writing
- 
+
+	flash_reset(info);	/* Homebox Black with JS28F128J3D75 had trouble reading after erase */
+
 	printf (" done\n");
 	return rcode;
 }

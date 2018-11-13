@@ -22,8 +22,7 @@
  * Description: This file implements BCM6368 ATM/PTM network device driver
  *              runtime processing - sending and receiving data.
  ***************************************************************************/
-
-
+ 
 /* Defines. */
 #define CARDNAME    "bcmxtmrt"
 #define VERSION     "0.1"
@@ -31,6 +30,7 @@
 #define INCLUDE_ATM_CRC32
 
 /* Includes. */
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
@@ -262,7 +262,7 @@ int __init bcmxtmrt_init( void )
  ***************************************************************************/
 static void bcmxtmrt_cleanup( void )
 {
-    bcmxtmrt_add_proc_files();
+    bcmxtmrt_del_proc_files();
     deregister_atm_ioctl(&g_PppoAtmIoctlOps);
     if( g_GlobalInfo.pAtmDev )
     {
@@ -281,7 +281,11 @@ static void bcmxtmrt_cleanup( void )
 static int bcmxtmrt_open( struct net_device *dev )
 {
     int nRet = 0;
-    PBCMXTMRT_DEV_CONTEXT pDevCtx = dev->priv;
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+   PBCMXTMRT_DEV_CONTEXT pDevCtx = netdev_priv(dev);
+ #else
+   PBCMXTMRT_DEV_CONTEXT pDevCtx = dev->priv;
+ #endif
 
     netif_start_queue(dev);
 
@@ -289,6 +293,10 @@ static int bcmxtmrt_open( struct net_device *dev )
         pDevCtx->ulOpenState = XTMRT_DEV_OPENED;
     else
         nRet = -EIO;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+    napi_enable(&pDevCtx->napi);
+#endif
 
     return( nRet );
 } /* bcmxtmrt_open */
@@ -302,10 +310,19 @@ static int bcmxtmrt_open( struct net_device *dev )
  ***************************************************************************/
 static int bcmxtmrt_close( struct net_device *dev )
 {
-    PBCMXTMRT_DEV_CONTEXT pDevCtx = dev->priv;
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+   PBCMXTMRT_DEV_CONTEXT pDevCtx = netdev_priv(dev);
+ #else
+   PBCMXTMRT_DEV_CONTEXT pDevCtx = dev->priv;
+ #endif
 
     pDevCtx->ulOpenState = XTMRT_DEV_CLOSED;
     netif_stop_queue(dev);
+    
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+    napi_disable(&pDevCtx->napi);
+#endif
+    
     return 0;
 } /* bcmxtmrt_close */
 
@@ -341,7 +358,11 @@ static struct net_device_stats *bcmxtmrt_query(struct net_device *dev)
  ***************************************************************************/
 static int bcmxtmrt_ioctl(struct net_device *dev, struct ifreq *Req, int nCmd)
 {
-    PBCMXTMRT_DEV_CONTEXT pDevCtx = dev->priv;
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+   PBCMXTMRT_DEV_CONTEXT pDevCtx = netdev_priv(dev);
+ #else
+   PBCMXTMRT_DEV_CONTEXT pDevCtx = dev->priv;
+ #endif
     int *data=(int*)Req->ifr_data;
     int status;
     MirrorCfg mirrorCfg;

@@ -11,15 +11,10 @@
 
 enum {
 	CARD_CARDBUS = (1 << 0),
-
 	CARD_PCCARD = (1 << 1),
-
 	CARD_5V = (1 << 2),
-
 	CARD_3V = (1 << 3),
-
 	CARD_XV = (1 << 4),
-
 	CARD_YV = (1 << 5),
 };
 

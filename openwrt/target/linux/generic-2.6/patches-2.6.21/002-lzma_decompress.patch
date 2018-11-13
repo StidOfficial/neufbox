@@ -1,6 +1,5 @@
-diff --exclude=.svn -pNur linux-2.6.21.7/lib/Kconfig linux-2.6.21.7/lib/Kconfig
---- linux-2.6.21.7/lib/Kconfig	2009-02-27 12:03:15.972133927 +0100
-+++ linux-2.6.21.7/lib/Kconfig	2009-02-27 12:02:56.588154410 +0100
+--- a/lib/Kconfig
++++ b/lib/Kconfig
 @@ -50,6 +50,9 @@ config AUDIT_GENERIC
  #
  # compression support is select'ed if needed
@@ -11,9 +10,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/lib/Kconfig linux-2.6.21.7/lib/Kconfig
  config ZLIB_INFLATE
  	tristate
  
-diff --exclude=.svn -pNur linux-2.6.21.7/lib/Makefile linux-2.6.21.7/lib/Makefile
---- linux-2.6.21.7/lib/Makefile	2009-02-27 12:03:09.016914693 +0100
-+++ linux-2.6.21.7/lib/Makefile	2009-02-27 11:57:34.116373135 +0100
+--- a/lib/Makefile
++++ b/lib/Makefile
 @@ -48,6 +48,8 @@ obj-$(CONFIG_ZLIB_INFLATE) += zlib_infla
  obj-$(CONFIG_ZLIB_DEFLATE) += zlib_deflate/
  obj-$(CONFIG_REED_SOLOMON) += reed_solomon/

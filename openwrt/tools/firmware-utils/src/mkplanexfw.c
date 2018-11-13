@@ -36,6 +36,13 @@ struct planex_hdr {
 	uint32_t	datalen;
 } __attribute__ ((packed));
 
+struct board_info {
+	char		*id;
+	uint32_t	seed;
+	uint8_t		unk[2];
+	uint32_t	datalen;
+};
+
 /*
  * Globals
  */
@@ -43,6 +50,25 @@ static char *ifname;
 static char *progname;
 static char *ofname;
 static char *version = "1.00.00";
+
+static char *board_id;
+static struct board_info *board;
+
+static struct board_info boards[] = {
+	{
+		.id		= "MZK-W04NU",
+		.seed		= 2,
+		.unk		= {0x04, 0x08},
+		.datalen	= 0x770000,
+	}, {
+		.id		= "MZK-W300NH",
+		.seed		= 4,
+		.unk		= {0x00, 0x00},
+		.datalen	= 0x770000,
+	}, {
+		/* terminating entry */
+	}
+};
 
 /*
  * Message macros
@@ -60,6 +86,22 @@ static char *version = "1.00.00";
 			progname, ## __VA_ARGS__, strerror(save)); \
 } while (0)
 
+static struct board_info *find_board(char *id)
+{
+	struct board_info *ret;
+	struct board_info *board;
+
+	ret = NULL;
+	for (board = boards; board->id != NULL; board++){
+		if (strcasecmp(id, board->id) == 0) {
+			ret = board;
+			break;
+		}
+	};
+
+	return ret;
+}
+
 void usage(int status)
 {
 	FILE *stream = (status != EXIT_SUCCESS) ? stderr : stdout;
@@ -69,6 +111,7 @@ void usage(int status)
 	fprintf(stream,
 "\n"
 "Options:\n"
+"  -B <board>      create image for the board specified with <board>\n"
 "  -i <file>       read input from the file <file>\n"
 "  -o <file>       write output to the file <file>\n"
 "  -v <version>    set image version to <version>\n"
@@ -87,7 +130,7 @@ int main(int argc, char *argv[])
 	char *buf;
 	struct planex_hdr *hdr;
 	sha1_context ctx;
-	uint32_t t = HOST_TO_BE32(2);
+	uint32_t seed;
 
 	FILE *outfile, *infile;
 
@@ -96,11 +139,14 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "i:o:v:h");
+		c = getopt(argc, argv, "B:i:o:v:h");
 		if (c == -1)
 			break;
 
 		switch (c) {
+		case 'B':
+			board_id = optarg;
+			break;
 		case 'i':
 			ifname = optarg;
 			break;
@@ -119,6 +165,17 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (board_id == NULL) {
+		ERR("no board specified");
+		goto err;
+	}
+
+	board = find_board(board_id);
+	if (board == NULL) {
+		ERR("unknown board '%s'", board_id);
+		goto err;
+	};
+
 	if (ifname == NULL) {
 		ERR("no input file specified");
 		goto err;
@@ -135,9 +192,13 @@ int main(int argc, char *argv[])
 		goto err;
 	}
 
-	buflen = (st.st_size + 3) & ~3;
-	buflen += sizeof(*hdr);
+	if (st.st_size > board->datalen) {
+		ERR("file '%s' is too big - max size: 0x%08X (exceeds %lu bytes)\n",
+		    ifname, board->datalen, st.st_size - board->datalen);
+		goto err;
+	}
 
+	buflen = board->datalen + 0x10000;
 	buf = malloc(buflen);
 	if (!buf) {
 		ERR("no memory for buffer\n");
@@ -147,9 +208,9 @@ int main(int argc, char *argv[])
 	memset(buf, 0xff, buflen);
 	hdr = (struct planex_hdr *)buf;
 
-	hdr->datalen = HOST_TO_BE32(buflen - sizeof(*hdr));
-	hdr->unk1[0] = 0x04;
-	hdr->unk1[1] = 0x08;
+	hdr->datalen = HOST_TO_BE32(board->datalen);
+	hdr->unk1[0] = board->unk[0];
+	hdr->unk1[1] = board->unk[1];
 
 	snprintf(hdr->version, sizeof(hdr->version), "%s", version);
 
@@ -166,9 +227,10 @@ int main(int argc, char *argv[])
 		goto err_close_in;
 	}
 
+	seed = HOST_TO_BE32(board->seed);
 	sha1_starts(&ctx);
-	sha1_update(&ctx, (uchar *) &t, sizeof(t));
-	sha1_update(&ctx, buf + sizeof(*hdr), buflen - sizeof(*hdr));
+	sha1_update(&ctx, (uchar *) &seed, sizeof(seed));
+	sha1_update(&ctx, buf + sizeof(*hdr), board->datalen);
 	sha1_finish(&ctx, hdr->sha1sum);
 
 	outfile = fopen(ofname, "w");

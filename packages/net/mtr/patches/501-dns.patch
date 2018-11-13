@@ -1,6 +1,6 @@
 --- a/dns.c
 +++ b/dns.c
-@@ -859,6 +859,507 @@
+@@ -880,6 +880,507 @@ void restell(char *s)
    fputs("\r",stderr);
  }
  

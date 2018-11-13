@@ -9,6 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=kernel
+PKG_FLAGS:=hold
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
 SCAN_DEPS=modules/*.mk
@@ -34,7 +35,7 @@ define Package/kernel
   CATEGORY:=Kernel
   DEFAULT:=y
   TITLE:=Virtual kernel package
-  VERSION:=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
+  VERSION:=$(LINUX_VERSION)-$(LINUX_RELEASE)
 endef
 
 define Package/kernel/install

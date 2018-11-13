@@ -1,31 +1,5 @@
---- linux-2.6.21.7/drivers/net/Kconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/net/Kconfig	2008-10-14 14:57:11.000000000 +0200
-@@ -2814,6 +2818,12 @@ config PPPOATM
- 	  which can lead to bad results if the ATM peer loses state and
- 	  changes its encapsulation unilaterally.
- 
-+config BCM_XTMRT
-+	tristate "Broadcom XTMRT"
-+	depends on BCM_BOARD
-+	help
-+	  Support for Broadcom xtmrt
-+
- config SLIP
- 	tristate "SLIP (serial line) support"
- 	---help---
---- linux-2.6.21.7/drivers/net/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/net/Makefile	2008-10-14 14:55:41.000000000 +0200
-@@ -197,6 +205,7 @@ obj-$(CONFIG_SMC911X) += smc911x.o
- obj-$(CONFIG_DM9000) += dm9000.o
- obj-$(CONFIG_FEC_8XX) += fec_8xx/
- obj-$(CONFIG_PASEMI_MAC) += pasemi_mac.o
-+obj-$(CONFIG_BCM_XTMRT) += bcmxtmrt.o
- 
- obj-$(CONFIG_MACB) += macb.o
- 
-diff -pNur linux-2.6.21.7/include/linux/atmbr2684.h linux-2.6.21.7/include/linux/atmbr2684.h
---- linux-2.6.21.7/include/linux/atmbr2684.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/atmbr2684.h	2008-06-25 18:34:06.000000000 +0200
+--- a/include/linux/atmbr2684.h
++++ b/include/linux/atmbr2684.h
 @@ -78,6 +78,13 @@ struct atm_backend_br2684 {
  	__u8	vpn_id[7];
  	int	send_padding;	/* unsupported */
@@ -40,9 +14,8 @@ diff -pNur linux-2.6.21.7/include/linux/atmbr2684.h linux-2.6.21.7/include/linux
  };
  
  /*
-diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/ppp_generic.c
---- linux-2.6.21.7/drivers/net/ppp_generic.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/net/ppp_generic.c	2008-06-25 18:34:15.000000000 +0200
+--- a/drivers/net/ppp_generic.c
++++ b/drivers/net/ppp_generic.c
 @@ -50,6 +50,14 @@
  
  #define PPP_VERSION	"2.4.2"
@@ -58,20 +31,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  /*
   * Network protocols we support.
   */
-@@ -65,6 +73,12 @@
- #define MPHDRLEN_SSN	4	/* ditto with short sequence numbers */
- #define MIN_FRAG_SIZE	64
- 
-+#if defined(CONFIG_MIPS_BRCM)
-+#define FIELD0    4        /* ppp device number ppp0, ppp1, the third digit (max 16) */
-+#define FIELD1    8        /* if 0, default mode, 1 vlan mux, 2 msc */    
-+#define FIELD2    19       /* if FILED1 is 0, add no extension, 1 add vlan id, 2 add conId for msc */
-+#endif
-+
- /*
-  * An instance of /dev/ppp can be associated with either a ppp
-  * interface unit or a ppp channel.  In both cases, file->private_data
-@@ -470,6 +484,13 @@ static ssize_t ppp_write(struct file *fi
+@@ -470,6 +478,13 @@ static ssize_t ppp_write(struct file *fi
  		kfree_skb(skb);
  		goto out;
  	}
@@ -85,7 +45,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  
  	skb_queue_tail(&pf->xq, skb);
  
-@@ -1067,6 +1088,49 @@ pad_compress_skb(struct ppp *ppp, struct
+@@ -1067,6 +1082,49 @@ pad_compress_skb(struct ppp *ppp, struct
  	return new_skb;
  }
  
@@ -135,7 +95,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  /*
   * Compress and send a frame.
   * The caller should have locked the xmit path,
-@@ -1079,6 +1143,15 @@ ppp_send_frame(struct ppp *ppp, struct s
+@@ -1079,6 +1137,15 @@ ppp_send_frame(struct ppp *ppp, struct s
  	struct sk_buff *new_skb;
  	int len;
  	unsigned char *cp;
@@ -151,7 +111,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  
  	if (proto < 0x8000) {
  #ifdef CONFIG_PPP_FILTER
-@@ -1098,10 +1171,16 @@ ppp_send_frame(struct ppp *ppp, struct s
+@@ -1098,10 +1165,16 @@ ppp_send_frame(struct ppp *ppp, struct s
  		if (!(ppp->active_filter
  		      && sk_run_filter(skb, ppp->active_filter,
  				       ppp->active_len) == 0))
@@ -168,7 +128,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  		ppp->last_xmit = jiffies;
  #endif /* CONFIG_PPP_FILTER */
  	}
-@@ -1170,6 +1249,10 @@ ppp_send_frame(struct ppp *ppp, struct s
+@@ -1170,6 +1243,10 @@ ppp_send_frame(struct ppp *ppp, struct s
  	if (ppp->flags & SC_LOOP_TRAFFIC) {
  		if (ppp->file.rq.qlen > PPP_MAX_RQLEN)
  			goto drop;
@@ -179,7 +139,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  		skb_queue_tail(&ppp->file.rq, skb);
  		wake_up_interruptible(&ppp->file.rwait);
  		return;
-@@ -1563,11 +1646,36 @@ ppp_receive_error(struct ppp *ppp)
+@@ -1563,11 +1640,36 @@ ppp_receive_error(struct ppp *ppp)
  		slhc_toss(ppp->vj);
  }
  
@@ -216,7 +176,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  
  	/*
  	 * Decompress the frame, if compressed.
-@@ -1582,6 +1690,13 @@ ppp_receive_nonmp_frame(struct ppp *ppp,
+@@ -1582,6 +1684,13 @@ ppp_receive_nonmp_frame(struct ppp *ppp,
  		goto err;
  
  	proto = PPP_PROTO(skb);
@@ -230,7 +190,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  	switch (proto) {
  	case PPP_VJC_COMP:
  		/* decompress VJ compressed packets */
-@@ -1659,6 +1774,15 @@ ppp_receive_nonmp_frame(struct ppp *ppp,
+@@ -1659,6 +1768,15 @@ ppp_receive_nonmp_frame(struct ppp *ppp,
  		/* check if the packet passes the pass and active filters */
  		/* the filter instructions are constructed assuming
  		   a four-byte PPP header on each packet */
@@ -246,7 +206,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  		*skb_push(skb, 2) = 0;
  		if (ppp->pass_filter
  		    && sk_run_filter(skb, ppp->pass_filter,
-@@ -1671,9 +1795,15 @@ ppp_receive_nonmp_frame(struct ppp *ppp,
+@@ -1671,9 +1789,15 @@ ppp_receive_nonmp_frame(struct ppp *ppp,
  		if (!(ppp->active_filter
  		      && sk_run_filter(skb, ppp->active_filter,
  				       ppp->active_len) == 0))
@@ -262,69 +222,8 @@ diff -pNur linux-2.6.21.7/drivers/net/ppp_generic.c linux-2.6.21.7/drivers/net/p
  		ppp->last_recv = jiffies;
  #endif /* CONFIG_PPP_FILTER */
  
-@@ -1727,7 +1857,6 @@ ppp_decompress_frame(struct ppp *ppp, st
- 			kfree_skb(ns);
- 			goto err;
- 		}
--
- 		kfree_skb(skb);
- 		skb = ns;
- 		skb_put(skb, len);
-@@ -2406,6 +2535,9 @@ ppp_create_interface(int unit, int *retp
- 	struct net_device *dev = NULL;
- 	int ret = -ENOMEM;
- 	int i;
-+#if defined(CONFIG_MIPS_BRCM)
-+	unsigned num[3]={0,0,0};
-+#endif
- 
- 	ppp = kzalloc(sizeof(struct ppp), GFP_KERNEL);
- 	if (!ppp)
-@@ -2442,7 +2574,40 @@ ppp_create_interface(int unit, int *retp
- 
- 	/* Initialize the new ppp unit */
- 	ppp->file.index = unit;
--	sprintf(dev->name, "ppp%d", unit);
-+
-+
-+#if defined(CONFIG_MIPS_BRCM)
-+   if (unit >= 0)
-+   {
-+      unsigned u=unit;
-+     
-+     /* req_name will beused as ifname and  for
-+     * num[1] == 0:  default connection mdoe: ppp0, ppp1...
-+     * num[1] == 1:  vlanMux mode: ppp0.100, ppp1.200...  
-+     * num[1] == 2:  msc (multiple service mode) ppp0_1, ppp1_3...
-+     *
-+     */
-+      num[0] = u<<(32-(FIELD2+FIELD1+FIELD0))>>(32-FIELD0);
-+      num[1] = u<<(32-(FIELD2+FIELD1))>>(32-FIELD1);
-+      num[2] = u<<(32-(FIELD2))>>(32-FIELD2);
-+      if (num[1] == 0)
-+      {
-+         sprintf(dev->name, "ppp%d", num[0]);
-+      }
-+      else if (num[1] == 1) /* vlan mux */
-+      {
-+         sprintf(dev->name, "ppp%d.%d", num[0], num[2]);
-+      }
-+      else if (num[1] == 2) /* msc */
-+      {
-+         sprintf(dev->name, "ppp%d_%d", num[0], num[2]);
-+      }
-+   }
-+#else
-+   sprintf(dev->name, "ppp%d", unit);
-+#endif
-+
-+     //printk(KERN_ERR "PPP_KERN: num0=%d, num1=%d, num2=%d register device %s", num[0], num[1], num[2], dev->name);
- 
- 	ret = register_netdev(dev);
- 	if (ret != 0) {
-diff -pNur linux-2.6.21.7/drivers/net/pppoe.c linux-2.6.21.7/drivers/net/pppoe.c
---- linux-2.6.21.7/drivers/net/pppoe.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/net/pppoe.c	2008-06-25 18:34:16.000000000 +0200
+--- a/drivers/net/pppoe.c
++++ b/drivers/net/pppoe.c
 @@ -77,7 +77,7 @@
  #include <linux/file.h>
  #include <linux/proc_fs.h>
@@ -338,8 +237,8 @@ diff -pNur linux-2.6.21.7/drivers/net/pppoe.c linux-2.6.21.7/drivers/net/pppoe.c
  
  		skb_reserve(skb2, dev->hard_header_len + sizeof(struct pppoe_hdr));
  		memcpy(skb_put(skb2, skb->len), skb->data, skb->len);
-+#if defined(CONFIG_MIPS_BRCM)
-+        blog_xfer(skb2, skb);   /* CONFIG_BLOG */
++#ifdef CONFIG_BLOG
++        blog_xfer(skb2, skb);
 +#endif
  	} else {
  		/* Make a clone so as to not disturb the original skb,

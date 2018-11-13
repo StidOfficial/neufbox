@@ -1,7 +1,6 @@
-diff -NPur linux-2.6.27.4.orig/include/linux/squashfs_fs.h linux-2.6.27.4/include/linux/squashfs_fs.h
---- linux-2.6.27.4.orig/include/linux/squashfs_fs.h	2008-10-29 18:03:31.000000000 -0500
-+++ linux-2.6.27.4/include/linux/squashfs_fs.h	2008-10-29 18:04:01.000000000 -0500
-@@ -341,7 +341,7 @@
+--- a/include/linux/squashfs_fs.h
++++ b/include/linux/squashfs_fs.h
+@@ -341,7 +341,7 @@ struct squashfs_dir_entry {
  	unsigned int		offset:13;
  	unsigned int		type:3;
  	unsigned int		size:8;
@@ -10,10 +9,9 @@ diff -NPur linux-2.6.27.4.orig/include/linux/squashfs_fs.h linux-2.6.27.4/includ
  	char			name[0];
  } __attribute__ ((packed));
  
-diff -NPur linux-2.6.27.4.orig/include/linux/squashfs_fs_sb.h linux-2.6.27.4/include/linux/squashfs_fs_sb.h
---- linux-2.6.27.4.orig/include/linux/squashfs_fs_sb.h	2008-10-29 18:03:31.000000000 -0500
-+++ linux-2.6.27.4/include/linux/squashfs_fs_sb.h	2008-10-29 18:04:01.000000000 -0500
-@@ -63,11 +63,11 @@
+--- a/include/linux/squashfs_fs_sb.h
++++ b/include/linux/squashfs_fs_sb.h
+@@ -63,11 +63,11 @@ struct squashfs_sb_info {
  	long long		*fragment_index;
  	unsigned int		*fragment_index_2;
  	char			*read_page;
@@ -27,11 +25,10 @@ diff -NPur linux-2.6.27.4.orig/include/linux/squashfs_fs_sb.h linux-2.6.27.4/inc
  	long long		*inode_lookup_table;
  	int			(*read_inode)(struct inode *i,  squashfs_inode_t \
  				inode);
-diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/inode.c
---- linux-2.6.27.4.orig/fs/squashfs/inode.c	2008-10-29 18:03:31.000000000 -0500
-+++ linux-2.6.27.4/fs/squashfs/inode.c	2008-10-29 18:17:46.000000000 -0500
-@@ -35,6 +35,28 @@
- #include <linux/exportfs.h>
+--- a/fs/squashfs/inode.c
++++ b/fs/squashfs/inode.c
+@@ -34,6 +34,28 @@
+ #include <linux/smp_lock.h>
  
  #include "squashfs.h"
 +#include "sqlzma.h"
@@ -57,9 +54,9 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
 +			     (un)->un_a[1].sz, (un)->un_a[1].buf, \
 +			     (un)->un_a[2].sz, (un)->un_a[2].buf)
  
- static struct dentry *squashfs_fh_to_dentry(struct super_block *s,
- 		struct fid *fid, int fh_len, int fh_type);
-@@ -236,35 +258,42 @@
+ static void vfs_read_inode(struct inode *i);
+ static struct dentry *squashfs_get_parent(struct dentry *child);
+@@ -238,35 +260,42 @@ SQSH_EXTERN unsigned int squashfs_read_d
  	}
  
  	if (compressed) {
@@ -119,7 +116,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  				if (avail_bytes == 0) {
  					offset = 0;
  					brelse(bh[k]);
-@@ -272,30 +301,38 @@
+@@ -274,30 +303,38 @@ SQSH_EXTERN unsigned int squashfs_read_d
  				}
  			}
  
@@ -174,7 +171,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	} else {
  		int i;
  
-@@ -323,7 +360,7 @@
+@@ -325,7 +362,7 @@ SQSH_EXTERN unsigned int squashfs_read_d
  	return bytes;
  
  release_mutex:
@@ -183,7 +180,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  
  block_release:
  	for (; k < b; k++)
-@@ -1093,6 +1130,7 @@
+@@ -1065,6 +1102,7 @@ static int squashfs_fill_super(struct su
  	struct squashfs_sb_info *msblk;
  	struct squashfs_super_block *sblk;
  	char b[BDEVNAME_SIZE];
@@ -191,7 +188,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	struct inode *root;
  
  	TRACE("Entered squashfs_fill_superblock\n");
-@@ -1104,23 +1142,19 @@
+@@ -1076,23 +1114,19 @@ static int squashfs_fill_super(struct su
  	}
  	msblk = s->s_fs_info;
  
@@ -217,7 +214,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	sblk->bytes_used = sizeof(struct squashfs_super_block);
  	if (!squashfs_read_data(s, (char *) sblk, SQUASHFS_START,
  					sizeof(struct squashfs_super_block) |
-@@ -1130,21 +1164,36 @@
+@@ -1102,21 +1136,36 @@ static int squashfs_fill_super(struct su
  	}
  
  	/* Check it is a SQUASHFS superblock */
@@ -269,7 +266,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	}
  
  	/* Check the MAJOR & MINOR versions */
-@@ -1190,6 +1239,7 @@
+@@ -1162,6 +1211,7 @@ static int squashfs_fill_super(struct su
  		goto failed_mount;
  
  	/* Allocate read_page block */
@@ -277,7 +274,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	msblk->read_page = vmalloc(sblk->block_size);
  	if (msblk->read_page == NULL) {
  		ERROR("Failed to allocate read_page block\n");
-@@ -1205,19 +1255,30 @@
+@@ -1177,19 +1227,30 @@ static int squashfs_fill_super(struct su
  	}
  	msblk->guid = msblk->uid + sblk->no_uids;
     
@@ -309,7 +306,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	} else
  		if (!squashfs_read_data(s, (char *) msblk->uid, sblk->uid_start,
  					((sblk->no_uids + sblk->no_guids) *
-@@ -1250,9 +1311,12 @@
+@@ -1223,9 +1284,12 @@ static int squashfs_fill_super(struct su
  	s->s_export_op = &squashfs_export_ops;
  
  allocate_root:
@@ -323,7 +320,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	insert_inode_hash(root);
  
  	s->s_root = d_alloc_root(root);
-@@ -1273,13 +1337,10 @@
+@@ -1246,13 +1310,10 @@ failed_mount:
  	vfree(msblk->read_page);
  	squashfs_cache_delete(msblk->block_cache);
  	kfree(msblk->fragment_index_2);
@@ -339,7 +336,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  }
  
  
-@@ -1290,7 +1351,7 @@
+@@ -1263,7 +1324,7 @@ static int squashfs_statfs(struct dentry
  
  	TRACE("Entered squashfs_statfs\n");
  
@@ -348,7 +345,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	buf->f_bsize = sblk->block_size;
  	buf->f_blocks = ((sblk->bytes_used - 1) >> sblk->block_log) + 1;
  	buf->f_bfree = buf->f_bavail = 0;
-@@ -1452,15 +1513,21 @@
+@@ -1425,15 +1486,21 @@ static int read_block_index(struct super
  	int block = 0;
  	
  	if (msblk->swap) {
@@ -371,7 +368,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	} else {
  		if (!squashfs_get_cached_block(s, block_list, *start_block,
  				*offset, blocks << 2, start_block, offset)) {
-@@ -2084,7 +2151,6 @@
+@@ -2057,7 +2124,6 @@ static void squashfs_put_super(struct su
  		kfree(sbi->fragment_index);
  		kfree(sbi->fragment_index_2);
  		kfree(sbi->meta_index);
@@ -379,7 +376,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  		kfree(s->s_fs_info);
  		s->s_fs_info = NULL;
  	}
-@@ -2099,18 +2165,63 @@
+@@ -2072,18 +2138,63 @@ static int squashfs_get_sb(struct file_s
  }
  
  
@@ -445,7 +442,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  
  out:
  	return err;
-@@ -2120,6 +2231,7 @@
+@@ -2093,6 +2204,7 @@ out:
  static void __exit exit_squashfs_fs(void)
  {
  	unregister_filesystem(&squashfs_fs_type);
@@ -453,7 +450,7 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
  	destroy_inodecache();
  }
  
-@@ -2168,6 +2280,6 @@
+@@ -2142,6 +2254,6 @@ static void destroy_inodecache(void)
  
  module_init(init_squashfs_fs);
  module_exit(exit_squashfs_fs);
@@ -462,9 +459,8 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/inode.c linux-2.6.27.4/fs/squashfs/in
 +MODULE_DESCRIPTION("squashfs 3.4, a compressed read-only filesystem, and LZMA suppport for slax.org");
 +MODULE_AUTHOR("Phillip Lougher <phillip@lougher.demon.co.uk>, and LZMA suppport for slax.org by jro");
  MODULE_LICENSE("GPL");
-diff -NPur linux-2.6.27.4.orig/fs/squashfs/Makefile linux-2.6.27.4/fs/squashfs/Makefile
---- linux-2.6.27.4.orig/fs/squashfs/Makefile	2008-10-29 18:03:31.000000000 -0500
-+++ linux-2.6.27.4/fs/squashfs/Makefile	2008-10-29 18:04:01.000000000 -0500
+--- a/fs/squashfs/Makefile
++++ b/fs/squashfs/Makefile
 @@ -2,6 +2,11 @@
  # Makefile for the linux squashfs routines.
  #
@@ -477,8 +473,8 @@ diff -NPur linux-2.6.27.4.orig/fs/squashfs/Makefile linux-2.6.27.4/fs/squashfs/M
  obj-$(CONFIG_SQUASHFS) += squashfs.o
  squashfs-y += inode.o
  squashfs-y += squashfs2_0.o
---- linux-2.6.21.7/fs/Kconfig	2009-03-05 11:11:29.488883672 +0100
-+++ linux-2.6.21.7/fs/Kconfig	2009-03-05 11:11:55.904128275 +0100
+--- a/fs/Kconfig
++++ b/fs/Kconfig
 @@ -1374,6 +1374,7 @@ config CRAMFS
  config SQUASHFS
  	tristate "SquashFS 3.4 - Squashed file system support"

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gettext
-PKG_VERSION:=0.16.1
-PKG_RELEASE:=4
+PKG_VERSION:=0.18.1.1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/gettext
-PKG_MD5SUM:=3d9ad24301c6d6b17ec30704a13fe127
+PKG_MD5SUM:=3dd55b952826d2b32f51308f2f91aa89
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool no-autoreconf
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=0
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -41,19 +43,15 @@ CONFIGURE_ARGS += \
 	--without-libexpat-prefix \
 	--without-emacs
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" all
-endef
-
-define Build/Install
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" install
-endef
-
 define Build/InstallDev
-	mkdir -p $(1)/usr/lib/libintl/include
+	$(INSTALL_DIR) $(1)/usr/lib/libintl/include
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/include/libintl.h $(1)/usr/lib/libintl/include/
-	mkdir -p $(1)/usr/lib/libintl/lib
+
+	$(INSTALL_DIR) $(1)/usr/lib/libintl/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libintl.{a,so*} $(1)/usr/lib/libintl/lib/
+
+	$(INSTALL_DIR) $(1)/usr/share/aclocal
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/aclocal/* $(1)/usr/share/aclocal/
 endef
 
 define Package/libintl/install

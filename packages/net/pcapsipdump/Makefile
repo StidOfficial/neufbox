@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pcapsipdump
 PKG_VERSION:=0.1.4
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/psipdump
@@ -22,7 +22,7 @@ define Package/pcapsipdump
   CATEGORY:=Network
   DEPENDS:=+libpcap +uclibcxx
   TITLE:=SIP sessions dumping tool
-  URL:=http://psipdump.sourceforge.net/
+  URL:=http://sourceforge.net/projects/pcapsipdump/
 endef
 
 define Package/pcapsipdump/description
@@ -30,7 +30,7 @@ define Package/pcapsipdump/description
         fashion similar to "tcpdump -w" (format is exactly the same), but one file per sip session
         (even if there is thousands of concurrect SIP sessions).
 endef
-	
+
 define Build/Compile
 	$(TARGET_CONFIGURE_OPTS) \
 		$(MAKE) -C $(PKG_BUILD_DIR) \

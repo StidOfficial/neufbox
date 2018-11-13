@@ -9,11 +9,10 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=samba
 PKG_VERSION:=2.0.10
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 PKG_MD5SUM:=54870482fe036b7e69dd48c90661eec6
 
-PKG_SOURCE_URL:=ftp://se.samba.org/pub/samba/stable \
-	ftp://ftp.easynet.be/samba/stable
+PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/samba/old-versions
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
 include $(INCLUDE_DIR)/package.mk
@@ -51,11 +50,15 @@ define Package/samba-client
   DEPENDS:=samba-common
 endef
 
+TARGET_CFLAGS += $(FPIC)
+
 define Build/Compile	
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	(cd $(PKG_BUILD_DIR)/source ; rm -rf config.{cache,status} ; \
 		./configure \
+			$(HOST_CONFIGURE_VARS) \
+			$(HOST_CONFIGURE_ARGS) \
 			--program-prefix="" \
 			--program-suffix="" \
 			--prefix=/usr \
@@ -85,7 +88,7 @@ define Build/Compile
 		clean
 	(cd $(PKG_BUILD_DIR)/source; rm -rf config.{cache,status}; \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -D_GNU_SOURCE -DNDEBUG -DSHMEM_SIZE=524288 -Dfcntl=fcntl64" \
+		CFLAGS="$(TARGET_CFLAGS) -D_GNU_SOURCE -DNDEBUG" \
 		CPPFLAGS="$(TARGET_CPPFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS) $(LIBGCC_S)" \
 		ac_cv_lib_cups_httpConnect=no \
@@ -106,7 +109,6 @@ define Build/Compile
 		samba_cv_HAVE_ROOT=yes \
 		samba_cv_HAVE_SECURE_MKSTEMP=yes \
 		samba_cv_HAVE_SHARED_MMAP=yes \
-		samba_cv_HAVE_STRUCT_FLOCK64=yes \
 		samba_cv_HAVE_SYSV_IPC=no \
 		samba_cv_HAVE_TRUNCATED_SALT=no \
 		samba_cv_HAVE_UNION_SEMUN=no \
@@ -143,14 +145,21 @@ define Build/Compile
 			--sysconfdir=/etc/samba \
 			$(DISABLE_LARGEFILE) \
 			$(DISABLE_NLS) \
-			--with-lockdir=/var/run/samba \
+			--with-lockdir=/var/run \
 			--with-privatedir=/etc/samba \
 			--with-syslog \
 	);
+ifneq ($(BOX),nb5)
 	$(MAKE) -C $(PKG_BUILD_DIR)/source \
 		$(TARGET_CONFIGURE_OPTS) \
 		CODEPAGEDIR="/usr/share/samba" \
 		all shared
+else
+	$(MAKE) -C $(PKG_BUILD_DIR)/source \
+		$(TARGET_CONFIGURE_OPTS) \
+		CODEPAGEDIR="/usr/share/samba" \
+		all
+endif
 	(cd $(PKG_BUILD_DIR)/source/bin ; \
 		mv -f make_smbcodepage.old make_smbcodepage ; touch make_smbcodepage ; \
 		mv -f make_unicodemap.old make_unicodemap ; touch make_unicodemap ; \
@@ -175,27 +184,35 @@ endef
 
 define Package/samba-common/install
 	$(INSTALL_DIR) $(1)/etc/samba
-	$(INSTALL_DATA) ./files/smb.conf $(1)/etc/samba/smb.conf
+#	$(INSTALL_DATA) ./files/smb.conf $(1)/etc/samba/smb.conf
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/smbpasswd.shared $(1)/usr/bin/smbpasswd
-	$(INSTALL_DIR) $(1)/usr/share/samba
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/codepage.{437,850} $(1)/usr/share/samba/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/unicode_map.{437,850,ISO8859-1,ISO8859-15} $(1)/usr/share/samba/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/codepage.852 $(1)/usr/share/samba/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/unicode_map.{852,ISO8859-2} $(1)/usr/share/samba/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/codepage.{866,1251} $(1)/usr/share/samba/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/unicode_map.{866,ISO8859-5,KOI8-R,1251} $(1)/usr/share/samba/
+#	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/smbpasswd.shared $(1)/usr/bin/smbpasswd
+#	$(INSTALL_DIR) $(1)/usr/share/samba
+#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/codepage.{437,850} $(1)/usr/share/samba/
+#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/unicode_map.{437,850,ISO8859-1,ISO8859-15} $(1)/usr/share/samba/
+#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/codepage.852 $(1)/usr/share/samba/
+#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/unicode_map.{852,ISO8859-2} $(1)/usr/share/samba/
+#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/codepage.{866,1251} $(1)/usr/share/samba/
+#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/samba/unicode_map.{866,ISO8859-5,KOI8-R,1251} $(1)/usr/share/samba/
 endef
 
+ifneq ($(BOX),nb5)
 define Package/samba-server/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/samba.init $(1)/etc/init.d/samba
+#	$(INSTALL_BIN) ./files/samba.init $(1)/etc/init.d/samba
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/libsmb.so $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/nmbd.shared $(1)/usr/sbin/nmbd
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/smbd.shared $(1)/usr/sbin/smbd
 endef
+else
+define Package/samba-server/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/nmbd $(1)/usr/sbin/nmbd
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/smbd $(1)/usr/sbin/smbd
+endef
+endif
 
 define Package/samba-client/install
 	$(INSTALL_DIR) $(1)/usr/bin

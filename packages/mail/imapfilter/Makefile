@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2009 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=imapfilter
-PKG_VERSION:=2.0.10
+PKG_VERSION:=2.2.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://imapfilter.hellug.gr/source/
-PKG_MD5SUM:=7a82c69a71105da185cb4dd7c57b01f7
+PKG_MD5SUM:=09c6ffb085a5a244dc9f3e798259f341
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -49,7 +49,7 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		INCDIRS="$(TARGET_CPPFLAGS)" \
 		LIBDIRS="$(TARGET_LDFLAGS)" \
-		MYCFLAGS="$(TARGET_CFLAGS)" \
+		MYCFLAGS="$(TARGET_CFLAGS) -std=gnu99" \
 		MYLDFLAGS="-lcrypt" 
 endef
 
@@ -63,7 +63,7 @@ define Package/imapfilter/install
 	$(INSTALL_DIR) $(1)/etc/imapfilter
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/sample.config.lua $(1)/etc/imapfilter/config.lua
 	$(INSTALL_DIR) $(1)/usr/share/imapfilter
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/{account,auxiliary,common,mailbox,message,options,regex,set}.lua $(1)/usr/share/imapfilter/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/{account,auxiliary,common,mailbox,message,options,regex,set,deprecated}.lua $(1)/usr/share/imapfilter/
 endef
 
 $(eval $(call BuildPackage,imapfilter))

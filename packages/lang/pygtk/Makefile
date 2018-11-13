@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -17,13 +17,13 @@ PKG_MD5SUM:=a816346d750d61e3fa67a200e4292694
 PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
--include $(if $(DUMP),,$(STAGING_DIR)/mk/python-package.mk)
+$(call include_mk, python-package.mk)
 
-EXTRA_CFLAGS+= \
+TARGET_CFLAGS+= \
 	-I$(STAGING_DIR)/usr/lib/libintl/include/ \
 	-I$(STAGING_DIR)/usr/lib/libiconv/include/
 
-EXTRA_LDFLAGS+= \
+TARGET_LDFLAGS+= \
 	-L$(STAGING_DIR)/usr/lib/libintl/lib \
 	-L$(STAGING_DIR)/usr/lib/libiconv/lib
 
@@ -85,7 +85,7 @@ define Package/python-gtk/install
 
 	$(INSTALL_DIR) $(1)$(PYTHON_PKG_DIR)/gtk-2.0/gtk
 	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)/gtk-2.0/gtk/*.{py,so} \
+		$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)/gtk-2.0/gtk/*.py* \
 		$(1)$(PYTHON_PKG_DIR)/gtk-2.0/gtk
 endef
 

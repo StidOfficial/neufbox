@@ -382,7 +382,7 @@ $(eval $(call BuildPackage,perlbase-data))
 define Package/perlbase-db
 $(call Package/perlbase-template)
 TITLE:=DB perl module
-DEPENDS+= +libdb
+DEPENDS+= +libdb47
 endef
 
 define Package/perlbase-db/install
@@ -395,7 +395,7 @@ $(eval $(call BuildPackage,perlbase-db))
 define Package/perlbase-db-file
 $(call Package/perlbase-template)
 TITLE:=DB_File perl module
-DEPENDS+=+libdb
+DEPENDS+= +libdb47
 endef
 
 define Package/perlbase-db-file/install
@@ -780,7 +780,7 @@ $(eval $(call BuildPackage,perlbase-flush))
 define Package/perlbase-gdbm-file
 $(call Package/perlbase-template)
 TITLE:=GDBM_File perl module
-DEPENDS+=libgdbm
+DEPENDS+= +libgdbm
 endef
 
 define Package/perlbase-gdbm-file/install
@@ -1172,6 +1172,17 @@ $(call perlmod/Install,$(1),PerlIO PerlIO.pm auto/PerlIO,)
 endef
 
 $(eval $(call BuildPackage,perlbase-perlio))
+
+define Package/perlbase-pod
+$(call Package/perlbase-template)
+TITLE:=Pod perl module
+endef
+
+define Package/perlbase-pod/install
+$(call perlmod/Install,$(1),Pod,)
+endef
+
+$(eval $(call BuildPackage,perlbase-pod))
 
 
 define Package/perlbase-posix

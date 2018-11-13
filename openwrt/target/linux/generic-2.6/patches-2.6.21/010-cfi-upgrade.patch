@@ -1,6 +1,5 @@
-diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c
---- linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c	2009-01-12 11:01:42.658187531 +0100
-+++ linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c	2009-01-12 11:05:15.814479180 +0100
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
 @@ -13,12 +13,11 @@
   * XIP support hooks by Vitaly Wool (based on code for Intel flash
   * by Nicolas Pitre)
@@ -107,7 +106,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c lin
  }
  
  static void fixup_use_secsi(struct mtd_info *mtd, void *param)
-@@ -213,12 +257,36 @@ static void fixup_use_atmel_lock(struct 
+@@ -213,12 +257,36 @@ static void fixup_use_atmel_lock(struct
  {
  	mtd->lock = cfi_atmel_lock;
  	mtd->unlock = cfi_atmel_unlock;
@@ -160,7 +159,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c lin
  	{ 0, 0, NULL, NULL }
  };
  static struct cfi_fixup jedec_fixup_table[] = {
-@@ -251,6 +322,14 @@ static struct cfi_fixup fixup_table[] = 
+@@ -251,6 +322,14 @@ static struct cfi_fixup fixup_table[] =
  };
  
  
@@ -175,7 +174,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c lin
  struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
  {
  	struct cfi_private *cfi = map->fldrv_priv;
-@@ -292,6 +371,8 @@ struct mtd_info *cfi_cmdset_0002(struct 
+@@ -292,6 +371,8 @@ struct mtd_info *cfi_cmdset_0002(struct
  			return NULL;
  		}
  
@@ -184,7 +183,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c lin
  		if (extp->MajorVersion != '1' ||
  		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
  			printk(KERN_ERR "  Unknown Amd/Fujitsu Extended Query "
-@@ -335,17 +416,6 @@ struct mtd_info *cfi_cmdset_0002(struct 
+@@ -335,17 +416,6 @@ struct mtd_info *cfi_cmdset_0002(struct
  		/* Set the default CFI lock/unlock addresses */
  		cfi->addr_unlock1 = 0x555;
  		cfi->addr_unlock2 = 0x2aa;
@@ -202,7 +201,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c lin
  
  	} /* CFI mode */
  	else if (cfi->cfi_mode == CFI_MODE_JEDEC) {
-@@ -1613,7 +1683,7 @@ static int __xipram do_erase_oneblock(st
+@@ -1609,7 +1679,7 @@ static int __xipram do_erase_oneblock(st
  }
  
  
@@ -211,7 +210,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c lin
  {
  	unsigned long ofs, len;
  	int ret;
-@@ -1718,12 +1788,12 @@ out_unlock:
+@@ -1714,12 +1784,12 @@ out_unlock:
  	return ret;
  }
  
@@ -226,7 +225,7 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c lin
  {
  	return cfi_varsize_frob(mtd, do_atmel_unlock, ofs, len, NULL);
  }
-@@ -1761,6 +1831,7 @@ static void cfi_amdstd_sync (struct mtd_
+@@ -1757,6 +1827,7 @@ static void cfi_amdstd_sync (struct mtd_
  
  		default:
  			/* Not an idle state */
@@ -234,9 +233,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c lin
  			add_wait_queue(&chip->wq, &wait);
  
  			spin_unlock(chip->mutex);
-diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_probe.c linux-2.6.21.7/drivers/mtd/chips/cfi_probe.c
---- linux-2.6.21.7/drivers/mtd/chips/cfi_probe.c	2009-01-12 11:01:42.650197765 +0100
-+++ linux-2.6.21.7/drivers/mtd/chips/cfi_probe.c	2009-01-12 11:06:44.534201347 +0100
+--- a/drivers/mtd/chips/cfi_probe.c
++++ b/drivers/mtd/chips/cfi_probe.c
 @@ -1,7 +1,6 @@
  /*
     Common Flash Interface probe code.
@@ -403,9 +401,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_probe.c linux-2.6
  		printk("  - Not Allowed / Reserved\n");
  		break;
  
-diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_util.c linux-2.6.21.7/drivers/mtd/chips/cfi_util.c
---- linux-2.6.21.7/drivers/mtd/chips/cfi_util.c	2009-01-12 11:01:42.650197765 +0100
-+++ linux-2.6.21.7/drivers/mtd/chips/cfi_util.c	2009-01-12 11:07:24.210365845 +0100
+--- a/drivers/mtd/chips/cfi_util.c
++++ b/drivers/mtd/chips/cfi_util.c
 @@ -6,9 +6,6 @@
   * Copyright (C) 2003 STMicroelectronics Limited
   *
@@ -503,9 +500,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/cfi_util.c linux-2.6.
  
  #ifdef CONFIG_MTD_XIP
  	(void) map_read(map, base);
-diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/fwh_lock.h linux-2.6.21.7/drivers/mtd/chips/fwh_lock.h
---- linux-2.6.21.7/drivers/mtd/chips/fwh_lock.h	2009-01-12 11:01:42.654182110 +0100
-+++ linux-2.6.21.7/drivers/mtd/chips/fwh_lock.h	2009-01-12 11:07:35.758260152 +0100
+--- a/drivers/mtd/chips/fwh_lock.h
++++ b/drivers/mtd/chips/fwh_lock.h
 @@ -65,18 +65,19 @@ static int fwh_xxlock_oneblock(struct ma
  		return ret;
  	}
@@ -537,9 +533,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/fwh_lock.h linux-2.6.
  {
  	int ret;
  
-diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/Kconfig linux-2.6.21.7/drivers/mtd/chips/Kconfig
---- linux-2.6.21.7/drivers/mtd/chips/Kconfig	2009-01-12 11:01:42.646187232 +0100
-+++ linux-2.6.21.7/drivers/mtd/chips/Kconfig	2009-01-12 11:07:07.250437955 +0100
+--- a/drivers/mtd/chips/Kconfig
++++ b/drivers/mtd/chips/Kconfig
 @@ -190,7 +190,7 @@ config MTD_CFI_INTELEXT
  	  StrataFlash and other parts.
  
@@ -549,9 +544,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/chips/Kconfig linux-2.6.21.
  	depends on MTD_GEN_PROBE
  	select MTD_CFI_UTIL
  	help
-diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/mtdcore.c linux-2.6.21.7/drivers/mtd/mtdcore.c
---- linux-2.6.21.7/drivers/mtd/mtdcore.c	2009-01-12 11:01:42.810187539 +0100
-+++ linux-2.6.21.7/drivers/mtd/mtdcore.c	2009-01-12 11:24:27.702330570 +0100
+--- a/drivers/mtd/mtdcore.c
++++ b/drivers/mtd/mtdcore.c
 @@ -59,7 +59,7 @@ int add_mtd_device(struct mtd_info *mtd)
  
  			/* Some chips always power up locked. Unlock them now */
@@ -561,9 +555,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/drivers/mtd/mtdcore.c linux-2.6.21.7/dr
  				if (mtd->unlock(mtd, 0, mtd->size))
  					printk(KERN_WARNING
  					       "%s: unlock failed, "
-diff --exclude=.svn -pNur linux-2.6.21.7/include/linux/mtd/cfi.h linux-2.6.21.7/include/linux/mtd/cfi.h
---- linux-2.6.21.7/include/linux/mtd/cfi.h	2009-01-12 11:02:31.303296653 +0100
-+++ linux-2.6.21.7/include/linux/mtd/cfi.h	2009-01-12 11:32:45.254468788 +0100
+--- a/include/linux/mtd/cfi.h
++++ b/include/linux/mtd/cfi.h
 @@ -57,6 +57,15 @@
  #define cfi_interleave_is_8(cfi) (0)
  #endif
@@ -659,9 +652,8 @@ diff --exclude=.svn -pNur linux-2.6.21.7/include/linux/mtd/cfi.h linux-2.6.21.7/
  #define CFI_MFR_ST  0x0020 	/* STMicroelectronics */
  
  void cfi_fixup(struct mtd_info *mtd, struct cfi_fixup* fixups);
-diff --exclude=.svn -pNur linux-2.6.21.7/include/mtd/mtd-abi.h linux-2.6.21.7/include/mtd/mtd-abi.h
---- linux-2.6.21.7/include/mtd/mtd-abi.h	2009-01-12 11:02:37.102187248 +0100
-+++ linux-2.6.21.7/include/mtd/mtd-abi.h	2009-01-12 11:15:46.830176881 +0100
+--- a/include/mtd/mtd-abi.h
++++ b/include/mtd/mtd-abi.h
 @@ -28,7 +28,7 @@ struct mtd_oob_buf {
  #define MTD_WRITEABLE		0x400	/* Device is writeable */
  #define MTD_BIT_WRITEABLE	0x800	/* Single bits can be flipped */

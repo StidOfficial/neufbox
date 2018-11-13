@@ -1,6 +1,6 @@
---- samba-2.0.10./source/Makefile.in	2007-04-24 15:49:41.000000000 +0200
-+++ samba-2.0.10.patched/source/Makefile.in	2007-04-24 15:57:04.000000000 +0200
-@@ -60,7 +60,8 @@
+--- a/source/Makefile.in
++++ b/source/Makefile.in
+@@ -58,7 +58,8 @@ LOCKDIR = @lockdir@
  CODEPAGEDIR = $(BASEDIR)/codepages
  
  # The current codepage definition list.
@@ -10,9 +10,8 @@
  
  # where you are going to have the smbrun binary. This defaults to the 
  # install directory. This binary is needed for correct printing
-diff -urN samba-2.0.10/source/codepages/codepage_def.1125 samba-2.2.9/source/codepages/codepage_def.1125
---- samba-2.0.10/source/codepages/codepage_def.1125	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/codepage_def.1125	2004-05-08 03:07:19.000000000 +0200
+--- /dev/null
++++ b/source/codepages/codepage_def.1125
 @@ -0,0 +1,168 @@
 +#
 +#   This program is free software; you can redistribute it and/or modify
@@ -182,9 +181,8 @@ diff -urN samba-2.0.10/source/codepages/codepage_def.1125 samba-2.2.9/source/cod
 +  253   0 False  False
 +  254   0 False  False
 +  255   0 False  False
-diff -urN samba-2.0.10/source/codepages/codepage_def.857 samba-2.2.9/source/codepages/codepage_def.857
---- samba-2.0.10/source/codepages/codepage_def.857	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/codepage_def.857	2004-05-08 03:07:20.000000000 +0200
+--- /dev/null
++++ b/source/codepages/codepage_def.857
 @@ -0,0 +1,55 @@
 +#
 +#   This program is free software; you can redistribute it and/or modify
@@ -241,9 +239,8 @@ diff -urN samba-2.0.10/source/codepages/codepage_def.857 samba-2.2.9/source/code
 +  0xA7	   0xA6    True			 True  #G WITH BREVE
 +  0x9f	   0x9e    True			 True  #S with cedilla
 +
-diff -urN samba-2.0.10/source/codepages/codepage_def.862 samba-2.2.9/source/codepages/codepage_def.862
---- samba-2.0.10/source/codepages/codepage_def.862	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/codepage_def.862	2004-05-08 03:07:19.000000000 +0200
+--- /dev/null
++++ b/source/codepages/codepage_def.862
 @@ -0,0 +1,52 @@
 +#
 +#   This program is free software; you can redistribute it and/or modify
@@ -297,9 +294,8 @@ diff -urN samba-2.0.10/source/codepages/codepage_def.862 samba-2.2.9/source/code
 +0x72	0x52	True	True
 +0x62	0x42	True	True
 +0x73	0x53	True	True
-diff -urN samba-2.0.10/source/codepages/CPISO8859-13.TXT samba-2.2.9/source/codepages/CPISO8859-13.TXT
---- samba-2.0.10/source/codepages/CPISO8859-13.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CPISO8859-13.TXT	2004-05-08 03:07:20.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CPISO8859-13.TXT
 @@ -0,0 +1,229 @@
 +#
 +#	Name:             ISO 8859-13 to Unicode
@@ -530,9 +526,8 @@ diff -urN samba-2.0.10/source/codepages/CPISO8859-13.TXT samba-2.2.9/source/code
 +0xFD	0x017C	#	LATIN SMALL LETTER Z WITH DOT ABOVE
 +0xFE	0x017E	#	LATIN SMALL LETTER Z WITH CARON
 +0xFF	0x2019	#	RIGHT SINGLE QUOTATION MARK
-diff -urN samba-2.0.10/source/codepages/CPISO8859-15.TXT samba-2.2.9/source/codepages/CPISO8859-15.TXT
---- samba-2.0.10/source/codepages/CPISO8859-15.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CPISO8859-15.TXT	2004-05-08 03:07:20.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CPISO8859-15.TXT
 @@ -0,0 +1,229 @@
 +#
 +#	Name:             ISO 8859-15 to Unicode
@@ -763,9 +758,8 @@ diff -urN samba-2.0.10/source/codepages/CPISO8859-15.TXT samba-2.2.9/source/code
 +0xFD	0x00FD	#	LATIN SMALL LETTER Y WITH ACUTE
 +0xFE	0x00FE	#	LATIN SMALL LETTER THORN (Icelandic)
 +0xFF	0x00FF	#	LATIN SMALL LETTER Y WITH DIAERESIS
-diff -urN samba-2.0.10/source/codepages/CPISO8859-8.TXT samba-2.2.9/source/codepages/CPISO8859-8.TXT
---- samba-2.0.10/source/codepages/CPISO8859-8.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CPISO8859-8.TXT	2004-05-08 03:07:19.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CPISO8859-8.TXT
 @@ -0,0 +1,240 @@
 +#
 +#	Name:             ISO 8859-8 to Unicode
@@ -1007,9 +1001,8 @@ diff -urN samba-2.0.10/source/codepages/CPISO8859-8.TXT samba-2.2.9/source/codep
 +0xfa	0x05EA	# HEBREW LETTER TAV
 +0xfd	0x200E	# LEFT-TO-RIGHT MARK
 +0xfe	0x200F	# RIGHT-TO-LEFT MARK
-diff -urN samba-2.0.10/source/codepages/CPISO8859-9.TXT samba-2.2.9/source/codepages/CPISO8859-9.TXT
---- samba-2.0.10/source/codepages/CPISO8859-9.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CPISO8859-9.TXT	2004-05-08 03:07:19.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CPISO8859-9.TXT
 @@ -0,0 +1,222 @@
 +#
 +#	Name:             ISO 8859-9 to Unicode
@@ -1233,9 +1226,8 @@ diff -urN samba-2.0.10/source/codepages/CPISO8859-9.TXT samba-2.2.9/source/codep
 +
 +
 +
-diff -urN samba-2.0.10/source/codepages/CPKOI8-U.TXT samba-2.2.9/source/codepages/CPKOI8-U.TXT
---- samba-2.0.10/source/codepages/CPKOI8-U.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CPKOI8-U.TXT	2004-05-08 03:07:19.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CPKOI8-U.TXT
 @@ -0,0 +1,262 @@
 +#
 +# UNIX Ukrainian (koi8-u) to UNICODE translation table
@@ -1499,9 +1491,8 @@ diff -urN samba-2.0.10/source/codepages/CPKOI8-U.TXT samba-2.2.9/source/codepage
 +0xFD 0x0429 # CYRILLIC CAPITAL LETTER SHCHA
 +0xFE 0x0427 # CYRILLIC CAPITAL LETTER CHE
 +0xFF 0x042A # CYRILLIC CAPITAL LETTER HARD SIGN
-diff -urN samba-2.0.10/source/codepages/CP1125.TXT samba-2.2.9/source/codepages/CP1125.TXT
---- samba-2.0.10/source/codepages/CP1125.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CP1125.TXT	2004-05-08 03:07:19.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CP1125.TXT
 @@ -0,0 +1,263 @@
 +#
 +# DOS Ukrainian (RUSCII, cp1125) to UNICODE translation table
@@ -1766,9 +1757,8 @@ diff -urN samba-2.0.10/source/codepages/CP1125.TXT samba-2.2.9/source/codepages/
 +0xfe    0x25a0  #BLACK SQUARE
 +0xff    0x00a0  #NO-BREAK SPACE
 +
-diff -urN samba-2.0.10/source/codepages/CP1251.TXT samba-2.2.9/source/codepages/CP1251.TXT
---- samba-2.0.10/source/codepages/CP1251.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CP1251.TXT	2004-05-08 03:07:20.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CP1251.TXT
 @@ -0,0 +1,274 @@
 +#
 +#    Name:     cp1251 to Unicode table
@@ -2044,9 +2034,8 @@ diff -urN samba-2.0.10/source/codepages/CP1251.TXT samba-2.2.9/source/codepages/
 +0xFD	0x044D	#CYRILLIC SMALL LETTER E
 +0xFE	0x044E	#CYRILLIC SMALL LETTER YU
 +0xFF	0x044F	#CYRILLIC SMALL LETTER YA
-diff -urN samba-2.0.10/source/codepages/CP775.TXT samba-2.2.9/source/codepages/CP775.TXT
---- samba-2.0.10/source/codepages/CP775.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CP775.TXT	2004-05-08 03:07:18.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CP775.TXT
 @@ -0,0 +1,273 @@
 +#
 +#    Name:     cp775_DOSBaltic to Unicode table
@@ -2321,9 +2310,8 @@ diff -urN samba-2.0.10/source/codepages/CP775.TXT samba-2.2.9/source/codepages/C
 +0xfe	0x25a0	#BLACK SQUARE
 +0xff	0x00a0	#NO-BREAK SPACE
 +
-diff -urN samba-2.0.10/source/codepages/CP857.TXT samba-2.2.9/source/codepages/CP857.TXT
---- samba-2.0.10/source/codepages/CP857.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CP857.TXT	2004-05-08 03:07:18.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CP857.TXT
 @@ -0,0 +1,273 @@
 +#
 +#    Name:     cp857_DOSLatin5 to Unicode table
@@ -2598,9 +2586,8 @@ diff -urN samba-2.0.10/source/codepages/CP857.TXT samba-2.2.9/source/codepages/C
 +0xfd	0x00b2	#SUPERSCRIPT TWO
 +0xfe	0x25a0	#BLACK SQUARE
 +0xff	0x00a0	#NO-BREAK SPACE
-diff -urN samba-2.0.10/source/codepages/CP862.TXT samba-2.2.9/source/codepages/CP862.TXT
---- samba-2.0.10/source/codepages/CP862.TXT	1970-01-01 01:00:00.000000000 +0100
-+++ samba-2.2.9/source/codepages/CP862.TXT	2004-05-08 03:07:19.000000000 +0200
+--- /dev/null
++++ b/source/codepages/CP862.TXT
 @@ -0,0 +1,270 @@
 +#
 +#    Name:     cp862_Hewbrew to Unicode table
@@ -2872,9 +2859,8 @@ diff -urN samba-2.0.10/source/codepages/CP862.TXT samba-2.2.9/source/codepages/C
 +0xfd	0x00B2	# SUPERSCRIPT TWO
 +0xfe	0x25A0	# BLACK SQUARE
 +0xff	0x00A0	# NO-BREAK SPACE
-diff -urN samba-2.0.10/source/codepages/CP932.TXT samba-2.2.9/source/codepages/CP932.TXT
---- samba-2.0.10/source/codepages/CP932.TXT	2000-04-04 00:46:18.000000000 +0200
-+++ samba-2.2.9/source/codepages/CP932.TXT	2004-05-08 03:07:21.000000000 +0200
+--- a/source/codepages/CP932.TXT
++++ b/source/codepages/CP932.TXT
 @@ -7613,6 +7613,1886 @@
  0xEEFA	0xFFE4	#FULLWIDTH BROKEN BAR
  0xEEFB	0xFF07	#FULLWIDTH APOSTROPHE

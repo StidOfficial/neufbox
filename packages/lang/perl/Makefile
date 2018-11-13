@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=perl
 PKG_VERSION:=5.10.0
-PKG_RELEASE:=1
+PKG_RELEASE:=5
 PKG_MD5SUM:=d2c39b002ebfd2c3c5dba589365c5a71
 
 PKG_SOURCE_URL:=ftp://ftp.cpan.org/pub/CPAN/src/5.0 \
@@ -17,7 +17,6 @@ PKG_SOURCE_URL:=ftp://ftp.cpan.org/pub/CPAN/src/5.0 \
 		ftp://ftp.gmd.de/mirrors/CPAN/src/5.0 \
 		ftp://ftp.funet.fi/pub/languages/perl/CPAN/src/5.0
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/perl/$(PKG_NAME)-$(PKG_VERSION)
 
@@ -61,7 +60,7 @@ endef
 define Build/microperl/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) -f Makefile.micro \
 		CC="$(TARGET_CC)" OPTIMIZE="$(TARGET_CFLAGS)"
-	mkdir -p $(PKG_INSTALL_DIR)/usr/bin/
+	$(INSTALL_DIR) $(PKG_INSTALL_DIR)/usr/bin/
 	$(CP) $(PKG_BUILD_DIR)/microperl $(PKG_INSTALL_DIR)/usr/bin/
 endef
 
@@ -161,7 +160,7 @@ endef
 define Package/perl/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/perl$(PKG_VERSION) $(1)/usr/bin
-	ln -f $(1)/usr/bin/perl$(PKG_VERSION) $(1)/usr/bin/perl
+	ln -nsf perl$(PKG_VERSION) $(1)/usr/bin/perl
 endef
 
 ifneq ($(CONFIG_PACKAGE_microperl),)

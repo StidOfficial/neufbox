@@ -1,6 +1,6 @@
 # Makefile for OpenWrt
 #
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -24,6 +24,9 @@ include rules.mk
 include $(INCLUDE_DIR)/debug.mk
 include $(INCLUDE_DIR)/depends.mk
 
+include $(INCLUDE_DIR)/version.mk
+export REVISION
+
 define Helptext
 Available Commands:
 	help:	This help text
@@ -39,6 +42,7 @@ Building images:
 	make image PROFILE="<profilename>" # override the default target profile
 	make image PACKAGES="<pkg1> [<pkg2> [<pkg3> ...]]" # include extra packages
 	make image FILES="<path>" # include extra files from <path>
+	make image BIN_DIR="<path>" # alternative output directory for the images
 
 endef
 $(eval $(call shexport,Helptext))
@@ -49,18 +53,27 @@ help: FORCE
 
 # override variables from rules.mk
 PACKAGE_DIR:=$(TOPDIR)/packages
-IPKG:= \
+OPKG:= \
   IPKG_TMP="$(TOPDIR)/tmp/ipkgtmp" \
   IPKG_INSTROOT="$(TARGET_DIR)" \
   IPKG_CONF_DIR="$(TOPDIR)/tmp" \
   IPKG_OFFLINE_ROOT="$(TARGET_DIR)" \
-  $(SCRIPT_DIR)/ipkg -force-defaults
+  $(STAGING_DIR_HOST)/bin/opkg \
+	-f $(TOPDIR)/repositories.conf \
+	--force-depends \
+	--force-overwrite \
+	--force-postinstall \
+	--cache $(TOPDIR)/dl \
+	--offline-root $(TARGET_DIR) \
+	--add-dest root:/ \
+	--add-arch all:100 \
+	--add-arch $(ARCH_PACKAGES):200
 
 define Profile
   $(eval $(call Profile/Default))
   $(eval $(call Profile/$(1)))
-  ifeq ($(PROFILE),)
-    PROFILE:=$(1)
+  ifeq ($(USER_PROFILE),)
+    USER_PROFILE:=$(1)
   endif
   $(1)_NAME:=$(NAME)
   $(1)_PACKAGES:=$(PACKAGES)
@@ -70,64 +83,54 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
-info: FORCE
+_call_info: FORCE
 	echo 'Current Target: "$(BOARD)$(if $(SUBTARGET), ($(BOARDNAME)))"'
 	echo 'Default Packages: $(DEFAULT_PACKAGES)'
 	echo 'Available Profiles:'
 	echo; $(PROFILE_LIST)
 
-$(TOPDIR)/tmp/ipkg.conf: FORCE
-	@mkdir -p $(TOPDIR)/tmp
-	@echo 'dest root /' > $@
-	@echo 'src packages file:$(PACKAGE_DIR)' >> $@
-
-BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(PACKAGES) $($(PROFILE)_PACKAGES) kernel)
-ifeq ($(KERNEL),2.4)
-BUILD_PACKAGES:=$(patsubst base-files,base-files-$(BOARD)-$(KERNEL),$(BUILD_PACKAGES))
-else
-BUILD_PACKAGES:=$(patsubst base-files,base-files-$(BOARD),$(BUILD_PACKAGES))
-endif
+BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(USER_PACKAGES) $($(USER_PROFILE)_PACKAGES) kernel)
 # "-pkgname" in the package list means remove "pkgname" from the package list
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
+PACKAGES:=
 
-image:
-	if [ -z "$($(PROFILE)_NAME)" ]; then \
-		echo Profile $(PROFILE) not found.; \
-		echo 'Use "make info" to get a list of available target profiles'; \
-		false; \
-	fi
-	echo 'Building images for $(BOARD) - $($(PROFILE)_NAME)'
+_call_image:
+	echo 'Building images for $(BOARD)$(if $($(USER_PROFILE)_NAME), - $($(USER_PROFILE)_NAME))'
 	echo 'Packages: $(BUILD_PACKAGES)'
 	echo
 	rm -rf $(TARGET_DIR)
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR)
 	$(MAKE) package_index
 	$(MAKE) package_install
-ifneq ($(FILES),)
+ifneq ($(USER_FILES),)
 	$(MAKE) copy_files
 endif
 	$(MAKE) package_postinst
 	$(MAKE) build_image
 	
-package_index: $(TOPDIR)/tmp/ipkg.conf FORCE
+package_index: FORCE
 	@echo
 	@echo Building package index...
+	@mkdir -p $(TOPDIR)/tmp $(TOPDIR)/dl $(TARGET_DIR)/tmp
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
 		gzip -9c Packages > Packages.gz \
 	) >/dev/null 2>/dev/null
-	$(IPKG) update
+	$(OPKG) update
 
 package_install: FORCE
 	@echo
 	@echo Installing packages...
-	$(IPKG) install $(BUILD_PACKAGES)
+	$(OPKG) install $(BUILD_PACKAGES)
 
 copy_files: FORCE
 	@echo
 	@echo Copying extra files
-	$(CP) $(FILES)/* $(TARGET_DIR)/
+	$(CP) $(USER_FILES)/* $(TARGET_DIR)/
 
 package_postinst: FORCE
+	@echo
+	@echo Cleaning up
+	@rm -f $(TARGET_DIR)/tmp/opkg.lock
 	@echo
 	@echo Activating init scripts
 	@( \
@@ -144,8 +147,19 @@ build_image: FORCE
 	$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1
 	
 clean:
-	rm -rf tmp $(TARGET_DIR) $(BIN_DIR)
+	rm -rf $(TOPDIR)/tmp $(TOPDIR)/dl $(TARGET_DIR) $(BIN_DIR)
 
+
+info:
+	(unset PROFILE FILES PACKAGES MAKEFLAGS; $(MAKE) -s _call_info)
+
+image:
+	(unset PROFILE FILES PACKAGES MAKEFLAGS; \
+	$(MAKE) _call_image \
+		$(if $(PROFILE),USER_PROFILE="$(PROFILE)") \
+		$(if $(FILES),USER_FILES="$(FILES)") \
+		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)") \
+		$(if $(BIN_DIR),BIN_DIR="$(BIN_DIR)"))
 
 .SILENT: help info image
 

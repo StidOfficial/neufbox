@@ -92,7 +92,7 @@ swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, 
 		if (ports[i].id >= dev->ports)
 			return -EINVAL;
 
-		if (dev->set_port_pvid && !(ports[i].flags & SWITCH_PORT_FLAG_TAGGED))
+		if (dev->set_port_pvid && !(ports[i].flags & (1 << SWITCH_PORT_FLAG_TAGGED)))
 			dev->set_port_pvid(dev, ports[i].id, val->port_vlan);
 	}
 
@@ -463,6 +463,8 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 		if (!info->attrs[SWITCH_ATTR_OP_VLAN])
 			goto done;
 		val->port_vlan = nla_get_u32(info->attrs[SWITCH_ATTR_OP_VLAN]);
+		if (val->port_vlan >= dev->vlans)
+			goto done;
 		break;
 	case SWITCH_CMD_SET_PORT:
 	case SWITCH_CMD_GET_PORT:
@@ -473,6 +475,8 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 		if (!info->attrs[SWITCH_ATTR_OP_PORT])
 			goto done;
 		val->port_vlan = nla_get_u32(info->attrs[SWITCH_ATTR_OP_PORT]);
+		if (val->port_vlan >= dev->ports)
+			goto done;
 		break;
 	default:
 		WARN_ON(1);
@@ -684,7 +688,7 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 	memset(&val, 0, sizeof(val));
 	attr = swconfig_lookup_attr(dev, info, &val);
 	if (!attr || !attr->get)
-		goto error_dev;
+		goto error;
 
 	if (attr->type == SWITCH_TYPE_PORTS) {
 		val.value.ports = dev->portbuf;
@@ -733,9 +737,8 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 nla_put_failure:
 	if (msg)
 		nlmsg_free(msg);
-error_dev:
-	swconfig_put_dev(dev);
 error:
+	swconfig_put_dev(dev);
 	if (!err)
 		err = -ENOMEM;
 	return err;
@@ -757,6 +760,7 @@ swconfig_send_switch(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 	NLA_PUT_STRING(msg, SWITCH_ATTR_DEV_NAME, dev->devname);
 	NLA_PUT_U32(msg, SWITCH_ATTR_VLANS, dev->vlans);
 	NLA_PUT_U32(msg, SWITCH_ATTR_PORTS, dev->ports);
+	NLA_PUT_U32(msg, SWITCH_ATTR_CPU_PORT, dev->cpu_port);
 
 	return genlmsg_end(msg, hdr);
 nla_put_failure:
@@ -882,6 +886,7 @@ unregister_switch(struct switch_dev *dev)
 	swconfig_lock();
 	list_del(&dev->dev_list);
 	swconfig_unlock();
+	spin_unlock(&dev->lock);
 }
 EXPORT_SYMBOL_GPL(unregister_switch);
 

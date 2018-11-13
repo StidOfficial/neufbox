@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lighttpd
-PKG_VERSION:=1.4.22
-PKG_RELEASE:=2
+PKG_VERSION:=1.4.26
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.lighttpd.net/download/
-PKG_MD5SUM:=ed4ca3897eadf419c893b03fee53c982
+PKG_SOURCE_URL:=http://download.lighttpd.net/lighttpd/releases-1.4.x/
+PKG_MD5SUM:=a682c8efce47a2f4263a247ba0813c9b
 
 PKG_FIXUP:=libtool
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -197,7 +198,7 @@ endef
 
 define Package/lighttpd-mod-webdav
   $(call Package/lighttpd/Default)
-  DEPENDS:=lighttpd +libuuid
+  DEPENDS:=lighttpd +libsqlite3 +libuuid +libxml2
   TITLE:=WebDAV module
 endef
 
@@ -227,6 +228,11 @@ ifneq ($(CONFIG_LARGEFILE),y)
 	--disable-lfs
 endif
 
+ifeq ($(CONFIG_IPV6),y)
+  CONFIGURE_ARGS+= \
+	--enable-ipv6
+endif
+
 ifneq ($(SDK)$(CONFIG_PACKAGE_lighttpd-mod-webdav),)
   CONFIGURE_ARGS+= \
 	--with-webdav-locks \
@@ -245,10 +251,6 @@ $(call Build/Configure/Default)
 	# XXX: override pcre (mis)detection by ./configure when cross-compiling
 	echo "#define HAVE_LIBPCRE 1" >>$(PKG_BUILD_DIR)/config.h
 	echo "#define HAVE_PCRE_H 1" >>$(PKG_BUILD_DIR)/config.h
-endef
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" all install
 endef
 
 define Package/lighttpd/conffiles

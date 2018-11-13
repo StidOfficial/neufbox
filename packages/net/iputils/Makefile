@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,24 +8,31 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iputils
-PKG_VERSION:=20071127
-PKG_RELEASE:=1
+PKG_VERSION:=20100418
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-s$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.skbuff.net/iputils
-PKG_MD5SUM:=12245e9927d60ff5cf4a99d265bcb7d3
+PKG_MD5SUM:=df6b0062118cdc5c62e3c810f831e976
 
+PKG_BUILD_DEPENDS:=sysfsutils
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-s$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
 
-
-define Package/iputils-arping
+define Package/iputils/Default
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=iputils - arping
   URL:=http://www.skbuff.net/iputils
+  DEPENDS:= @!LINUX_2_4
+endef
+
+
+define Package/iputils-arping
+$(call Package/iputils/Default)
+  TITLE:=iputils - arping
+  DEPENDS+= +libsysfs
 endef
 
 define Package/iputils-arping/description
@@ -33,11 +40,10 @@ define Package/iputils-arping/description
   Sends ARP REQUEST to a neighbour host.
 endef
 
+
 define Package/iputils-clockdiff
-  SECTION:=net
-  CATEGORY:=Network
+$(call Package/iputils/Default)
   TITLE:=iputils - clockdiff
-  URL:=http://www.skbuff.net/iputils
 endef
 
 define Package/iputils-clockdiff/description
@@ -45,11 +51,10 @@ define Package/iputils-clockdiff/description
   Measures clock difference between hosts.
 endef
 
+
 define Package/iputils-ping
-  SECTION:=net
-  CATEGORY:=Network
+$(call Package/iputils/Default)
   TITLE:=iputils - ping
-  URL:=http://www.skbuff.net/iputils
 endef
 
 define Package/iputils-ping/description
@@ -57,11 +62,11 @@ define Package/iputils-ping/description
   Sends ICMP ECHO_REQUEST to network hosts (IPv4).
 endef
 
+
 define Package/iputils-ping6
-  SECTION:=net
-  CATEGORY:=Network
+$(call Package/iputils/Default)
   TITLE:=iputils - ping6
-  URL:=http://www.skbuff.net/iputils
+  DEPENDS+= @IPV6 @BROKEN
 endef
 
 define Package/iputils-ping6/description
@@ -69,11 +74,10 @@ define Package/iputils-ping6/description
   Sends ICMP ECHO_REQUEST to network hosts (IPv6).
 endef
 
+
 define Package/iputils-tftpd
-  SECTION:=net
-  CATEGORY:=Network
+$(call Package/iputils/Default)
   TITLE:=iputils - tftpd
-  URL:=http://www.skbuff.net/iputils
 endef
 
 define Package/iputils-tftpd/description
@@ -81,11 +85,10 @@ define Package/iputils-tftpd/description
   Trivial File Transfer Protocol server.
 endef
 
+
 define Package/iputils-tracepath
-  SECTION:=net
-  CATEGORY:=Network
+$(call Package/iputils/Default)
   TITLE:=iputils - tracepath
-  URL:=http://www.skbuff.net/iputils
 endef
 
 define Package/iputils-tracepath/description
@@ -93,11 +96,11 @@ define Package/iputils-tracepath/description
   Traces path to a network host discovering MTU along this path (IPv4).
 endef
 
+
 define Package/iputils-tracepath6
-  SECTION:=net
-  CATEGORY:=Network
+$(call Package/iputils/Default)
   TITLE:=iputils - tracepath6
-  URL:=http://www.skbuff.net/iputils
+  DEPENDS+= @IPV6 @BROKEN
 endef
 
 define Package/iputils-tracepath6/description
@@ -105,11 +108,11 @@ define Package/iputils-tracepath6/description
   Traces path to a network host discovering MTU along this path (IPv6).
 endef
 
+
 define Package/iputils-traceroute6
-  SECTION:=net
-  CATEGORY:=Network
+$(call Package/iputils/Default)
   TITLE:=iputils - traceroute6
-  URL:=http://www.skbuff.net/iputils
+  DEPENDS+= @IPV6 @BROKEN
 endef
 
 define Package/iputils-traceroute6/description
@@ -117,8 +120,9 @@ define Package/iputils-traceroute6/description
   Traces path to a network host (IPv6).
 endef
 
+
 MAKE_FLAGS += \
-	CFLAGS="$(TARGET_CFLAGS)"
+	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)" \
 
 define Package/iputils-arping/install
 	$(INSTALL_DIR) $(1)/usr/bin
@@ -163,8 +167,8 @@ endef
 $(eval $(call BuildPackage,iputils-arping))
 $(eval $(call BuildPackage,iputils-clockdiff))
 $(eval $(call BuildPackage,iputils-ping))
-$(eval $(call BuildPackage,iputils-ping6))
 $(eval $(call BuildPackage,iputils-tftpd))
 $(eval $(call BuildPackage,iputils-tracepath))
-$(eval $(call BuildPackage,iputils-tracepath6))
-$(eval $(call BuildPackage,iputils-traceroute6))
+#$(eval $(call BuildPackage,iputils-ping6))
+#$(eval $(call BuildPackage,iputils-tracepath6))
+#$(eval $(call BuildPackage,iputils-traceroute6))

@@ -18,49 +18,52 @@ PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
 
+PKG_INSTALL=1
+
 define Package/libtwin
-  SECTION:=libs
-  CATEGORY:=Libraries
-  DEPENDS:=+zlib +libpng +libjpeg @TARGET_ps3
-  TITLE:=The tiny windowing system libraries
-  URL:=
+	SECTION:=libs
+	CATEGORY:=Libraries
+	DEPENDS:=+zlib +libpng +libjpeg +libfreetype
+	TITLE:=The tiny windowing system library
+	URL:=http://ozlabs.org/~jk/projects/petitboot/
+	MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
 endef
 
-TARGET_CFLAGS += -flax-vector-conversions
-
-define Build/Configure
-	$(call Build/Configure/Default, \
-		--enable-shared \
-		--enable-static \
-		--disable-x11 \
-	)
+define Package/libtwin/description
+	Keith Packard's Tiny Windowing System Library
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
+CONFIGURE_ARGS += --enable-shared --enable-static --disable-x11
+
+ifdef CONFIG_powerpc
+  EXTRA_CFLAGS += -flax-vector-conversions
+endif
+
+TARGET_LDFLAGS += \
+	-Wl,-rpath-link=$(STAGING_DIR)/usr/lib
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/libtwin $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libtwin.{la,a,so*} $(1)/usr/lib/
-	mkdir -p $(1)/usr/lib/pkgconfig
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libtwin.pc $(1)/usr/lib/pkgconfig/
-endef
+	$(INSTALL_DIR) $(1)/usr/include/libtwin
+	$(INSTALL_DATA) \
+		$(PKG_INSTALL_DIR)/usr/include/libtwin/*.h \
+		$(1)/usr/include/libtwin
 
-define Build/UninstallDev
-	rm -rf \
-		$(STAGING_DIR)/usr/include/libtwin \
-		$(STAGING_DIR)/usr/lib/libtwin.{la,a,so*} \
-		$(STAGING_DIR)/usr/lib/pkgconfig/libtwin.pc
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) \
+		$(PKG_INSTALL_DIR)/usr/lib/libtwin.{la,a,so*} \
+		$(1)/usr/lib/
+
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+	$(INSTALL_DATA) \
+		$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libtwin.pc \
+		$(1)/usr/lib/pkgconfig/
 endef
 
 define Package/libtwin/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libtwin.so* $(1)/usr/lib/
+	$(INSTALL_BIN) \
+		$(PKG_INSTALL_DIR)/usr/lib/libtwin.so* \
+		$(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libtwin))

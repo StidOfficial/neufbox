@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2009 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=sqlite
-PKG_VERSION:=3.6.14
+PKG_VERSION:=3.7.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-amalgamation-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.sqlite.org/
-PKG_MD5SUM:=cfe9d3021cfdb58e2b02a36a4cb6b70c
+PKG_MD5SUM:=61b85f108760f91b79afc7833e6e6cb4
 
 PKG_BUILD_DEPENDS:=libncurses libreadline
+
+PKG_FIXUP:=libtool
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -72,12 +76,6 @@ CONFIGURE_VARS += \
 	config_TARGET_CFLAGS="$(TARGET_CFLAGS)" \
 	config_TARGET_READLINE_INC="$(TARGET_CPPFLAGS)" \
 	config_TARGET_READLINE_LIBS="$(TARGET_LDFLAGS) -lreadline -lncurses" \
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include

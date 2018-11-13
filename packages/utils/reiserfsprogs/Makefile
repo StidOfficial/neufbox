@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,34 +8,29 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=reiserfsprogs
-PKG_VERSION:=3.6.19
+PKG_VERSION:=3.6.21
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=ftp://ftp.namesys.com/pub/reiserfsprogs
-PKG_MD5SUM:=b42cf15f6651c3ceff5cb84996c0d539
+PKG_SOURCE_URL:=@KERNEL/linux/utils/fs/reiserfs/
+PKG_MD5SUM:=bc00c7c4e047902575dc4e1c64ab3ba4
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/reiserfsprogs
   SECTION:=utils
   CATEGORY:=Utilities
+  SUBMENU:=Filesystem
   TITLE:=ReiserFS filesystems utilities
   URL:=http://www.namesys.com/
-  SUBMENU:=filesystem
 endef
 
 define Package/reiserfsprogs/description
 	This package contains utilities to create, check,
 	resize, and debug ReiserFS filesystems.
-endef
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
 endef
 
 define Package/reiserfsprogs/install

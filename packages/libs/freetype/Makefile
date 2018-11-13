@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2009 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=freetype
-PKG_VERSION:=2.3.9
+PKG_VERSION:=2.3.12
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/freetype
-PKG_MD5SUM:=d76233108aca9c9606cdbd341562ad9a
+PKG_MD5SUM:=e974a82e5939be8e05ee65f07275d7c5
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_LIBTOOL_PATHS:=builds/unix
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
@@ -23,9 +24,9 @@ include $(INCLUDE_DIR)/package.mk
 define Package/libfreetype
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+zlib
   TITLE:=A free, high-quality and portable font engine
   URL:=http://www.freetype.org/
+  DEPENDS:=+zlib
 endef
 
 define Package/libfreetype/description
@@ -46,17 +47,19 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(2)/bin
+	$(INSTALL_DIR) $(2)/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/freetype-config $(2)/bin/
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/freetype2 $(1)/usr/include/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/ft2build.h $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfreetype.{a,so*} $(1)/usr/lib/
-	mkdir -p $(1)/usr/lib/pkgconfig
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/freetype2.pc $(1)/usr/lib/pkgconfig/
-	$(SED) 's,-I$$$$includedir/freetype2,-I$(STAGING_DIR)/usr/include/freetype2,g' $(2)/bin/freetype-config
-	$(SED) 's,/usr/include/freetype2/,$(STAGING_DIR)/usr/include/freetype2/,g' $(2)/bin/freetype-config
+
+	$(SED) \
+		's,^\(prefix\|exec_prefix\)=.*,\1="$(STAGING_DIR)/usr",g' \
+		 $(2)/bin/freetype-config
 endef
 
 

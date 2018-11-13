@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,30 +8,32 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gphoto2
-PKG_VERSION:=2.4.1
+PKG_VERSION:=2.4.9
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/gphoto
-PKG_MD5SUM:=fba6cf5f5d6a23569d97f4f6896d5e09
+PKG_MD5SUM:=a08a93a425cde03ca8f9bade83bbd26a
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/gphoto2
   SECTION:=multimedia
   CATEGORY:=Multimedia
-  DEPENDS:=+libexif +libgphoto2 +libltdl +libpopt +libpthread
   TITLE:=Gphoto Digital Camera Control
   URL:=http://www.gphoto.org/
+  DEPENDS:=+libgphoto2 +libpopt +libpthread
 endef
 
 define Package/gphoto2/description
-	For downloading and controlling digital cameras
+ For downloading and controlling digital cameras
 endef
 
 CONFIGURE_ARGS += \
+	--without-aalib \
 	--without-libiconv-prefix \
 	--without-libintl-prefix \
 
@@ -45,7 +47,7 @@ CONFIGURE_VARS += \
 
 define Package/gphoto2/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/gphoto2/$(PKG_NAME) $(1)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/$(PKG_NAME) $(1)/usr/bin/
 endef
 
 $(eval $(call BuildPackage,gphoto2))

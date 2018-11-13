@@ -1,21 +1,17 @@
 use strict;
 
 my @fields = (
-	[ "_avg", "FLOAT", " - Average" ],
-	[ "_stdev", "FLOAT", " - Standard deviation" ],
-	[ "_n", "UINT", " - Number of samples" ]
+	[ "_n", "UINT", " - Number of samples", 4 ],
+	[ "_s", "UINT", " - Sum of samples", 8 ],
+	[ "_ss", "UINT", " - Sum of squared samples", 8 ],
 );
 
-my $file = $ARGV[0] or die "Syntax: $0 <file>\n";
+my $file = $ARGV[0] or die "Syntax: $0 <file> <start>\n";
 -f $file or die "File not found\n";
-my $last_ie = 0;
-my $line;
-open IES, "<$file" or die "Can't open file";
-while ($line = <IES>) {
-	$line =~ /^(\d+)\s*,/ and $last_ie = $1;
-}
-close IES;
-while (<STDIN>) {
+my $start = $ARGV[1];
+$start =~ /^\d+$/ or die "Invalid start number";
+open FILE, "<$file" or die "Can't open file";
+while (<FILE>) {
 	/^(%?)(\w+),\s*(\w+),\s*(.+)$/ and do {
 		my $counter = $1;
 		my $rfield = $2;
@@ -23,18 +19,20 @@ while (<STDIN>) {
 		my $descr = $4;
 		my @f;
 		if ($counter) {
-			@f = [ "", "UINT", "" ];
+			@f = [ "", "UINT", "", 4];
 		} else {
 			@f = @fields;
 		}
 		foreach my $f (@f) {
-			my $nr = ++$last_ie;
+			my $nr = $start++;
 			my $n = $f->[0];
 			my $N = uc $n;
 			my $ftype = $f->[1];
 			my $fdesc = $f->[2];
-			print "$nr, IPFIX_FT_WPROBE_$rfield$N, 4, IPFIX_CODING_$ftype, \"$nfield$n\", \"$descr$fdesc\"\n";
+			my $size = $f->[3];
+			print "$nr, IPFIX_FT_WPROBE_$rfield$N, $size, IPFIX_CODING_$ftype, \"$nfield$n\", \"$descr$fdesc\"\n";
 		}
 	};
 }
+close FILE;
 

@@ -45,7 +45,7 @@ This article refers to the "Kamikaze" branch of OpenWrt, which can be downloaded
 subversion using the following command:
 
 \begin{Verbatim}
-$ svn checkout https://svn.openwrt.org/openwrt/trunk kamikaze
+$ svn checkout svn://svn.openwrt.org/openwrt/trunk kamikaze
 \end{Verbatim}
 
 Additionally, there is a trac interface on \href{https://dev.openwrt.org/}{https://dev.openwrt.org/}
@@ -293,7 +293,7 @@ directly as the Nth argument to \texttt{BuildPackage}.
 
     \begin{itemize}
         \item \texttt{SECTION} \\
-            The type of package (currently unused)
+            The section of package (currently unused)
         \item \texttt{CATEGORY} \\
             Which menu it appears in menuconfig: Network, Sound, Utilities, Multimedia ...
         \item \texttt{TITLE} \\

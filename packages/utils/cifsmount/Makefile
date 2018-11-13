@@ -18,6 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/cifsmount
   SECTION:=utils
   CATEGORY:=Utilities
+  SUBMENU:=Filesystem
   TITLE:=CIFS mounting helper utility
 endef
 
@@ -26,7 +27,6 @@ define Package/cifsmount/description
 endef
 
 define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
 endef
 
 define Build/Compile

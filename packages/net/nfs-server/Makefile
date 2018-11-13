@@ -20,8 +20,10 @@ include $(INCLUDE_DIR)/package.mk
 define Package/nfs-server
   SECTION:=net
   CATEGORY:=Network
+  SUBMENU:=Filesystem
   DEPENDS:=+portmap
   TITLE:=User Space NFS server
+  URL:=http://packages.debian.org/nfs-user-server
 endef
 
 define Package/nfs-server/description

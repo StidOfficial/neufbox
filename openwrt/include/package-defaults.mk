@@ -23,7 +23,16 @@ define Package/Default
   else
     VERSION:=$(PKG_RELEASE)
   endif
-  PKGARCH:=$(ARCH)
+  ifneq ($(PKG_FLAGS),)
+    PKGFLAGS:=$(PKG_FLAGS)
+  else
+    PKGFLAGS:=
+  endif
+  ifneq ($(ARCH_PACKAGES),)
+    PKGARCH:=$(ARCH_PACKAGES)
+  else
+    PKGARCH:=$(BOARD)
+  endif
   PRIORITY:=optional
   DEFAULT:=
   MENU:=
@@ -33,6 +42,7 @@ define Package/Default
   KCONFIG:=
   BUILDONLY:=
   URL:=
+  VARIANT:=
 endef
 
 Build/Patch:=$(Build/Patch/Default)
@@ -60,7 +70,9 @@ CONFIGURE_ARGS = \
 		--localstatedir=/var \
 		--mandir=$(CONFIGURE_PREFIX)/man \
 		--infodir=$(CONFIGURE_PREFIX)/info \
-		$(DISABLE_NLS)
+		$(DISABLE_NLS) \
+		$(DISABLE_LARGEFILE) \
+		$(DISABLE_IPV6)
 
 CONFIGURE_VARS = \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -91,7 +103,8 @@ endef
 MAKE_VARS = \
 	CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)" \
 	CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)" \
-	LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)"
+	LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)" \
+	BOX="$(BOX)"
 
 MAKE_FLAGS = \
 	$(TARGET_CONFIGURE_OPTS) \
@@ -115,5 +128,13 @@ define Build/Install/Default
 	$(MAKE_VARS) \
 	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
 		$(MAKE_INSTALL_FLAGS) \
-		$(1) install;
+		$(if $(1), $(1), install);
+endef
+
+define Build/Dist/Default
+	$(call Build/Compile/Default, DESTDIR="$(PKG_BUILD_DIR)/tmp" CC="$(TARGET_CC)" dist)
+endef
+
+define Build/DistCheck/Default
+	$(call Build/Compile/Default, DESTDIR="$(PKG_BUILD_DIR)/tmp" CC="$(TARGET_CC)" distcheck)
 endef

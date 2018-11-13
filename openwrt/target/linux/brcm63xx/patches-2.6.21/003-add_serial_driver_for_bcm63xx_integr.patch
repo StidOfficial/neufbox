@@ -19,14 +19,14 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
 
 --- a/drivers/serial/Kconfig
 +++ b/drivers/serial/Kconfig
-@@ -1421,4 +1421,23 @@ config SPORT_BAUD_RATE
- 	default 19200 if (SERIAL_SPORT_BAUD_RATE_19200)
- 	default 9600 if (SERIAL_SPORT_BAUD_RATE_9600)
+@@ -1026,4 +1026,23 @@ config SERIAL_OF_PLATFORM
+ 	  Currently, only 8250 compatible ports are supported, but
+ 	  others can easily be added.
  
 +config SERIAL_BCM63XX
 +	tristate "bcm63xx serial port support"
 +	select SERIAL_CORE
-+	depends on BCM96358
++	depends on BCM63XX
 +	help
 +	  If you have a bcm63xx CPU, you can enable its onboard
 +	  serial port by enabling this options.

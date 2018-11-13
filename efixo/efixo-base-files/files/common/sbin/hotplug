@@ -4,4 +4,4 @@
 	for script in $(ls /etc/hotplug.d/$1/* 2>&-); do (
 		[ -f $script ] && . $script
 	); done
-} 
+}

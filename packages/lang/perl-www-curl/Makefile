@@ -8,7 +8,6 @@ PKG_MD5SUM:=f34eb29f59a811869a4f77bfc0df2f5d
 
 PKG_SOURCE_URL:=http://search.cpan.org/CPAN/authors/id/S/SZ/SZBALINT
 PKG_SOURCE:=WWW-Curl-$(PKG_VERSION).tar.gz
-PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/perl/WWW-Curl-$(PKG_VERSION)
 
@@ -20,8 +19,8 @@ SUBMENU:=Perl
 SECTION:=lang
 CATEGORY:=Languages
 TITLE:=Perl bindings to libcurl
-URL:=http://search.cpan.org/~crisb/WWW-Curl-3.02/
-DEPENDS:=libcurl perl
+URL:=http://search.cpan.org/dist/WWW-Curl/
+DEPENDS:=perl +libcurl
 endef
 
 define Build/Configure

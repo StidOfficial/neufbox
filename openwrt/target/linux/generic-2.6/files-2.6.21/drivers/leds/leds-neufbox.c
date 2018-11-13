@@ -20,9 +20,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include <linux/autoconf.h>
-#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/init.h>
+#include <linux/platform_device.h>
+#include <linux/leds.h>
+#include <linux/module.h>
 #include <linux/types.h>
 #include <linux/delay.h>
 #include <linux/timer.h>
@@ -38,52 +40,51 @@
 
 #define LEDS_MINOR 132		/* LED device driver */
 
+struct neufbox_led_data {
+	struct led_classdev cdev;
+	unsigned gpio;
+	u8 active_low;
+	atomic_t command;
+	enum led_state state;
+};
+
 struct leds_device {
 	struct timer_list timer; /** leds timer structure */
 	unsigned long counter;	/** leds timer counter */
 	atomic_t mode; /** leds device mode */
 	void (*fn_leds_mode_process) (struct leds_device *);	/* callback for leds management */
-	atomic_t command[led_id_last]; /** leds command registers */
-	enum led_state state[led_id_last]; /** leds states registers */
+	int num_leds;
+	struct neufbox_led_data leds_data[1];
 };
+
+
+extern void gen_74x164_sync(void);
+
 
 static struct leds_device *leds_dev;
 
-static char const *leds_name[] = {
-	[led_id_wan] = "wan",
-	[led_id_traffic] = "traffic",
-	[led_id_tel] = "tel",
-	[led_id_tv] = "tv",
-	[led_id_wifi] = "wifi",
-	[led_id_alarm] = "alarm",
 
-	[led_id_red] = "red",
-	[led_id_green] = "green",
-	[led_id_blue] = "blue",
-};
-
-static inline void led_off(enum led_id led)
+static inline void led_off(struct neufbox_led_data *led)
 {
-	u16 info = led_info(led);
-
-	gpio_set_value(LED_GPIO(info), LED_OFF(info));
+	gpio_set_value(led->gpio, led->active_low);
+	led->cdev.brightness = LED_OFF;
 }
 
-static inline void led_on(enum led_id led)
+static inline void led_on(struct neufbox_led_data *led)
 {
-	u16 info = led_info(led);
-
-	gpio_set_value(LED_GPIO(info), LED_ON(info));
+	gpio_set_value(led->gpio, !led->active_low);
+	led->cdev.brightness = LED_FULL;
 }
 
-static inline int led_toggle(enum led_id led)
+static inline int led_toggle(struct neufbox_led_data *led)
 {
-	u16 info = led_info(led);
-	int value = !gpio_get_value(LED_GPIO(info));
+	int value = !gpio_get_value(led->gpio);
 
-	gpio_set_value(LED_GPIO(info), value);
+	gpio_set_value(led->gpio, value);
+	led->cdev.brightness =
+	    (led->cdev.brightness == LED_FULL) ? LED_OFF : LED_FULL;
 
-	return (info & LED_ACTIVE_LOW) ? value : !value;
+	return led->active_low ? value : !value;
 }
 
 static void leds_process_disable(struct leds_device *dev)
@@ -91,128 +92,90 @@ static void leds_process_disable(struct leds_device *dev)
 	/* nothing TODO */
 }
 
-static void leds_process_control(struct leds_device *dev)
+static void led_state_update(struct leds_device *dev,
+			     struct neufbox_led_data *led, enum led_state state,
+			     int *blink_sync)
 {
-	enum led_id id;
-	enum led_state state;
-	int blink_state = -1;
+	switch (state) {
+	case led_state_unchanged:
+		return;
+	case led_state_on:
+		led_on(led);
+		break;
 
-	for (id = led_id_wan; id < led_id_last; ++id) {
-		/* critical region */
-		state = atomic_read(&dev->command[id]);
-		(void)atomic_cmpxchg(&dev->command[id], state,
-				     led_state_unchanged);
+	case led_state_off:
+		led_off(led);
+		break;
 
-		switch (state) {
-		case led_state_unchanged:
-			continue;
-		case led_state_on:
-			led_on(id);
-			break;
+	case led_state_toggle:
+		led_toggle(led);
+		break;
 
-		case led_state_off:
-			led_off(id);
-			break;
+	case led_state_blinkonce:
+		led_toggle(led);
+		(void)atomic_cmpxchg(&led->command,
+				     led_state_unchanged, led_state_toggle);
+		break;
 
-		case led_state_toggle:
-			led_toggle(id);
-			break;
+	case led_state_slowblinks:
+		if (!(dev->counter % 8))
+			led_toggle(led);
+		(void)atomic_cmpxchg(&led->command,
+				     led_state_unchanged, led_state_slowblinks);
+		break;
 
-		case led_state_blinkonce:
-			led_toggle(id);
-			/* critical region */
-			(void)atomic_cmpxchg(&dev->command[id],
-					     led_state_unchanged,
-					     led_state_toggle);
-			break;
+	case led_state_blinks:
+		if (*blink_sync < 0)
+			*blink_sync = led_toggle(led);
+		else if (*blink_sync)
+			led_off(led);
+		else
+			led_on(led);
+		(void)atomic_cmpxchg(&led->command,
+				     led_state_unchanged, led_state_blinks);
+		break;
 
-		case led_state_slowblinks:
-			if (!(dev->counter % 8)) {
-				led_toggle(id);
-			}
-			/* critical region */
-			(void)atomic_cmpxchg(&dev->command[id],
-					     led_state_unchanged,
-					     led_state_slowblinks);
-			break;
-
-		case led_state_blinks:
-			if (blink_state < 0) {
-				blink_state = led_toggle(id);
-			} else if (blink_state) {
-				led_off(id);
-			} else {
-				led_on(id);
-			}
-			/* critical region */
-			(void)atomic_cmpxchg(&dev->command[id],
-					     led_state_unchanged,
-					     led_state_blinks);
-			break;
-
-		default:
-			printk(KERN_ERR
-			       "leds: invalid state [ID=%d STATE=%d\n",
-			       id, state);
-			continue;
-		}
-
-		dev->state[id] = state;
+	default:
+		printk(KERN_ERR "leds: (%s) invalid state STATE=%d\n",
+		       led->cdev.name, state);
+		return;
 	}
 
-	nxp_74hc164_flush();
+	led->state = state;
+}
+
+static void leds_process_control(struct leds_device *dev)
+{
+	struct neufbox_led_data *led;
+	int num_leds = dev->num_leds;
+	int blink_sync = -1;
+	int i;
+
+	for (i = 0; i < num_leds; i++) {
+		enum led_state state;
+
+		led = &dev->leds_data[i];
+		state = atomic_read(&led->command);
+		(void)atomic_cmpxchg(&led->command, state, led_state_unchanged);
+		led_state_update(dev, led, state, &blink_sync);
+	}
+
+	gen_74x164_sync();
 }
 
 static void leds_process_k2000(struct leds_device *dev)
 {
-	enum led_id id;
+	int i;
 
-	for (id = led_id_wan; id <= led_id_alarm; ++id)
-		led_off(id);
+	for (i = 0; i <= led_id_alarm; i++)
+		led_off(&dev->leds_data[i]);
 
-	switch (dev->counter % 10) {
-	case 0:
-		led_on(led_id_wan);
-		break;
+	i = dev->counter % 10;
+	if (i > 5)
+		i = 10 - i;
+	led_on(&dev->leds_data[i]);
 
-	case 1:
-		led_on(led_id_traffic);
-		break;
-
-	case 2:
-		led_on(led_id_tel);
-		break;
-
-	case 3:
-		led_on(led_id_tv);
-		break;
-
-	case 4:
-		led_on(led_id_wifi);
-		break;
-
-	case 5:
-		led_on(led_id_alarm);
-		break;
-
-	case 6:
-		led_on(led_id_wifi);
-		break;
-
-	case 7:
-		led_on(led_id_tv);
-		break;
-
-	case 8:
-		led_on(led_id_tel);
-		break;
-
-	case 9:
-		led_on(led_id_traffic);
-		break;
-	}
-
-	nxp_74hc164_flush();
+	gen_74x164_sync();
 
 	dev->timer.expires = jiffies + (HZ);
 }
@@ -220,102 +183,69 @@ static void leds_process_k2000(struct leds_device *dev)
 static void leds_process_downloading(struct leds_device *dev)
 {
 	leds_process_k2000(dev);
-
 	/* set led service to yellow */
-	led_on(led_id_red);
-	led_on(led_id_green);
-	led_off(led_id_blue);
+	led_on(&dev->leds_data[led_id_red]);
+	led_on(&dev->leds_data[led_id_green]);
+	led_off(&dev->leds_data[led_id_blue]);
 }
 
 static void leds_process_burning(struct leds_device *dev)
 {
 	leds_process_k2000(dev);
-
 	/* set led service to red */
-	led_on(led_id_red);
-	led_off(led_id_green);
-	led_off(led_id_blue);
+	led_on(&dev->leds_data[led_id_red]);
+	led_off(&dev->leds_data[led_id_green]);
+	led_off(&dev->leds_data[led_id_blue]);
 }
 
 static void leds_process_panic(struct leds_device *dev)
 {
-	enum led_id id;
+	int num_leds = dev->num_leds;
+	int i;
 
-	if (dev->counter & 0x01) {
-		for (id = led_id_wan; id < led_id_last; ++id) {
-			led_on(id);
-		}
-	} else {
-		for (id = led_id_wan; id < led_id_last; ++id) {
-			led_off(id);
-		}
-	}
+	if (dev->counter & 0x01)
+		for (i = 0; i < num_leds; i++)
+			led_on(&dev->leds_data[i]);
+	else
+		for (i = 0; i < num_leds; i++)
+			led_off(&dev->leds_data[i]);
 
-	nxp_74hc164_flush();
+	gen_74x164_sync();
 }
 
 static void leds_process_demo(struct leds_device *dev)
 {
-	enum led_id id;
+	int i;
 
-	for (id = led_id_wan; id <= led_id_alarm; ++id)
-		led_off(id);
+	for (i = 0; i <= led_id_alarm; i++)
+		led_off(&dev->leds_data[i]);
 
-	if (dev->counter % 6) {
-		switch ((dev->counter / 6) % 3) {
-		case 0:
-			led_on(led_id_red);
-			led_off(led_id_green);
-			led_off(led_id_blue);
-			break;
+	i = dev->counter % 3;
 
-		case 1:
-			led_off(led_id_red);
-			led_on(led_id_green);
-			led_off(led_id_blue);
-			break;
-
-		case 2:
-			led_off(led_id_red);
-			led_off(led_id_green);
-			led_on(led_id_blue);
-			break;
-		}
-	}
-
-	switch (dev->counter % 6) {
+	switch (i) {
 	case 0:
-		led_on(led_id_wan);
-		led_on(led_id_alarm);
+		led_on(&dev->leds_data[led_id_red]);
+		led_off(&dev->leds_data[led_id_green]);
+		led_off(&dev->leds_data[led_id_blue]);
 		break;
 
 	case 1:
-		led_on(led_id_traffic);
-		led_on(led_id_wifi);
+		led_off(&dev->leds_data[led_id_red]);
+		led_on(&dev->leds_data[led_id_green]);
+		led_off(&dev->leds_data[led_id_blue]);
 		break;
 
 	case 2:
-		led_on(led_id_tel);
-		led_on(led_id_tv);
-		break;
-
-	case 3:
-		led_on(led_id_tel);
-		led_on(led_id_tv);
-		break;
-
-	case 4:
-		led_on(led_id_traffic);
-		led_on(led_id_wifi);
-		break;
-
-	case 5:
-		led_on(led_id_wan);
-		led_on(led_id_alarm);
+		led_off(&dev->leds_data[led_id_red]);
+		led_off(&dev->leds_data[led_id_green]);
+		led_on(&dev->leds_data[led_id_blue]);
 		break;
 	}
 
-	nxp_74hc164_flush();
+	led_on(&dev->leds_data[i]);
+	led_on(&dev->leds_data[led_id_alarm - i]);
+
+	gen_74x164_sync();
 }
 
 static void inline leds_timer_function(unsigned long data)
@@ -323,22 +253,22 @@ static void inline leds_timer_function(unsigned long data)
 	struct leds_device *dev = (struct leds_device *)data;
 
 	dev->timer.expires = jiffies + (HZ >> 3);
-
 	(dev->fn_leds_mode_process) (dev);
-
 	++dev->counter;
-
 	add_timer(&dev->timer);
 }
 
 static int leds_set_mode(struct leds_device *dev, enum led_mode mode)
 {
+	struct neufbox_led_data *led;
 	enum led_mode prev_mode = atomic_read(&dev->mode);
-	enum led_id id;
+	int num_leds = dev->num_leds;
+	int i;
 
-	if (mode == prev_mode) {
+	if (mode == prev_mode)
 		return prev_mode;
-	}
+
+	dev->counter = 0UL;
 
 	switch (mode) {
 	case led_mode_disable:
@@ -373,41 +303,65 @@ static int leds_set_mode(struct leds_device *dev, enum led_mode mode)
 	atomic_set(&dev->mode, mode);
 
 	if (mode == led_mode_control) {
-		for (id = led_id_wan; id < led_id_last; ++id) {
-			/* critical region */
-			(void)atomic_cmpxchg(&dev->command[id],
-					     led_state_unchanged,
-					     dev->state[id]);
+		for (i = 0; i < num_leds; i++) {
+			led = &dev->leds_data[i];
+			(void)atomic_cmpxchg(&led->command,
+					     led_state_unchanged, led->state);
 		}
 	} else {
-		for (id = led_id_wan; id < led_id_last; ++id) {
-			led_off(id);
-		}
+		for (i = 0; i < num_leds; i++)
+			led_off(&dev->leds_data[i]);
 
-		nxp_74hc164_flush();
+		gen_74x164_sync();
 	}
 
 	return prev_mode;
 }
 
-int leds_control(enum led_id id, enum led_state state)
+void leds_config(u8 id, u8 state)
 {
 	struct leds_device *dev = leds_dev;
+	struct neufbox_led_data *led;
 
 	if (id >= led_id_last || state > led_state_blinks) {
 		printk(KERN_WARNING
-		       "%s: broken control [ID=%u] [STATE=%u]\n",
-		       "leds", id, state);
-		return -1;
+		       "%s: broken control [ID=%u] [STATE=%u]\n", "leds", id,
+		       state);
+		return ;
 	}
 
-	/* critical region */
-	(void)atomic_set(&dev->command[id], state);
+	led = &dev->leds_data[id];
+	(void)atomic_set(&led->command, state);
+}
+
+EXPORT_SYMBOL(leds_config);
+
+static long leds_panic_blink(long time)
+{
+	struct leds_device *dev = leds_dev;
+	int i;
+
+	if (!dev)
+		return 0;
+
+	if (!(time % 256)) {
+		int num_leds = dev->num_leds;
+		static int on = 0;
+
+		if ((on = !on))
+			for (i = 0; i < num_leds; i++)
+				led_on(&dev->leds_data[i]);
+		else
+			for (i = 0; i < num_leds; i++)
+				led_off(&dev->leds_data[i]);
+
+		gen_74x164_sync();
+	}
 
 	return 0;
 }
 
-static int leds_open(struct inode *inode, struct file *file)
+static int misc_leds_open(struct inode *inode, struct file *file)
 {
 	struct leds_device *dev = leds_dev;
 
@@ -416,11 +370,12 @@ static int leds_open(struct inode *inode, struct file *file)
 	return nonseekable_open(inode, file);
 }
 
-static long leds_compat_ioctl(struct file *file, unsigned int cmd,
-			      unsigned long arg)
+static long misc_leds_compat_ioctl(struct file *file, unsigned int cmd,
+				   unsigned long arg)
 {
 	struct leds_device *dev = file->private_data;
 	struct leds_dev_ioctl_struct leds_ioctl;
+	struct neufbox_led_data *led;
 	enum led_mode mode;
 
 	switch (cmd) {
@@ -454,9 +409,7 @@ static long leds_compat_ioctl(struct file *file, unsigned int cmd,
 		     sizeof(leds_ioctl)) < 0) {
 			return -EFAULT;
 		}
-		if (leds_control(leds_ioctl.id, leds_ioctl.state) < 0) {
-			return -EINVAL;
-		}
+		leds_config(leds_ioctl.id, leds_ioctl.state);
 		break;
 
 	case LED_IOCTL_GET_LED:
@@ -466,19 +419,17 @@ static long leds_compat_ioctl(struct file *file, unsigned int cmd,
 			return -EFAULT;
 		}
 
-		if (leds_ioctl.id >= led_id_last) {
+		if (leds_ioctl.id >= led_id_last)
 			return -EINVAL;
-		}
 
+		led = &dev->leds_data[leds_ioctl.id];
 		/* in disable mode check for command state */
 		if (atomic_read(&dev->mode) == led_mode_disable) {
-			leds_ioctl.state =
-			    atomic_read(&dev->command[leds_ioctl.id]);
-			if (leds_ioctl.state == led_state_unchanged) {
-				leds_ioctl.state = dev->state[leds_ioctl.id];
-			}
+			leds_ioctl.state = atomic_read(&led->command);
+			if (leds_ioctl.state == led_state_unchanged)
+				leds_ioctl.state = led->state;
 		} else {
-			leds_ioctl.state = dev->state[leds_ioctl.id];
+			leds_ioctl.state = led->state;
 		}
 
 		if (__copy_to_user
@@ -496,153 +447,174 @@ static long leds_compat_ioctl(struct file *file, unsigned int cmd,
 	return 0;
 }
 
-static int leds_ioctl(struct inode *inode, struct file *file,
-		      unsigned int cmd, unsigned long arg)
+static int misc_leds_ioctl(struct inode *inode, struct file *file,
+			   unsigned int cmd, unsigned long arg)
 {
-	return leds_compat_ioctl(file, cmd, arg);
+	return misc_leds_compat_ioctl(file, cmd, arg);
 }
 
-static struct file_operations leds_fops = {
+static struct file_operations misc_leds_fops = {
 	.owner = THIS_MODULE,
 	.llseek = no_llseek,
-	.ioctl = leds_ioctl,
-	.compat_ioctl = leds_compat_ioctl,
-	.open = leds_open,
+	.ioctl = misc_leds_ioctl,
+	.compat_ioctl = misc_leds_compat_ioctl,
+	.open = misc_leds_open,
 };
 
 static struct miscdevice leds_miscdev = {
 	.minor = LEDS_MINOR,
 	.name = "leds",
-	.fops = &leds_fops,
+	.fops = &misc_leds_fops,
 };
 
-static long leds_panic_blink(long time)
+static void neufbox_led_set(struct led_classdev *led_cdev,
+			    enum led_brightness value)
 {
-	enum led_id id;
-	struct leds_device *dev;
+	struct neufbox_led_data *led =
+	    container_of(led_cdev, struct neufbox_led_data, cdev);
 
-	dev = leds_dev;
-	if (!dev) {
-		return 0;
-	}
+	if (value == LED_OFF)
+		(void)atomic_set(&led->command, led_state_off);
+	else
+		(void)atomic_set(&led->command, led_state_on);
 
-	if (!(time % 256)) {
-		static int on = 0;
-
-		if ((on = !on)) {
-			for (id = led_id_wan; id < led_id_last; ++id) {
-				led_on(id);
-			}
-		} else {
-			for (id = led_id_wan; id < led_id_last; ++id) {
-				led_off(id);
-			}
-		}
-
-		nxp_74hc164_flush();
-	}
-
-	return 0;
 }
 
-static int __init leds_init(void)
+static int __init neufbox_led_probe(struct platform_device *pdev)
 {
 	struct leds_device *dev;
-	enum led_id led;
-	int err;
+	struct gpio_led_platform_data *pdata = pdev->dev.platform_data;
+	struct gpio_led *cur_led;
+	struct neufbox_led_data *leds_data, *led;
+	int i, ret = 0;
 
 	extern long (*panic_blink) (long time);
 
-	err = misc_register(&leds_miscdev);
-	if (err < 0) {
-		printk(KERN_ERR "error: register leds device\n");
-		return err;
-	}
+	if (!pdata)
+		return -EBUSY;
 
-	/* alloc leds device structure */
-	if (!(leds_dev = dev = kzalloc(sizeof(*dev), GFP_KERNEL))) {
-		printk(KERN_ERR "error: alloc leds device\n");
+	leds_dev = dev =
+	    kzalloc(sizeof(struct leds_device) +
+		    (sizeof(struct neufbox_led_data) * pdata->num_leds),
+		    GFP_KERNEL);
+	if (!dev)
 		return -ENOMEM;
-	}
 
+	/* setup hook panic */
 	panic_blink = leds_panic_blink;
 
-	/* enable leds GPIOs and set default values */
-	for (led = led_id_wan; led < led_id_last; ++led) {
-		int gpio;
-		u16 info = led_info(led);
+	dev->num_leds = pdata->num_leds;
+	leds_data = dev->leds_data;
+	for (i = 0; i < pdata->num_leds; i++) {
+		int default_state;
+		cur_led = &pdata->leds[i];
+		led = &leds_data[i];
 
-		gpio = LED_GPIO(info);
-		printk("[request leds: %s gpio: %d]\n", leds_name[led], gpio);
-		if (gpio_request(gpio, NULL) < 0) {
-			printk(KERN_ERR "error: gpio_request(%d)\n", gpio);
-			BUG();
+		led->cdev.name = cur_led->name;
+		led->cdev.default_trigger = cur_led->default_trigger;
+		led->gpio = cur_led->gpio;
+		led->active_low = cur_led->active_low;
+		led->cdev.brightness_set = neufbox_led_set;
+
+		ret = gpio_request(led->gpio, led->cdev.name);
+		if (ret < 0)
+			goto err;
+
+		if (cur_led->default_state == LEDS_GPIO_DEFSTATE_ON) {
+			default_state = !led->active_low;
+			led->cdev.brightness = LED_FULL;
+			leds_config(i, led_state_on);
+		} else {
+			default_state = led->active_low;
+			led->cdev.brightness = LED_OFF;
+			leds_config(i, led_state_off);
 		}
-		gpio_direction_output(gpio, 0);
-		dev->state[led] = led_state_off;
+
+		gpio_direction_output(led->gpio, default_state);
+
+		ret = led_classdev_register(&pdev->dev, &led->cdev);
+		if (ret < 0) {
+			gpio_free(led->gpio);
+			goto err;
+		}
 	}
+
+	platform_set_drvdata(pdev, leds_data);
+
+	ret = misc_register(&leds_miscdev);
+	if (ret < 0)
+		goto err;
 
 	leds_set_mode(dev, led_mode_control);
 
-	/* set led service to the right color */
-#ifdef CONFIG_NEUFBOX_MAIN
-	/* yellow */
-	led_on(led_id_red);
-	led_on(led_id_green);
-	led_off(led_id_blue);
-	leds_control(led_id_red, led_state_on);
-	leds_control(led_id_green, led_state_on);
-	leds_control(led_id_blue, led_state_off);
-#else				/* CONFIG_NEUFBOX_RESCUE */
-	/* blue */
-	led_off(led_id_red);
-	led_off(led_id_green);
-	led_on(led_id_blue);
-	leds_control(led_id_red, led_state_off);
-	leds_control(led_id_green, led_state_off);
-	leds_control(led_id_blue, led_state_on);
-#endif				/* CONFIG_NEUFBOX_MAIN */
-
-	nxp_74hc164_flush();
-
 	/* setup timer */
-	init_timer(&dev->timer);
-	leds_dev->timer.function = leds_timer_function;
-	leds_dev->timer.data = (unsigned long)dev;
-	leds_dev->timer.expires = jiffies;
-	add_timer(&dev->timer);
+	setup_timer(&dev->timer, leds_timer_function, (unsigned long)dev);
+	/* start timer */
+	mod_timer(&dev->timer, jiffies);
+
+	return 0;
+
+ err:
+	if (i > 0) {
+		for (i = i - 1; i >= 0; i--) {
+			led_classdev_unregister(&leds_data[i].cdev);
+			gpio_free(leds_data[i].gpio);
+		}
+	}
+
+	kfree(leds_dev);
+
+	return ret;
+}
+
+static int __exit neufbox_led_remove(struct platform_device *pdev)
+{
+	int i;
+	struct gpio_led_platform_data *pdata = pdev->dev.platform_data;
+	struct neufbox_led_data *leds_data;
+	struct leds_device *dev = leds_dev;
+
+	del_timer(&dev->timer);
+	/* reset leds states */
+	leds_set_mode(dev, led_mode_disable);
+	misc_deregister(&leds_miscdev);
+	/* free leds device structure */
+	kfree(dev);
+
+	leds_data = platform_get_drvdata(pdev);
+
+	for (i = 0; i < pdata->num_leds; i++) {
+		led_classdev_unregister(&leds_data[i].cdev);
+		gpio_free(leds_data[i].gpio);
+	}
+
+	kfree(dev);
 
 	return 0;
 }
 
-static void __exit leds_exit(void)
+static struct platform_driver neufbox_led_driver = {
+	.remove = __exit_p(neufbox_led_remove),
+	.driver = {
+		   .name = "leds-neufbox",
+		   .owner = THIS_MODULE,
+		   },
+};
+
+static int __init neufbox_led_init(void)
 {
-	struct leds_device *dev = leds_dev;
-	enum led_id id;
-
-	printk("%s: clean up...\n", "leds");
-	del_timer(&dev->timer);
-
-	/* reset leds states */
-	leds_set_mode(dev, led_mode_disable);
-
-	/* cleanup leds GPIOs */
-	for (id = led_id_wan; id < led_id_last; ++id) {
-		gpio_direction_output(LED_GPIO(id), 0);
-	}
-
-	misc_deregister(&leds_miscdev);
-
-	/* free leds device structure */
-	kfree(dev);
+	return platform_driver_probe(&neufbox_led_driver, neufbox_led_probe);
 }
 
-module_init(leds_init);
-module_exit(leds_exit);
+static void __exit neufbox_led_exit(void)
+{
+	platform_driver_unregister(&neufbox_led_driver);
+}
 
-EXPORT_SYMBOL(leds_control);
+module_init(neufbox_led_init);
+module_exit(neufbox_led_exit);
 
-MODULE_AUTHOR("Miguel GAIO");
-MODULE_DESCRIPTION("Driver neufbox leds");
 MODULE_ALIAS_MISCDEV(LEDS_MINOR);
+MODULE_AUTHOR("Miguel GAIO");
+MODULE_DESCRIPTION("NEUFBOX LED driver");
 MODULE_LICENSE("GPL");

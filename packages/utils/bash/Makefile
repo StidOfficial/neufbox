@@ -12,7 +12,7 @@ PKG_VERSION:=3.2
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=ftp://ftp.gnu.org/gnu/bash/
+PKG_SOURCE_URL:=@GNU/bash
 PKG_MD5SUM:=00bfa16d58e034e3c2aa27f390390d30
 
 include $(INCLUDE_DIR)/package.mk
@@ -34,7 +34,6 @@ endef
 
 define Build/Configure
 	$(call Build/Configure/Default, \
-		--disable-restricted \
 		--without-bash-malloc \
                 --bindir=/bin \
 	)
@@ -53,11 +52,13 @@ define Package/bash/postinst
 #!/bin/sh
 grep bash $${IPKG_INSTROOT}/etc/shells || \
 	echo "/bin/bash" >> $${IPKG_INSTROOT}/etc/shells
+	echo "/bin/rbash" >> $${IPKG_INSTROOT}/etc/shells
 endef
 
 define Package/bash/install
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/bash $(1)/bin/
+	ln -sf bash $(1)/bin/rbash
 endef
 
 $(eval $(call BuildPackage,bash))

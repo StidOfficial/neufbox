@@ -21,8 +21,8 @@ define Package/libpfm
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Perfmon2 Kernel performance monitoring interface
-  DEPENDS:=@TARGET_ps3||TARGET_ps3chk
   URL:=http://perfmon2.sourceforge.net/
+  DEPENDS:=@BROKEN
 endef
 
 define Build/Compile
@@ -50,7 +50,7 @@ define Build/InstallDev
 #		CONFIG_PFMLIB_CELL=y \
 #		CONFIG_PFMLIB_SHARED=y \
 #		install
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP)	$(PKG_BUILD_DIR)/lib/libpfm* $(1)/usr/lib/
 endef
 

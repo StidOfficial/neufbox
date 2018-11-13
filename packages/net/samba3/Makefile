@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,8 +8,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=samba3
 PKG_VERSION:=3.0.24
-PKG_RELEASE:=3
-#PKG_MD5SUM:=b51b2975f21006f85f7297f3fb1acde1
+PKG_RELEASE:=7
+PKG_MD5SUM:=89273f67a6d8067cbbecefaa13747153
 
 PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/samba/old-versions/
 PKG_SOURCE:=samba-$(PKG_VERSION).tar.gz
@@ -52,7 +52,7 @@ define Build/Compile
 	CPPFLAGS="$(TARGET_CPPFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	$(MAKE) -C $(PKG_BUILD_DIR)/source \
-		all bin/smbpasswd	
+		all bin/smbpasswd
 endef
 
 define Package/samba3/install
@@ -60,11 +60,11 @@ define Package/samba3/install
 	$(INSTALL_BIN) ./files/samba.init $(1)/etc/init.d/samba
 	$(INSTALL_DATA) ./files/samba.config $(1)/etc/config/samba
 	$(INSTALL_DATA) ./files/smb.conf.template $(1)/etc/samba/
-	cd $(1)/etc/samba; rm -r smb.conf; ln -s /tmp/smb.conf
 	touch $(1)/etc/samba/smbpasswd
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/smbpasswd $(1)/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/smbd $(1)/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/source/bin/nmbd $(1)/bin/
 endef
 
 $(eval $(call BuildPackage,samba3))

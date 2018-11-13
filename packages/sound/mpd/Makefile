@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2007-2009 OpenWrt.org
+#
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,72 +8,95 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mpd
-PKG_VERSION:=0.14.2
-PKG_RELEASE:=2
+PKG_VERSION:=0.15.8
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/musicpd
-PKG_MD5SUM:=66817a4b4c05454e6488f6b821f2a6a3
+PKG_MD5SUM:=824e1ce46c0f468865d9e5e403cdaf5d
+
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/mpd
   SECTION:=sound
   CATEGORY:=Sound
-  DEPENDS:=+libflac +libid3tag +libmad +libvorbisidec +libpthread +glib2
   TITLE:=Music Player Daemon
   URL:=http://www.musicpd.org/
+# libvorbis and therewith libogg are needed for shout support
+  DEPENDS:= \
+	+AUDIO_SUPPORT:alsa-lib \
+	+libaudiofile \
+	+BUILD_PATENTED:libfaad2 +BUILD_PATENTED:libmad \
+	+glib2 +libcurl +libflac +libmms +libpthread +libshout \
+	+libvorbis +libvorbisidec +libid3tag
 endef
 
 define Package/mpd/description
-	MPD is a music player supporting flac, mp3 and ogg files.
-	It is typically controlled over a network using one of it's many
-	clients including mpc(console), gmpc(gnome), phpmp(php) etc.
+ MPD is a music player supporting flac, mp3 and ogg files. It is
+ typically controlled over a network using one of it's many clients
+ including mpc(console), gmpc(gnome), phpmp(php), etc...
 endef
 
 define Package/mpd/conffiles
+/etc/avahi/services/mpd.service
 /etc/mpd.conf
 endef
 
-ifndef CONFIG_PACKAGE_kmod-sound-core
-	EXTRA_CONFIG_PARAM:=--disable-alsa
-endif
+# oggflac is not compatible with tremor
+CONFIGURE_ARGS += \
+	$(call autoconf_bool,CONFIG_BUILD_PATENTED,mad) \
+	$(call autoconf_bool,CONFIG_AUDIO_SUPPORT,alsa) \
+	--enable-audiofile \
+	--disable-mpc \
+	$(call autoconf_bool,CONFIG_BUILD_PATENTED,aac) \
+	--disable-lsr \
+	--disable-ao \
+	--disable-mvp \
+	--disable-lame-encoder \
+	--disable-ffmpeg \
+	--enable-flac \
+	--enable-vorbis \
+	--disable-oggflac \
+	--disable-cue \
+	--disable-jack \
+	--disable-modplug \
+	--disable-pulse \
+	--disable-sidplay \
+	--disable-sqlite \
+	--enable-shout \
+	--enable-id3 \
+	--enable-lastfm \
+	--enable-mms \
+	--enable-curl \
+	--disable-oss \
+	--enable-aac \
+	--with-zeroconf=no \
+	--disable-libOggFLACtest \
+	--disable-test \
+	--with-tremor=yes \
+	--with-faad="$(STAGING_DIR)/usr" \
 
 CONFIGURE_VARS += \
-	ID3TAG_LIBS="$(TARGET_LDFLAGS) -lz -lid3tag" \
-	ID3TAG_CFLAGS="$(TARGET_CPPFLAGS)" \
+	FLAC_CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/FLAC" \
 	FLAC_LIBS="$(TARGET_LDFLAGS) -lFLAC" \
-	FLAC_CFLAGS="-I$(STAGING_DIR)/usr/include/FLAC" \
-	MAD_LIBS="$(TARGET_LDFLAGS) -lmad" \
-	MAD_CFLAGS="$(TARGET_CPPFLAGS)" \
-	OGGVORBIS_LIBS="$(TARGET_LDLFAGS) -lvorbisidec" \
-	OGGVORBIS_CFLAGS="$(TARGET_CPPFLAGS)" \
-	GLIB_CFLAGS="-I$(STAGING_DIR)/usr/include/glib-2.0 -I$(STAGING_DIR)/usr/lib/glib-2.0/include" \
-	GLIB_LIBS="$(TARGET_LDLFAGS) -L$(STAGING_DIR)/usr/lib/libintl/lib -lintl -L$(STAGING_DIR)/usr/lib/libiconv/lib -liconv -lglib-2.0 -lgthread-2.0 -pthread"
+	$(if $(CONFIG_BUILD_PATENTED),MAD_CFLAGS="$(TARGET_CFLAGS)") \
+	$(if $(CONFIG_BUILD_PATENTED),MAD_LIBS="$(TARGET_LDFLAGS) -lmad") \
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		$(EXTRA_CONFIG_PARAM) \
-		--disable-mod \
-		--disable-audiofile \
-		--disable-mpc \
-		--disable-aac \
-		--disable-lsr \
-		--disable-ipv6 \
-		--disable-ao \
-		--disable-mvp \
-		--disable-lametest \
-		--disable-lame \
-		--enable-flac \
-		--with-tremor=$(STAGING_DIR)/usr/lib \
-	)
-endef
+TARGET_CFLAGS += \
+	-std=gnu99 \
+	-I$(STAGING_DIR)/usr/lib/libintl/include/ \
+	-I$(STAGING_DIR)/usr/lib/libiconv/include/ \
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
+TARGET_LDFLAGS += \
+	-Wl,-rpath-link=$(STAGING_DIR)/usr/lib \
+	-L$(STAGING_DIR)/usr/lib/libintl/lib/ \
+	-L$(STAGING_DIR)/usr/lib/libiconv/lib/ \
+
+# use gcc instead of g++ to avoid unnecessary linking against libstdc++
+TARGET_CXX:=$(TARGET_CC)
 
 define Package/mpd/install
 	$(INSTALL_DIR) $(1)/etc
@@ -82,6 +105,8 @@ define Package/mpd/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/mpd $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/mpd.init $(1)/etc/init.d/mpd
+	$(INSTALL_DIR) $(1)/etc/avahi/services
+	$(INSTALL_DATA) ./files/mpd.service $(1)/etc/avahi/services/
 endef
 
 $(eval $(call BuildPackage,mpd))

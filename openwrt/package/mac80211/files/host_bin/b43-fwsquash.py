@@ -12,16 +12,16 @@ import sys
 import os
 
 def usage():
-	print "Usage: %s PHYTYPES COREREVS /path/to/extracted/firmware" % sys.argv[0]
-	print ""
-	print "PHYTYPES is a comma separated list of:"
-	print "A         => A-PHY"
-	print "AG        => Dual A-PHY G-PHY"
-	print "G         => G-PHY"
-	print "LP        => LP-PHY"
-	print "N         => N-PHY"
-	print ""
-	print "COREREVS is a comma separated list of core revision numbers."
+	print("Usage: %s PHYTYPES COREREVS /path/to/extracted/firmware" % sys.argv[0])
+	print("")
+	print("PHYTYPES is a comma separated list of:")
+	print("A         => A-PHY")
+	print("AG        => Dual A-PHY G-PHY")
+	print("G         => G-PHY")
+	print("LP        => LP-PHY")
+	print("N         => N-PHY")
+	print("")
+	print("COREREVS is a comma separated list of core revision numbers.")
 
 if len(sys.argv) != 4:
 	usage()
@@ -35,7 +35,7 @@ phytypes = phytypes.split(',')
 try:
 	corerevs = map(lambda r: int(r), corerevs.split(','))
 except ValueError:
-	print "ERROR: \"%s\" is not a valid COREREVS string\n" % corerevs
+	print("ERROR: \"%s\" is not a valid COREREVS string\n" % corerevs)
 	usage()
 	sys.exit(1)
 
@@ -43,7 +43,7 @@ except ValueError:
 fwfiles = os.listdir(fwpath)
 fwfiles = filter(lambda str: str.endswith(".fw"), fwfiles)
 if not fwfiles:
-	print "ERROR: No firmware files found in %s" % fwpath
+	print("ERROR: No firmware files found in %s" % fwpath)
 	sys.exit(1)
 
 required_fwfiles = []
@@ -62,9 +62,13 @@ def phytypes_match(types_a, types_b):
 	return False
 
 revmapping = {
+	"ucode2.fw"		: (2,3,),
+	"ucode4.fw"		: (4,),
 	"ucode5.fw"		: (5,6,7,8,9,10,),
 	"ucode11.fw"		: (11,12,),
 	"ucode13.fw"		: (13,),
+	"ucode14.fw"		: (14,),
+	"ucode15.fw"		: (15,),
 	"pcm4.fw"		: (1,2,3,4,),
 	"pcm5.fw"		: (5,6,7,8,9,10,),
 }
@@ -72,13 +76,20 @@ revmapping = {
 initvalmapping = {
 	"a0g1initvals5.fw"	: ( (5,6,7,8,9,10,),	("AG",), ),
 	"a0g0initvals5.fw"	: ( (5,6,7,8,9,10,),	("A", "AG",), ),
+	"b0g0initvals2.fw"	: ( (2,4,),		("G",), ),
 	"b0g0initvals5.fw"	: ( (5,6,7,8,9,10,),	("G",), ),
 	"b0g0initvals13.fw"	: ( (13,),		("G",), ),
 	"n0initvals11.fw"	: ( (11,12,),		("N",), ),
+	"lp0initvals13.fw"	: ( (13,),		("LP",), ),
+	"lp0initvals14.fw"	: ( (14,),		("LP",), ),
+	"lp0initvals15.fw"	: ( (15,),		("LP",), ),
 	"a0g1bsinitvals5.fw"	: ( (5,6,7,8,9,10,),	("AG",), ),
 	"a0g0bsinitvals5.fw"	: ( (5,6,7,8,9,10,),	("A", "AG"), ),
 	"b0g0bsinitvals5.fw"	: ( (5,6,7,8,9,10,),	("G",), ),
 	"n0bsinitvals11.fw"	: ( (11,12,),		("N",), ),
+	"lp0bsinitvals13.fw"	: ( (13,),		("LP",), ),
+	"lp0bsinitvals14.fw"	: ( (14,),		("LP",), ),
+	"lp0bsinitvals15.fw"	: ( (15,),		("LP",), ),
 }
 
 for f in fwfiles:
@@ -91,10 +102,10 @@ for f in fwfiles:
 		   phytypes_match(phytypes, initvalmapping[f][1]):
 			required_fwfiles += [f]
 		continue
-	print "WARNING: Firmware file %s not found in the mapping lists" % f
+	print("WARNING: Firmware file %s not found in the mapping lists" % f)
 
 for f in fwfiles:
 	if f not in required_fwfiles:
-		print "Deleting %s" % f
+		print("Deleting %s" % f)
 		os.unlink(fwpath + '/' + f)
 

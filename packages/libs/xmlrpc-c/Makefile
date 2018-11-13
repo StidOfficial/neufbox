@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,11 +9,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xmlrpc-c
-PKG_REV:=1724
-PKG_VERSION:=1.18.3_r$(PKG_REV)
+PKG_REV:=1913
+PKG_VERSION:=1.22.2_r$(PKG_REV)
 PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://xmlrpc-c.svn.sourceforge.net/svnroot/xmlrpc-c/advanced
+PKG_SOURCE_URL:=http://xmlrpc-c.svn.sourceforge.net/svnroot/xmlrpc-c/advanced
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_PROTO:=svn
@@ -51,17 +51,17 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/*.h $(1)/usr/include/
-	mkdir -p $(1)/usr/include/xmlrpc-c
+	$(INSTALL_DIR) $(1)/usr/include/xmlrpc-c
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/xmlrpc-c/*.h $(1)/usr/include/xmlrpc-c
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxmlrpc*.{a,so*} $(1)/usr/lib/
-	mkdir -p $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/xmlrpc-c-config $(1)/usr/bin/
 	$(SED) 's,HEADERINST_DIR="/usr/include",HEADERINST_DIR="$(STAGING_DIR)/usr/include",g' $(1)/usr/bin/xmlrpc-c-config
 	$(SED) 's,LIBINST_DIR="/usr/lib",LIBINST_DIR="$(STAGING_DIR)/usr/lib",g' $(1)/usr/bin/xmlrpc-c-config
-	mkdir -p $(2)/bin
+	$(INSTALL_DIR) $(2)/bin
 	ln -sf $(STAGING_DIR)/usr/bin/xmlrpc-c-config $(2)/bin/
 endef
 

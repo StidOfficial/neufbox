@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,16 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uclibc++
 PKG_VERSION:=0.2.2
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 PKG_SOURCE:=uClibc++-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://cxx.uclibc.org/src/
 PKG_MD5SUM:=1ceef3209cca88be8f1bd9de99735954
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/uClibc++-$(PKG_VERSION)
+PKG_BUILD_PARALLEL:=1
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -45,7 +48,7 @@ TARGET_CFLAGS += $(FPIC)
 MAKE_FLAGS:= \
 	TOPDIR="$(PKG_BUILD_DIR)/" \
 	$(TARGET_CONFIGURE_OPTS) \
-	ARCH_CFLAGS="$(TARGET_CFLAGS)" \
+	CPU_CFLAGS="$(TARGET_CFLAGS)" \
 	CROSS="$(TARGET_CROSS)" \
 	CP="$(CP)" \
 	$(if $(CONFIG_TARGET_avr32),check_as_needed=)
@@ -60,18 +63,11 @@ define Build/Configure
 	fi
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(MAKE_FLAGS) \
-		DESTDIR="$(PKG_INSTALL_DIR)/usr" \
-		all install
-endef
-
 define Build/InstallDev
 	$(INSTALL_DIR) $(2)/bin $(1)/usr/include/uClibc++ $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/g++-uc $(2)/bin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/uClibc++/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libuClibc++*.{a,so*} $(1)/usr/lib/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/g++-uc $(2)/bin/
+	$(CP) $(PKG_INSTALL_DIR)/include/* $(1)/usr/include/uClibc++/
+	$(CP) $(PKG_INSTALL_DIR)/lib/libuClibc++*.a $(1)/usr/lib/
 	$(SED) 's|-I/include/|-I$(STAGING_DIR)/usr/include/uClibc++/|g' $(2)/bin/g++-uc
 	$(SED) 's|-L/lib/|-L$(STAGING_DIR)/usr/lib/|g' $(2)/bin/g++-uc
 # add another wrapper which links against both uClibc++ and libstdc++ 
@@ -83,8 +79,8 @@ endef
 
 define Package/uclibcxx/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libuClibc++.so.* $(1)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libuClibc++-*.so $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/lib/libuClibc++.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/lib/libuClibc++-*.so $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,uclibcxx))

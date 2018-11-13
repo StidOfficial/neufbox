@@ -17,6 +17,7 @@
 #define SUPPORT_SYSRQ
 #endif
 
+#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/init.h>
@@ -242,7 +243,11 @@ static void bcm_uart_do_rx(struct uart_port *port)
 	 * higher than fifo size anyway since we're much faster than
 	 * serial port */
 	max_count = 32;
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,21)
+	tty = port->info->tty;
+#else
 	tty = port->info->port.tty;
+#endif
 	do {
 		unsigned int iestat, c, cstat;
 		char flag;

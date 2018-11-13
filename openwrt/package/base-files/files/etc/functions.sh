@@ -2,8 +2,13 @@
 # Copyright (C) 2006 OpenWrt.org
 # Copyright (C) 2006 Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
 
-alias debug=${DEBUG:-:}
-alias mount='busybox mount'
+
+debug () {
+	${DEBUG:-:} "$@"
+}
+mount() {
+	busybox mount "$@"
+}
 
 # newline
 N="
@@ -91,8 +96,9 @@ list() {
 	local value="$*"
 	local len
 
-	config_get len "$CONFIG_SECTION" "${varname}_LENGTH" 
-	len="$((${len:-0} + 1))"
+	config_get len "$CONFIG_SECTION" "${varname}_LENGTH" 0
+	[ $len = 0 ] && append CONFIG_LIST_STATE "${CONFIG_SECTION}_${varname}"
+	len=$(($len + 1))
 	config_set "$CONFIG_SECTION" "${varname}_ITEM$len" "$value"
 	config_set "$CONFIG_SECTION" "${varname}_LENGTH" "$len"
 	append "CONFIG_${CONFIG_SECTION}_${varname}" "$value" "$LIST_SEP"
@@ -134,22 +140,25 @@ config_clear() {
 	done
 }
 
+# config_get <variable> <section> <option> [<default>]
+# config_get <section> <option>
 config_get() {
 	case "$3" in
-		"") eval "echo \"\${CONFIG_${1}_${2}}\"";;
-		*)  eval "export ${NO_EXPORT:+-n} -- \"$1=\${CONFIG_${2}_${3}}\"";;
+		"") eval echo "\${CONFIG_${1}_${2}:-\${4}}";;
+		*)  eval export ${NO_EXPORT:+-n} -- "${1}=\${CONFIG_${2}_${3}:-\${4}}";;
 	esac
 }
 
 # config_get_bool <variable> <section> <option> [<default>]
 config_get_bool() {
 	local _tmp
-	config_get "_tmp" "$2" "$3"
+	config_get _tmp "$2" "$3" "$4"
 	case "$_tmp" in
-		1|on|true|enabled) export ${NO_EXPORT:+-n} "$1=1";;
-		0|off|false|disabled) export ${NO_EXPORT:+-n} "$1=0";;
-		*) eval "$1=$4";;
+		1|on|true|enabled) _tmp=1;;
+		0|off|false|disabled) _tmp=0;;
+		*) _tmp="$4";;
 	esac
+	export ${NO_EXPORT:+-n} "$1=$_tmp"
 }
 
 config_set() {
@@ -255,7 +264,7 @@ jffs2_mark_erase() {
 	echo -e "\xde\xad\xc0\xde" | mtd -qq write - "$1"
 }
 
-uci_apply_defaults() {(
+uci_apply_defaults() {
 	cd /etc/uci-defaults || return 0
 	files="$(ls)"
 	[ -z "$files" ] && return 0
@@ -264,6 +273,44 @@ uci_apply_defaults() {(
 		( . "./$(basename $file)" ) && rm -f "$file"
 	done
 	uci commit
-)}
+}
+
+service_kill() {
+	local name="${1}"
+	local pid="${2:-$(pidof "$name")}"
+	local grace="${3:-5}"
+
+	[ -f "$pid" ] && pid="$(head -n1 "$pid" 2>/dev/null)"
+
+	for pid in $pid; do
+		[ -d "/proc/$pid" ] || continue
+		local try=0
+		kill -TERM $pid 2>/dev/null && \
+			while grep -qs "$name" "/proc/$pid/cmdline" && [ $((try++)) -lt $grace ]; do sleep 1; done
+		kill -KILL $pid 2>/dev/null && \
+			while grep -qs "$name" "/proc/$pid/cmdline"; do sleep 1; done
+	done
+}
+
+
+pi_include() {
+	if [ -f "/tmp/overlay/$1" ]; then
+		. "/tmp/overlay/$1"
+	elif [ -f "$1" ]; then
+		. "$1"
+	elif [ -d "/tmp/overlay/$1" ]; then
+		for src_script in /tmp/overlay/$1/*.sh; do
+			. "$src_script"
+		done
+	elif [ -d "$1" ]; then
+		for src_script in $1/*.sh; do
+			. "$src_script"
+		done
+	else
+		echo "WARNING: $1 not found"
+		return 1
+	fi
+	return 0
+}
 
 [ -z "$IPKG_INSTROOT" -a -f /lib/config/uci.sh ] && . /lib/config/uci.sh

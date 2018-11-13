@@ -1,7 +1,6 @@
-diff -ruN axTLS-0.95-old/config/makefile.conf axTLS-0.95-new/config/makefile.conf
---- axTLS-0.95-old/config/makefile.conf	2006-02-28 02:50:28.000000000 +0100
-+++ axTLS-0.95-new/config/makefile.conf	2006-05-18 22:24:02.000000000 +0200
-@@ -87,20 +87,23 @@
+--- a/config/makefile.conf
++++ b/config/makefile.conf
+@@ -105,20 +105,23 @@ endif
  endif
  
  ifdef CONFIG_DEBUG

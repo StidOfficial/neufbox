@@ -1,3 +1,0 @@
-
-obj-m := veth.o
-

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,64 +8,107 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vnstat
-PKG_VERSION:=1.7
+PKG_VERSION:=1.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://humdi.net/vnstat
-PKG_MD5SUM:=e5788e8122e34f2c93561e2a84c19432
+PKG_MD5SUM:=95421d968689130590348ceb80ff74a8
+
+PKG_INSTALL:=1
+
+PKG_BUILD_DEPENDS:=libgd
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/vnstat
+define Package/vnstat/Default
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=Console-based network traffic monitor
   URL:=http://humdi.net/vnstat/
 endef
 
+define Package/vnstat
+$(call Package/vnstat/Default)
+  TITLE:=Console-based network traffic monitor
+endef
+
 define Package/vnstat/description
-	vnStat is a network traffic monitor for Linux that keeps a log of daily 
-	network traffic for the selected interface(s). vnStat isn't a packet 
-	sniffer. The traffic information is analyzed from the /proc -filesystem, 
+	vnStat is a network traffic monitor for Linux that keeps a log of daily
+	network traffic for the selected interface(s). vnStat isn't a packet
+	sniffer. The traffic information is analyzed from the /proc -filesystem,
 	so vnStat can be used without root permissions.
 endef
 
+define Package/vnstati
+$(call Package/vnstat/Default)
+  DEPENDS+=vnstat +libgd
+  TITLE:=PNG image output support for vnStat
+endef
+
+define Package/vnstati/description
+	The purpose of vnstati is to provide image output support for statistics
+	collected using vnstat(1). However, the image file format is limited to
+	png. All basic outputs of vnStat are supported excluding live traffic
+	features. The image can be outputted either to a file or to standard
+	output.
+endef
+
 define Package/vnstat/conffiles
+/etc/vnstat.conf
 /etc/config/vnstat
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+define Build/Compile/vnstat
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)"
 endef
 
+define Build/Compile/vnstati
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include" \
+		LDFLAGS="$(TARGET_LDFLAGS) -Wl,-rpath-link,$(STAGING_DIR)/usr/lib" \
+		all
+endef
+
+define Build/Compile
+$(call Build/Compile/vnstat)
+$(call Build/Compile/vnstati)
+endef
+
 define Package/vnstat/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/vnstat $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/vnstat $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/vnstatd $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc
+	$(INSTALL_CONF) $(PKG_INSTALL_DIR)/etc/vnstat.conf $(1)/etc/
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/vnstat.conf $(1)/etc/config/vnstat
+	$(INSTALL_CONF) ./files/vnstat-uci.conf $(1)/etc/config/vnstat
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/vnstat.init $(1)/etc/init.d/vnstat
+endef
+
+define Package/vnstati/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/vnstati $(1)/usr/bin/
 endef
 
 define Package/vnstat/postinst
 #!/bin/sh
 BIN_REL=/usr/bin/vnstat
 BIN=$${IPKG_INSTROOT}$${BIN_REL}
-CRONTAB=$${IPKG_INSTROOT}/etc/crontabs/root
 LIB_D_REL=/var/lib/vnstat
 LIB_D=$${IPKG_INSTROOT}$${LIB_D_REL}
-mkdir -p $${IPKG_INSTROOT}/etc/crontabs/
 [ -d $$LIB_D ] || mkdir -p $$LIB_D
 IFACE_WAN=$$(uci get network.wan.ifname)
 if [ -n $$IFACE_WAN ]; then
 	[ -e $$LIB_D/$$IFACE_WAN ] || ( [ -x $$BIN ] && $$BIN -u -i $$IFACE_WAN )
 fi
-grep -q "$$BIN_REL -u" $$CRONTAB 2>/dev/null
-[ $$? -ne 0 ] && echo "*/30 * * * *    if [ -x $$BIN_REL ] && [ \`ls $$LIB_D_REL | wc -l\` -ge 1 ]; then $$BIN_REL -u; fi" >> $$CRONTAB
 true
 endef
 
 $(eval $(call BuildPackage,vnstat))
+$(eval $(call BuildPackage,vnstati))

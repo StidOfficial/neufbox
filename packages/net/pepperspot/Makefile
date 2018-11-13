@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2008 OpenWrt.org
+#
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pepperspot
-PKG_VERSION:=0.1
+PKG_VERSION:=0.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/pepperspot
-PKG_MD5SUM:=52e5861f6cae05a972b8a159be270bf7
+PKG_MD5SUM:=10e6d42be577c231135c36440d86012a
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -21,9 +23,9 @@ define Package/pepperspot
   SUBMENU:=Captive Portals
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-tun
   TITLE:=Wireless LAN HotSpot controller
-  URL:=http://www.pepperspot.org/
+  URL:=http://pepperspot.sourceforge.net/
+  DEPENDS:=+kmod-tun +kmod-ipv6
 endef
 
 define Package/pepperspot/description
@@ -39,17 +41,21 @@ endef
 
 # uses GNU configure
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
+define Build/Prepare
+$(call Build/Prepare/Default)
+	# prevent autoconf invocation, since one the patches touched
+	# configure
+	(cd $(PKG_BUILD_DIR); \
+		touch -r Makefile.am configure.in; \
+		touch -r Makefile.in configure; \
+	)
 endef
 
 define Package/pepperspot/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/$(PKG_NAME).init $(1)/etc/init.d/pepper
 	$(INSTALL_DIR) $(1)/etc
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/doc/pepper.conf $(1)/etc/
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/extra/pepper.conf $(1)/etc/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pepper $(1)/usr/sbin/
 endef

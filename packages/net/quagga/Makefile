@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,15 +8,35 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=quagga
-PKG_VERSION:=0.98.6
-PKG_RELEASE:=1
-PKG_MD5SUM:=b0d4132039953a0214256873b7d23d68
+ifneq ($(CONFIG_QUAGGA_OLD),)
+  PKG_VERSION:=0.98.6
+  PKG_RELEASE:=8
+  PKG_MD5SUM:=b0d4132039953a0214256873b7d23d68
+  PATCH_DIR:=./patches-old
+else
+  PKG_VERSION:=0.99.17
+  PKG_RELEASE:=5
+  PKG_MD5SUM:=37b9022adca04b03863d2d79787e643f
+endif
 
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.quagga.net/download/ \
                 http://www.de.quagga.net/download/ \
                 http://www.uk.quagga.net/download/
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_CONFIG_DEPENDS:= \
+	CONFIG_QUAGGA_OLD \
+	CONFIG_IPV6 \
+	CONFIG_PACKAGE_quagga-libzebra \
+	CONFIG_PACKAGE_quagga-libospf \
+	CONFIG_PACKAGE_quagga-bgpd \
+	CONFIG_PACKAGE_quagga-isisd \
+	CONFIG_PACKAGE_quagga-ospf6d \
+	CONFIG_PACKAGE_quagga-ripd \
+	CONFIG_PACKAGE_quagga-ripngd \
+	CONFIG_PACKAGE_quagga-vtysh
+PKG_BUILD_PARALLEL:=1
+PKG_FIXUP:=libtool
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -26,19 +46,28 @@ define Package/quagga/Default
   DEPENDS:=quagga
   TITLE:=The Quagga Software Routing Suite
   URL:=http://www.quagga.net
+  MAINTAINER:=Vasilis Tsiligiannis <b_tsiligiannis@silverton.gr>
 endef
 
 define Package/quagga
   $(call Package/quagga/Default)
-  DEPENDS:=
+  DEPENDS:=+!QUAGGA_OLD:librt
   MENU:=1
 endef
 
 define Package/quagga/description
-A routing software package that provides TCP/IP based routing services
-	with routing protocols support such as RIPv1, RIPv2, RIPng, OSPFv2,
-	OSPFv3, BGP-4, and BGP-4+
+  A routing software package that provides TCP/IP based routing services
+  with routing protocols support such as RIPv1, RIPv2, RIPng, OSPFv2,
+  OSPFv3, BGP-4, and BGP-4+
+endef
 
+define Package/quagga/config
+config QUAGGA_OLD
+	depends on (PACKAGE_quagga && BROKEN)
+	default n
+	bool "Use the old release version 0.98.6"
+	help
+	  This option allows you to select the old version of Quagga to be built.
 endef
 
 define Package/quagga-libzebra
@@ -53,7 +82,7 @@ endef
 
 define Package/quagga-bgpd
   $(call Package/quagga/Default)
-  DEPENDS += quagga-libzebra
+  DEPENDS+=+quagga-libzebra
   TITLE:=BGPv4, BGPv4+, BGPv4- routing engine
 endef
 
@@ -64,75 +93,122 @@ endef
 
 define Package/quagga-ospfd
   $(call Package/quagga/Default)
-  DEPENDS += quagga-libospf quagga-libzebra
+  DEPENDS+=+quagga-libospf +quagga-libzebra
   TITLE:=OSPFv2 routing engine
 endef
 
 define Package/quagga-ospf6d
   $(call Package/quagga/Default)
-  DEPENDS += quagga-libospf quagga-libzebra
+  DEPENDS+=+quagga-libospf +quagga-libzebra @IPV6
   TITLE:=OSPFv3 routing engine
 endef
 
 define Package/quagga-ripd
   $(call Package/quagga/Default)
-  DEPENDS += quagga-libzebra
+  DEPENDS+=+quagga-libzebra
   TITLE:=RIP routing engine
 endef
 
 define Package/quagga-ripngd
   $(call Package/quagga/Default)
-  DEPENDS += quagga-libzebra
+  DEPENDS+=+quagga-libzebra @IPV6
   TITLE:=RIPNG routing engine
 endef
 
 define Package/quagga-vtysh
   $(call Package/quagga/Default)
-  DEPENDS += quagga-libzebra +libreadline +libncurses
+  DEPENDS+=quagga-libzebra +libreadline +libncurses
   TITLE:=integrated shell for Quagga routing software
 endef
 
+define Package/quagga/conffiles
+/etc/quagga/zebra.conf
+endef
+
+define Package/quagga-bgpd/conffiles
+/etc/quagga/bgpd.conf
+endef
+
+define Package/quagga-isisd/conffiles
+/etc/quagga/isisd.conf
+endef
+
+define Package/quagga-ospfd/conffiles
+/etc/quagga/ospfd.conf
+endef
+
+define Package/quagga-ospf6d/conffiles
+/etc/quagga/ospf6d.conf
+endef
+
+define Package/quagga-ripd/conffiles
+/etc/quagga/ripd.conf
+endef
+
+define Package/quagga-ripngd/conffiles
+/etc/quagga/ripngd.conf
+endef
+
+ifneq ($(SDK),)
+CONFIG_PACKAGE_quagga-libzebra:=m
+CONFIG_PACKAGE_quagga-libospf:=m
+CONFIG_PACKAGE_quagga-bgpd:=m
+CONFIG_PACKAGE_quagga-isisd:=m
+CONFIG_PACKAGE_quagga-ospf6d:=m
+CONFIG_PACKAGE_quagga-ripd:=m
+CONFIG_PACKAGE_quagga-ripngd:=m
+CONFIG_PACKAGE_quagga-vtysh:=m
+endif
+
+TARGET_LDFLAGS += -lpthread
+
+CONFIGURE_ARGS+= \
+	--localstatedir=/var/run/quagga \
+	--sysconfdir=/etc/quagga/ \
+	--enable-shared \
+	--disable-static \
+	--enable-user=quagga \
+	--enable-group=quagga \
+	--enable-pie=no \
+	--enable-multipath=8 \
+	$(call autoconf_bool,CONFIG_PACKAGE_quagga-libzebra,zebra) \
+	$(call autoconf_bool,CONFIG_PACKAGE_quagga-libospf,ospfd) \
+	$(call autoconf_bool,CONFIG_PACKAGE_quagga-bgpd,bgpd) \
+	$(call autoconf_bool,CONFIG_PACKAGE_quagga-isisd,isisd) \
+	$(call autoconf_bool,CONFIG_PACKAGE_quagga-ospf6d,ospf6d) \
+	$(call autoconf_bool,CONFIG_PACKAGE_quagga-ripd,ripd) \
+	$(call autoconf_bool,CONFIG_PACKAGE_quagga-ripngd,ripngd) \
+	$(call autoconf_bool,CONFIG_PACKAGE_quagga-vtysh,vtysh) \
+
+MAKE_FLAGS += \
+	CFLAGS="$(TARGET_CFLAGS) -D_GNU_SOURCE"
+
 define Build/Configure
-	$(call Build/Configure/Default, \
-		--localstatedir=/var/run/quagga \
-		--sysconfdir=/etc/quagga/ \
-		--enable-shared \
-		--disable-static \
-		--enable-ipv6 \
-		--enable-vtysh \
-		--enable-user=quagga \
-		--enable-group=quagga \
-		--enable-multipath=8 \
-		--enable-isisd \
-	)
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
+		autoconf \
+	);
+	$(call Build/Configure/Default)
 endef
 
-define Build/Compile	
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR=$(PKG_INSTALL_DIR) \
-		all install
-endef
-
-define Package/quagga/install	
+define Package/quagga/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/zebra $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/watchquagga $(1)/usr/sbin/
 	# avoid /etc being set to 0750
-	$(INSTALL_DIR) $(1)/etc/quagga/
-	chmod 0750 $(1)/etc/quagga/
-	$(INSTALL_DATA) ./files/quagga.conf $(1)/etc/quagga/zebra.conf
-	$(INSTALL_DIR) $(1)/etc/init.d/
+	$(INSTALL_DIR) $(1)/etc/quagga
+	chmod 0750 $(1)/etc/quagga
+	$(INSTALL_CONF) ./files/quagga.conf $(1)/etc/quagga/zebra.conf
+	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/quagga $(1)/usr/sbin/quagga.init
 	$(INSTALL_BIN) ./files/quagga.init $(1)/etc/init.d/quagga
-	$(INSTALL_DIR) $(1)/var/run/quagga
 endef
 
 define Package/quagga/postinst
 #!/bin/sh
-  
+
 name=quagga
 id=51
-  
+
 # do not change below
 # check if we are on real system
 if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -151,18 +227,18 @@ if [ -z "$${IPKG_INSTROOT}" ]; then
 fi
 
 echo ""
-if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/group)" ]; then 
+if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/group)" ]; then
 	echo "adding group $$name to /etc/group"
-	echo "$${name}:x:$${id}:" >> $${IPKG_INSTROOT}/etc/group  
+	echo "$${name}:x:$${id}:" >> $${IPKG_INSTROOT}/etc/group
 fi
 
-if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/passwd)" ]; then 
+if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/passwd)" ]; then
 	echo "adding user $$name to /etc/passwd"
 	echo "$${name}:x:$${id}:$${id}:$${name}:/tmp/.$${name}:/bin/false" >> $${IPKG_INSTROOT}/etc/passwd
 fi
 
 grep -q '^zebra[[:space:]]*2601/tcp' $${IPKG_INSTROOT}/etc/services 2>/dev/null
-if [ $$? -ne 0 ]; then  
+if [ $$? -ne 0 ]; then
 echo "zebrasrv      2600/tcp" >>$${IPKG_INSTROOT}/etc/services
 echo "zebra         2601/tcp" >>$${IPKG_INSTROOT}/etc/services
 echo "ripd          2602/tcp" >>$${IPKG_INSTROOT}/etc/services
@@ -175,55 +251,55 @@ echo "isisd         2608/tcp" >>$${IPKG_INSTROOT}/etc/services
 fi
 endef
 
-define Package/quagga-bgpd/install	
+define Package/quagga-bgpd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/bgpd $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/quagga/
-	chmod 0750 $(1)/etc/quagga/
-	$(INSTALL_DATA) ./files/quagga.conf $(1)/etc/quagga/bgpd.conf
+	$(INSTALL_DIR) $(1)/etc/quagga
+	chmod 0750 $(1)/etc/quagga
+	$(INSTALL_CONF) ./files/quagga.conf $(1)/etc/quagga/bgpd.conf
 endef
 
 define Package/quagga-isisd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/isisd $(1)/usr/sbin
-	$(INSTALL_DIR) $(1)/etc/quagga/
-	chmod 0750 $(1)/etc/quagga/
-	$(INSTALL_DATA) ./files/quagga.conf $(1)/etc/quagga/isisd.conf
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/isisd $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc/quagga
+	chmod 0750 $(1)/etc/quagga
+	$(INSTALL_CONF) ./files/quagga.conf $(1)/etc/quagga/isisd.conf
 endef
 
-define Package/quagga-ospfd/install	
+define Package/quagga-ospfd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ospfd $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/quagga/
-	chmod 0750 $(1)/etc/quagga/
-	$(INSTALL_DATA) ./files/quagga.conf $(1)/etc/quagga/ospfd.conf
+	$(INSTALL_DIR) $(1)/etc/quagga
+	chmod 0750 $(1)/etc/quagga
+	$(INSTALL_CONF) ./files/quagga.conf $(1)/etc/quagga/ospfd.conf
 endef
 
-define Package/quagga-ospf6d/install	
+define Package/quagga-ospf6d/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ospf6d $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/quagga/
-	chmod 0750 $(1)/etc/quagga/
-	$(INSTALL_DATA) ./files/quagga.conf $(1)/etc/quagga/ospf6d.conf
+	$(INSTALL_DIR) $(1)/etc/quagga
+	chmod 0750 $(1)/etc/quagga
+	$(INSTALL_CONF) ./files/quagga.conf $(1)/etc/quagga/ospf6d.conf
 endef
 
-define Package/quagga-ripd/install	
+define Package/quagga-ripd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ripd $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/quagga/
-	chmod 0750 $(1)/etc/quagga/
-	$(INSTALL_DATA) ./files/quagga.conf $(1)/etc/quagga/ripd.conf
+	$(INSTALL_DIR) $(1)/etc/quagga
+	chmod 0750 $(1)/etc/quagga
+	$(INSTALL_CONF) ./files/quagga.conf $(1)/etc/quagga/ripd.conf
 endef
 
-define Package/quagga-ripngd/install	
+define Package/quagga-ripngd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ripngd $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/quagga/
-	chmod 0750 $(1)/etc/quagga/
-	$(INSTALL_DATA) ./files/quagga.conf $(1)/etc/quagga/ripngd.conf
+	$(INSTALL_DIR) $(1)/etc/quagga
+	chmod 0750 $(1)/etc/quagga
+	$(INSTALL_CONF) ./files/quagga.conf $(1)/etc/quagga/ripngd.conf
 endef
 
-define Package/quagga-vtysh/install	
+define Package/quagga-vtysh/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/vtysh $(1)/usr/bin/
 endef
@@ -235,7 +311,7 @@ endef
 
 define Package/quagga-libzebra/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libzebra.so.* $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libzebra.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,quagga))

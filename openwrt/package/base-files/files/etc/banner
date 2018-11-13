@@ -3,8 +3,8 @@
  |     |  -__|  |  |   _|  _  |  _  |_   _|
  |__|__|_____|_____|__| |_____|_____|__.__|
 
- KAMIKAZE (bleeding edge, $R) -------------------
-  * Powered by Efixo ($E)
-                           (http://dev.efixo.net/)
-  * OpenWrt based firmware (http://dev.openwrt.org/)
+ Backfire (10.03, $R) --------------------------
+  * Powered by Efixo ($E, $S)
+                   (http://www.efixo.net/gpl/)
+  * OpenWrt Base Firmware (http://openwrt.org)
  ---------------------------------------------------

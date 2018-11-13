@@ -12,7 +12,7 @@ PKG_VERSION:=015
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.kernel.org/pub/linux/utils/kernel/pcmcia/
+PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/pcmcia
 PKG_MD5SUM:=9e12435c8b6cf7bf59894e90e480b4aa
 
 include $(INCLUDE_DIR)/package.mk
@@ -20,14 +20,12 @@ include $(INCLUDE_DIR)/package.mk
 define Package/pcmciautils
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+sysfsutils @LINUX_2_6 @PCMCIA_SUPPORT
+  DEPENDS:=+sysfsutils @!LINUX_2_4 @PCMCIA_SUPPORT
   TITLE:=PCMCIA Utilities
   URL:=http://www.kernel.org/pub/linux/utils/kernel/pcmcia/pcmcia.html
 endef
 
 define Build/Compile
-	rm -rf "$(PKG_INSTALL_DIR)"
-	mkdir -p "$(PKG_INSTALL_DIR)"
 	$(call Build/Compile/Default, \
 		LD="$(TARGET_CC)" UDEV=false \
 		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) \

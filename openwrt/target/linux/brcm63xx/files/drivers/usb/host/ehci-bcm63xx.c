@@ -6,11 +6,15 @@
  * Copyright (C) 2008 Maxime Bizon <mbizon@freebox.fr>
  */
 
+#include <linux/version.h>
 #include <linux/init.h>
+#include <linux/clk.h>
 #include <linux/platform_device.h>
 #include <bcm63xx_cpu.h>
 #include <bcm63xx_regs.h>
 #include <bcm63xx_io.h>
+
+static struct clk *usb_host_clock;
 
 static int ehci_bcm63xx_setup(struct usb_hcd *hcd)
 {
@@ -25,7 +29,6 @@ static int ehci_bcm63xx_setup(struct usb_hcd *hcd)
 	if (retval)
 		return retval;
 
-	hcd->has_tt = 1;
 	ehci_reset(ehci);
 	ehci_port_power(ehci, 0);
 
@@ -56,30 +59,53 @@ static const struct hc_driver ehci_bcm63xx_hc_driver = {
 	.hub_control =		ehci_hub_control,
 	.bus_suspend =		ehci_bus_suspend,
 	.bus_resume =		ehci_bus_resume,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
 	.relinquish_port =	ehci_relinquish_port,
 	.port_handed_over =	ehci_port_handed_over,
+#endif
 };
 
 static int __devinit ehci_hcd_bcm63xx_drv_probe(struct platform_device *pdev)
 {
-	struct resource *res_mem, *res_irq;
+	struct resource *res_mem;
 	struct usb_hcd *hcd;
 	struct ehci_hcd *ehci;
 	u32 reg;
-	int ret;
+	int ret, irq;
 
 	res_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	res_irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-	if (!res_mem || !res_irq)
+	irq = platform_get_irq(pdev, 0);;
+	if (!res_mem || irq < 0)
 		return -ENODEV;
 
-	reg = bcm_rset_readl(RSET_USBH_PRIV, USBH_PRIV_SWAP_REG);
-	reg &= ~USBH_PRIV_SWAP_EHCI_DATA_MASK;
-	reg |= USBH_PRIV_SWAP_EHCI_ENDN_MASK;
-	bcm_rset_writel(RSET_USBH_PRIV, reg, USBH_PRIV_SWAP_REG);
+	if (!BCMCPU_IS_6362()) {
+		reg = bcm_rset_readl(RSET_USBH_PRIV, USBH_PRIV_SWAP_REG);
+		reg &= ~USBH_PRIV_SWAP_EHCI_DATA_MASK;
+		reg |= USBH_PRIV_SWAP_EHCI_ENDN_MASK;
+		bcm_rset_writel(RSET_USBH_PRIV, reg, USBH_PRIV_SWAP_REG);
 
-	/* don't ask... */
-	bcm_rset_writel(RSET_USBH_PRIV, 0x1c0020, USBH_PRIV_TEST_REG);
+		/*
+		 * The magic value comes for the original vendor BSP and is
+		 * needed for USB to work. Datasheet does not help, so the
+		 * magic value is used as-is.
+		 */
+		bcm_rset_writel(RSET_USBH_PRIV, 0x1c0020, USBH_PRIV_TEST_REG);
+	}
+	else {
+		struct clk *clk;
+		/* enable USB host clock */
+		clk = clk_get(&pdev->dev, "usbh");
+		if (IS_ERR(clk))
+			return -ENODEV;
+
+		clk_enable(clk);
+		usb_host_clock = clk;
+		reg = bcm_rset_readl(RSET_USBH_PRIV, USBH_PRIV_6362_SWAP_REG);
+		reg &= ~USBH_PRIV_SWAP_EHCI_DATA_MASK;
+		reg |= USBH_PRIV_SWAP_EHCI_ENDN_MASK;
+		bcm_rset_writel(RSET_USBH_PRIV, reg, USBH_PRIV_6362_SWAP_REG);
+		bcm_rset_writel(RSET_USBH_PRIV, USBH_PRIV_6362_SETUP_IOC_MASK, USBH_PRIV_6362_SETUP_REG);
+	}
 
 	hcd = usb_create_hcd(&ehci_bcm63xx_hc_driver, &pdev->dev, "bcm63xx");
 	if (!hcd)
@@ -102,14 +128,16 @@ static int __devinit ehci_hcd_bcm63xx_drv_probe(struct platform_device *pdev)
 
 	ehci = hcd_to_ehci(hcd);
 	ehci->big_endian_mmio = 1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
 	ehci->big_endian_desc = 0;
+#endif
 	ehci->caps = hcd->regs;
 	ehci->regs = hcd->regs +
 		HC_LENGTH(ehci_readl(ehci, &ehci->caps->hc_capbase));
 	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
 	ehci->sbrn = 0x20;
 
-	ret = usb_add_hcd(hcd, res_irq->start, IRQF_DISABLED);
+	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED);
 	if (ret)
 		goto out2;
 
@@ -134,6 +162,10 @@ static int __devexit ehci_hcd_bcm63xx_drv_remove(struct platform_device *pdev)
 	iounmap(hcd->regs);
 	usb_put_hcd(hcd);
 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
+	if (usb_host_clock) {
+		clk_disable(usb_host_clock);
+		clk_put(usb_host_clock);
+	}
 	platform_set_drvdata(pdev, NULL);
 	return 0;
 }
@@ -145,7 +177,6 @@ static struct platform_driver ehci_hcd_bcm63xx_driver = {
 	.driver		= {
 		.name	= "bcm63xx_ehci",
 		.owner	= THIS_MODULE,
-		.bus	= &platform_bus_type
 	},
 };
 

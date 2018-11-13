@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zile
-PKG_VERSION:=2.2.59
+PKG_VERSION:=2.3.19
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/zile
-PKG_MD5SUM:=ff7e448e230de8eebb6b0a675b73a0fe
+PKG_MD5SUM:=c23096fc646bc4a906c24c1bbe4e29f6
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -22,7 +24,7 @@ define Package/zile
   CATEGORY:=Utilities
   DEPENDS:=+libncurses
   TITLE:=very small emacs-like editor
-  URL:=http://zile.sourceforge.net
+  URL:=http://www.gnu.org/software/zile/
   SUBMENU:=Editors
 endef
 
@@ -32,13 +34,12 @@ define Package/zile/description
 	to Emacs; every Emacs user should feel at home with Zile.
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)/src
-endef
+CONFIGURE_VARS += \
+	gl_cv_func_getopt_gnu=yes \
 
 define Package/zile/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(CP) $(PKG_BUILD_DIR)/src/$(PKG_NAME) $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/$(PKG_NAME) $(1)/usr/bin/
 endef
 
 $(eval $(call BuildPackage,zile))

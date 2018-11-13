@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=curl
-PKG_VERSION:=7.19.4
+PKG_VERSION:=7.21.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -19,9 +19,10 @@ PKG_SOURCE_URL:=http://curl.haxx.se/download/ \
 	ftp://ftp.planetmirror.com/pub/curl/ \
 	http://www.mirrormonster.com/curl/download/ \
 	http://curl.mirrors.cyberservers.net/download/
-PKG_MD5SUM:=2734167c1e5f7ce6be99b75d2d371d85
+PKG_MD5SUM:=ca96df88e044c7c25d19692ec8b250b2
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -34,7 +35,7 @@ endef
 define Package/curl
   $(call Package/curl/Default)
   DEPENDS:=+libcurl
-  TITLE:=A client-side URL transfer library
+  TITLE:=A client-side URL transfer utility
 endef
 
 define Package/libcurl
@@ -42,7 +43,7 @@ define Package/libcurl
   SECTION:=libs
   CATEGORY:=Libraries
   DEPENDS:=+libopenssl +zlib
-  TITLE:=A client-side URL transfer utility
+  TITLE:=A client-side URL transfer library
 endef
 
 TARGET_CFLAGS += $(FPIC)
@@ -57,7 +58,6 @@ CONFIGURE_ARGS += \
 	--enable-file \
 	--enable-ftp \
 	--enable-http \
-	--enable-ipv6 \
 	--disable-ares \
 	--disable-debug \
 	--disable-dict \
@@ -75,18 +75,22 @@ CONFIGURE_ARGS += \
 	--without-krb4 \
 	--without-libidn \
 	--without-nss \
+	--without-libssh2 \
 	--with-zlib="$(STAGING_DIR)/usr" \
 
 CONFIGURE_VARS += \
 	LDFLAGS="$$$$LDFLAGS -lcrypto -lssl -lz" \
 	CC="$(filter-out ccache,$(TARGET_CC))"
 
-define Build/Configure
-	$(call Build/Configure/Default,,bash)
-endef
+#define Build/Configure
+#	(cd $(PKG_BUILD_DIR); \
+#		autoreconf -v --install || exit 1 \
+#	);
+#	$(call Build/Configure/Default)
+#endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		CC="$(TARGET_CC)" \
 		install

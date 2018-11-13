@@ -14,9 +14,13 @@ override MAKEFLAGS=
 PKG_OS:=$(shell uname -s)
 PKG_CPU:=$(shell uname -m)
 
-SDK_NAME:=OpenWrt-SDK-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)
+SDK_NAME:=OpenWrt-SDK-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)-gcc-$(GCCV)_$(LIBC)-$(LIBCV)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
-EXCLUDE_DIRS:=*/ccache */stamp */man */share */stampfiles */info
+EXCLUDE_DIRS:=*/ccache \
+	*/stamp \
+	*/stampfiles \
+	*/man \
+	*/info
 
 SVN_PACKAGE_URL=$(shell svn info ../../package | awk '/^URL:/ { print $$2; }')
 
@@ -25,7 +29,7 @@ all: compile
 $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
 	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
-	$(TAR) -cf - -C $(TOPDIR) $(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") --exclude="staging_dir/$(ARCH)" staging_dir | \
+	$(TAR) -cf - -C $(TOPDIR) $(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") --exclude="staging_dir/$(ARCH)" staging_dir/host staging_dir/target-$(ARCH)$(ARCH_SUFFIX)_$(LIBC)-$(LIBCV) staging_dir/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)_$(LIBC)-$(LIBCV) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 	mkdir -p $(SDK_BUILD_DIR)/target/linux
 	$(CP) $(GENERIC_PLATFORM_DIR) $(PLATFORM_DIR) $(SDK_BUILD_DIR)/target/linux/

@@ -1,11 +1,19 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 OTHER_MENU:=Other modules
+
+define KernelPackage/block2mtd
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Block device MTD emulation
+  KCONFIG:=CONFIG_MTD_BLOCK2MTD
+  FILES:=$(LINUX_DIR)/drivers/mtd/devices/block2mtd.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,block2mtd))
 
 define KernelPackage/crc-itu-t
   SUBMENU:=$(OTHER_MENU)
@@ -54,9 +62,10 @@ $(eval $(call KernelPackage,crc7))
 define KernelPackage/crc16
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC16 support
+  DEPENDS:=@!(LINUX_2_4||TARGET_xburst)
   KCONFIG:=CONFIG_CRC16
   FILES:=$(LINUX_DIR)/lib/crc16.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,20,crc16)
+  AUTOLOAD:=$(call AutoLoad,20,crc16,1)
 endef
 
 define KernelPackage/crc16/description
@@ -71,11 +80,7 @@ define KernelPackage/eeprom-93cx6
   TITLE:=EEPROM 93CX6 support
   DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_EEPROM_93CX6
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/eeprom_93cx6.$(LINUX_KMOD_SUFFIX)
-else
-  FILES:=$(LINUX_DIR)/drivers/misc/eeprom_93cx6.$(LINUX_KMOD_SUFFIX)
-endif
   AUTOLOAD:=$(call AutoLoad,20,eeprom_93cx6)
 endef
 
@@ -101,7 +106,21 @@ define KernelPackage/lp
   AUTOLOAD:=$(call AutoLoad,50,parport lp)
 endef
 
+define KernelPackage/lp/2.4
+  FILES:= \
+	$(LINUX_DIR)/drivers/parport/parport.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/parport/parport_*.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/char/lp.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/char/ppdev.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50, \
+  	parport \
+  	parport_splink \
+  	lp \
+  )
+endef
+
 $(eval $(call KernelPackage,lp))
+
 
 define KernelPackage/pcspkr
   SUBMENU:=$(OTHER_MENU)
@@ -121,7 +140,6 @@ endef
 
 $(eval $(call KernelPackage,pcspkr))
 
-# This activates PCMCIA support in ssb. This will be included in kmod-ssb.
 define KernelPackage/pcmcia-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PCMCIA/CardBus support
@@ -130,11 +148,6 @@ define KernelPackage/pcmcia-core
 	CONFIG_PCMCIA \
 	CONFIG_CARDBUS \
 	CONFIG_PCCARD \
-	CONFIG_YENTA \
-	CONFIG_PCCARD_NONSTATIC \
-	CONFIG_SSB_PCMCIAHOST=y \
-	CONFIG_SSB_PCMCIAHOST_POSSIBLE=y \
-	CONFIG_SSB_BLOCKIO=y \
 	PCMCIA_DEBUG=n
 endef
 
@@ -144,22 +157,20 @@ define KernelPackage/pcmcia-core/2.4
 #	CONFIG_CARDBUS
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core ds)
+	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core ds yenta_socket)
 endef
 
 define KernelPackage/pcmcia-core/2.6
 #  KCONFIG:= \
 #	CONFIG_PCCARD \
 #	CONFIG_PCMCIA \
-#	CONFIG_YENTA \
-#	CONFIG_PCCARD_NONSTATIC \
 #	PCMCIA_DEBUG=n
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core pcmcia rsrc_nonstatic)
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core pcmcia)
 endef
 
 define KernelPackage/pcmcia-core/description
@@ -172,13 +183,18 @@ $(eval $(call KernelPackage,pcmcia-core))
 define KernelPackage/pcmcia-yenta
   SUBMENU:=$(OTHER_MENU)
   TITLE:=yenta socket driver
-  DEPENDS:=kmod-pcmcia-core
-  KCONFIG:=CONFIG_YENTA
-  FILES:=$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,yenta_socket)
+  DEPENDS:=@LINUX_2_6 kmod-pcmcia-core
+  KCONFIG:= \
+	CONFIG_PCCARD_NONSTATIC \
+	CONFIG_YENTA
+  FILES:= \
+	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,rsrc_nonstatic yenta_socket)
 endef
 
 $(eval $(call KernelPackage,pcmcia-yenta))
+
 
 define KernelPackage/pcmcia-au1000
   SUBMENU:=$(OTHER_MENU)
@@ -234,7 +250,7 @@ $(eval $(call KernelPackage,pcmcia-serial))
 define KernelPackage/ssb
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Silicon Sonics Backplane glue code
-  DEPENDS:=@LINUX_2_6 @PCI_SUPPORT @!TARGET_brcm47xx||!TARGET_brcm63xx
+  DEPENDS:=@LINUX_2_6 @PCI_SUPPORT @!TARGET_brcm47xx @!TARGET_brcm63xx
   KCONFIG:=\
 	CONFIG_SSB \
 	CONFIG_SSB_B43_PCI_BRIDGE=y \
@@ -260,7 +276,8 @@ $(eval $(call KernelPackage,ssb))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-input-core
+  DEPENDS:=@USB_SUPPORT +!(LINUX_2_4||TARGET_xburst):kmod-crc16 +kmod-usb-core +!TARGET_x86:kmod-hid \
+	+(TARGET_x86||TARGET_s3c24xx||TARGET_brcm47xx||TARGET_ar71xx):kmod-rfkill
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -310,7 +327,6 @@ define KernelPackage/bluetooth/2.6
 #	CONFIG_BT_BNEP \
 #	CONFIG_BT_HCIUSB \
 #	CONFIG_BT_HCIUART
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.27)),1)
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
@@ -321,18 +337,6 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.27)),1)
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/bluetooth/btusb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart btusb)
-else
-  FILES:= \
-	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/hidp/hidp.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart hci_usb)
-endif
 endef
 
 define KernelPackage/bluetooth/description
@@ -359,7 +363,7 @@ define KernelPackage/mmc
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/core/mmc_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/mmc/card/mmc_block.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block)
+  AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block,1)
 endef
 
 define KernelPackage/mmc/description
@@ -375,7 +379,7 @@ define KernelPackage/mmc-at91
   DEPENDS:=@TARGET_at91 +kmod-mmc
   KCONFIG:=CONFIG_MMC_AT91
   FILES:=$(LINUX_DIR)/drivers/mmc/host/at91_mci.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,at91_mci)
+  AUTOLOAD:=$(call AutoLoad,90,at91_mci,1)
 endef
 
 define KernelPackage/mmc-at91/description
@@ -424,6 +428,21 @@ endef
 
 $(eval $(call KernelPackage,softdog))
 
+define KernelPackage/rdc321x-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RDC321x watchdog
+  DEPENDS:=@TARGET_rdc
+  KCONFIG:=CONFIG_RDC321X_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/rdc321x_wdt.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,rdc321x_wdt)
+endef
+
+define KernelPackage/rdc321x-wdt/description
+  RDC-321x watchdog driver
+endef
+
+$(eval $(call KernelPackage,rdc321x-wdt))
+
 
 define KernelPackage/leds-gpio
   SUBMENU:=$(OTHER_MENU)
@@ -439,6 +458,21 @@ define KernelPackage/leds-gpio/description
 endef
 
 $(eval $(call KernelPackage,leds-gpio))
+
+
+define KernelPackage/leds-pwm
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PWM LED support
+  KCONFIG:=CONFIG_LEDS_PWM
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-pwm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,61,leds-pwm)
+endef
+
+define KernelPackage/leds-pwm/description
+ Kernel module for PWM LEDs
+endef
+
+$(eval $(call KernelPackage,leds-pwm))
 
 
 define KernelPackage/ledtrig-adm5120-switch
@@ -494,9 +528,9 @@ define KernelPackage/leds-alix
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PCengines ALIX LED support
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_LEDS_ALIX
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-alix.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,leds-alix)
+  KCONFIG:=CONFIG_LEDS_ALIX2
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-alix2.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,leds-alix2)
 endef
 
 define KernelPackage/leds-alix/description
@@ -504,6 +538,38 @@ define KernelPackage/leds-alix/description
 endef
 
 $(eval $(call KernelPackage,leds-alix))
+
+
+define KernelPackage/leds-wndr3700-usb
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=WNDR3700 USB LED support
+  DEPENDS:= @TARGET_ar71xx
+  KCONFIG:=CONFIG_LEDS_WNDR3700_USB
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-wndr3700-usb.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,leds-wndr3700-usb)
+endef
+
+define KernelPackage/leds-wndr3700-usb/description
+ Kernel module for the USB LED on the NETGWR WNDR3700 board.
+endef
+
+$(eval $(call KernelPackage,leds-wndr3700-usb))
+
+
+define KernelPackage/leds-rb750
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RouterBOARD 750 LED support
+  DEPENDS:=@TARGET_ar71xx
+  KCONFIG:=CONFIG_LEDS_RB750
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-rb750.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,leds-rb750)
+endef
+
+define KernelPackage/leds-rb750/description
+ Kernel module for the LEDs on the MikroTik RouterBOARD 750.
+endef
+
+$(eval $(call KernelPackage,leds-rb750))
 
 
 define KernelPackage/ledtrig-netdev
@@ -619,8 +685,16 @@ $(eval $(call KernelPackage,sc520-wdt))
 define KernelPackage/input-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Input device core
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@!TARGET_x86
   KCONFIG:=CONFIG_INPUT
+endef
+
+define KernelPackage/input-core/2.4
+  FILES:=$(LINUX_DIR)/drivers/input/input.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,19,input)
+endef
+
+define KernelPackage/input-core/2.6
   FILES:=$(LINUX_DIR)/drivers/input/input-core.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,19,input-core)
 endef
@@ -635,7 +709,7 @@ $(eval $(call KernelPackage,input-core))
 define KernelPackage/input-evdev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Input event device
-  DEPENDS:=+kmod-input-core
+  DEPENDS:=+!TARGET_x86:kmod-input-core
   KCONFIG:=CONFIG_INPUT_EVDEV
   FILES:=$(LINUX_DIR)/drivers/input/evdev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,evdev)
@@ -651,7 +725,7 @@ $(eval $(call KernelPackage,input-evdev))
 define KernelPackage/hid
   SUBMENU:=$(OTHER_MENU)
   TITLE:=HID Devices
-  DEPENDS:=+kmod-input-core +kmod-input-evdev
+  DEPENDS:=+kmod-input-core +kmod-input-evdev @!TARGET_x86
   KCONFIG:=CONFIG_HID
   FILES:=$(LINUX_DIR)/drivers/hid/hid.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,hid)
@@ -667,7 +741,7 @@ $(eval $(call KernelPackage,hid))
 define KernelPackage/input-polldev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Polled Input device support
-  DEPENDS:=+kmod-input-core @LINUX_2_6
+  DEPENDS:=+!TARGET_x86:kmod-input-core @LINUX_2_6
   KCONFIG:=CONFIG_INPUT_POLLDEV
   FILES:=$(LINUX_DIR)/drivers/input/input-polldev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,input-polldev)
@@ -678,6 +752,23 @@ define KernelPackage/input-polldev/description
 endef
 
 $(eval $(call KernelPackage,input-polldev))
+
+
+define KernelPackage/input-gpio-keys
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=GPIO key support
+  DEPENDS:= @GPIO_SUPPORT +!TARGET_x86:kmod-input-core
+  KCONFIG:=CONFIG_KEYBOARD_GPIO
+  FILES:=$(LINUX_DIR)/drivers/input/keyboard/gpio_keys.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,gpio_keys)
+endef
+
+define KernelPackage/input-gpio-keys/description
+ This driver implements support for buttons connected
+ to GPIO pins of various CPUs (and some other chips).
+endef
+
+$(eval $(call KernelPackage,input-gpio-keys))
 
 
 define KernelPackage/input-gpio-buttons
@@ -697,10 +788,28 @@ endef
 
 $(eval $(call KernelPackage,input-gpio-buttons))
 
+
+define KernelPackage/input-neufbox-events
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=neufbox events input device
+  DEPENDS:=+kmod-input-core
+  KCONFIG:= \
+	CONFIG_INPUT_NEUFBOX_EVENTS \
+	CONFIG_INPUT_MISC=y
+  FILES:=$(LINUX_DIR)/drivers/input/misc/neufbox_events.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,62,neufbox_events)
+endef
+
+define KernelPackage/input-neufbox-events/description
+ Kernel module for support neufbox events input device
+endef
+
+$(eval $(call KernelPackage,input-neufbox-events))
+
 define KernelPackage/input-joydev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Joystick device support
-  DEPENDS:=+kmod-input-core
+  DEPENDS:=+!TARGET_x86:kmod-input-core
   KCONFIG:=CONFIG_INPUT_JOYDEV
   FILES:=$(LINUX_DIR)/drivers/input/joydev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,62,joydev)
@@ -712,23 +821,23 @@ endef
 
 $(eval $(call KernelPackage,input-joydev))
 
-
-define KernelPackage/mmc-spi
+define KernelPackage/input-rb532
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=MMC/SD over SPI Support
-  DEPENDS:=@LINUX_2_6 +kmod-mmc +kmod-crc-itu-t +kmod-crc7
-  KCONFIG:=CONFIG_MMC_SPI \
-          CONFIG_SPI=y \
-          CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/mmc/host/mmc_spi.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,mmc_spi)
+  TITLE:=RB532 button device support
+  DEPENDS:=+kmod-input-core @TARGET_rb532
+  KCONFIG:= \
+	CONFIG_INPUT_MISC=y \
+	CONFIG_INPUT_RB532_BUTTON
+  FILES:=$(LINUX_DIR)/drivers/input/misc/rb532_button.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,62,rb532_button)
 endef
 
-define KernelPackage/mmc-spi/description
- Kernel support for MMC/SD over SPI
+define KernelPackage/input-rb532/description
+  Kernel module for RB532 button
 endef
 
-$(eval $(call KernelPackage,mmc-spi))
+$(eval $(call KernelPackage,input-rb532))
+
 
 define KernelPackage/mmc-atmelmci
   SUBMENU:=$(OTHER_MENU)
@@ -743,91 +852,13 @@ define KernelPackage/mmc-atmelmci/description
  Kernel support for  Atmel Multimedia Card Interface.
 endef
 
-$(eval $(call KernelPackage,mmc-atmelmci))
+$(eval $(call KernelPackage,mmc-atmelmci,1))
 
-define KernelPackage/spi-bitbang
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Serial Peripheral Interface bitbanging library
-  DEPENDS:=@LINUX_2_6
-  KCONFIG:=CONFIG_SPI_BITBANG \
-          CONFIG_SPI=y \
-          CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_bitbang.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,91,spi_bitbang)
-endef
-
-define KernelPackage/spi-bitbang/description
- This package contains the SPI bitbanging library
-endef
-
-$(eval $(call KernelPackage,spi-bitbang))
-
-define KernelPackage/spi-gpio-old
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Old GPIO based bitbanging SPI controller (DEPRECATED)
-  DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
-  KCONFIG:=CONFIG_SPI_GPIO_OLD
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio_old.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,92,spi_gpio_old)
-endef
-
-define KernelPackage/spi-gpio-old/description
- This package contains the GPIO based bitbanging SPI controller driver
-endef
-
-$(eval $(call KernelPackage,spi-gpio-old))
-
-define KernelPackage/spi-gpio
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=GPIO-based bitbanging SPI Master
-  DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
-  KCONFIG:=CONFIG_SPI_GPIO
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,92,spi_gpio)
-endef
-
-define KernelPackage/spi-gpio/description
- This package contains the GPIO-based bitbanging SPI Master
-endef
-
-$(eval $(call KernelPackage,spi-gpio))
-
-define KernelPackage/spi-dev
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=User mode SPI device driver
-  DEPENDS:=@LINUX_2_6
-  KCONFIG:=CONFIG_SPI_SPIDEV \
-          CONFIG_SPI=y \
-          CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spidev.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,91,spidev)
-endef
-
-define KernelPackage/spi-dev/description
- This package contains the user mode SPI device driver
-endef
-
-$(eval $(call KernelPackage,spi-dev))
-
-define KernelPackage/bcm63xx-spi
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Broadcom BCM63xx SPI driver
-  DEPENDS:=@TARGET_brcm63xx +kmod-spi-bitbang
-  KCONFIG:=CONFIG_SPI_BCM63XX
-  FILES:=$(LINUX_DIR)/drivers/spi/bcm63xx_spi.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,92,bcm63xx_spi)
-endef
-
-define KernelPackage/bcm63xx-spi/description
-  This package contains the Broadcom BCM63xx SPI Master driver
-endef
-
-$(eval $(call KernelPackage,bcm63xx-spi))
 
 define KernelPackage/cs5535-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=AMD CS5535/CS5536 GPIO driver
-  DEPENDS:=@TARGET_x86||@TARGET_olpc
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_CS5535_GPIO
   FILES:=$(LINUX_DIR)/drivers/char/cs5535_gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,cs5535_gpio)
@@ -838,6 +869,24 @@ define KernelPackage/cs5535-gpio/description
 endef
 
 $(eval $(call KernelPackage,cs5535-gpio))
+
+
+define KernelPackage/ixp4xx-beeper
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=IXP4XX Beeper support
+  DEPENDS:=@TARGET_ixp4xx +kmod-input-core
+  KCONFIG:= \
+	CONFIG_INPUT_MISC=y \
+	CONFIG_INPUT_IXP4XX_BEEPER
+  FILES:=$(LINUX_DIR)/drivers/input/misc/ixp4xx-beeper.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,ixp4xx-beeper)
+endef
+
+define KernelPackage/ixp4xx-beeper/description
+ IXP4XX Beeper support
+endef
+
+$(eval $(call KernelPackage,ixp4xx-beeper))
 
 
 define KernelPackage/textsearch
@@ -862,15 +911,21 @@ $(eval $(call KernelPackage,textsearch))
 define KernelPackage/rfkill
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RF switch subsystem support
-  DEPENDS:=@LINUX_2_6 @!LINUX_2_6_21 @!TARGET_rb532 @!TARGET_avr32 @!TARGET_brcm47xx @!TARGET_s3c24xx @!TARGET_ifxmips @!TARGET_atheros @!TARGET_adm5120 @!TARGET_ar7 @!TARGET_ppc40x @!TARGET_ixp4xx @!TARGET_rdc @!TARGET_uml
+  DEPENDS:=@TARGET_x86||TARGET_s3c24xx||TARGET_brcm47xx||TARGET_ar71xx
   KCONFIG:= \
     CONFIG_RFKILL \
-    CONFIG_RFKILL_INPUT \
+    CONFIG_RFKILL_INPUT=y \
     CONFIG_RFKILL_LEDS=y
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.31)),1)
+  FILES:= \
+    $(LINUX_DIR)/net/rfkill/rfkill.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,rfkill)
+else
   FILES:= \
     $(LINUX_DIR)/net/rfkill/rfkill.$(LINUX_KMOD_SUFFIX) \
     $(LINUX_DIR)/net/rfkill/rfkill-input.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,rfkill rfkill-input)
+endif
 endef
 
 define KernelPackage/rfkill/description
@@ -879,3 +934,37 @@ define KernelPackage/rfkill/description
 endef
 
 $(eval $(call KernelPackage,rfkill))
+
+define KernelPackage/bcm63xx-tdm
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=bcm63xx TDM driver
+  DEPENDS:=@TARGET_brcm63xx
+  KCONFIG:= \
+	CONFIG_TDM=y \
+	CONFIG_TDM_BCM63XX
+  FILES:=$(LINUX_DIR)/drivers/tdm/bcm63xx_tdm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call Autoload,20,bcm63xx_tdm)
+endef
+
+define KernelPackage/bcm63xx-tdm/description
+  Say Y here if you want TDM bus driver
+endef
+
+$(eval $(call KernelPackage,bcm63xx-tdm))
+
+define KernelPackage/si32176
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=si32176 SLIC driver
+  DEPENDS:=@TARGET_brcm63xx +kmod-bcm63xx-tdm
+  KCONFIG:= \
+	CONFIG_PHONE \
+	CONFIG_SI32176
+  FILES:=$(LINUX_DIR)/drivers/telephony/si32176.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call Autoload,20,si32176)
+endef
+
+define KernelPackage/si32176/description
+  Say Y here if you want Silabs si32176 SLIC driver
+endef
+
+$(eval $(call KernelPackage,si32176))

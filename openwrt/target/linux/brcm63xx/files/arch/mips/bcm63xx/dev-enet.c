@@ -28,7 +28,7 @@ static struct platform_device bcm63xx_enet_shared_device = {
 	.resource	= shared_res,
 };
 
-static int shared_device_registered = 0;
+static int shared_device_registered;
 
 static struct resource enet0_res[] = {
 	{
@@ -42,12 +42,10 @@ static struct resource enet0_res[] = {
 	},
 	{
 		.start		= -1, /* filled at runtime */
-		.start		= IRQ_ENET0_RXDMA,
 		.flags		= IORESOURCE_IRQ,
 	},
 	{
 		.start		= -1, /* filled at runtime */
-		.start		= IRQ_ENET0_TXDMA,
 		.flags		= IORESOURCE_IRQ,
 	},
 };
@@ -106,10 +104,16 @@ int __init bcm63xx_enet_register(int unit,
 	if (unit > 1)
 		return -ENODEV;
 
+	if (unit == 1 && BCMCPU_IS_6338())
+		return -ENODEV;
+
 	if (!shared_device_registered) {
 		shared_res[0].start = bcm63xx_regset_address(RSET_ENETDMA);
 		shared_res[0].end = shared_res[0].start;
-		shared_res[0].end += RSET_ENETDMA_SIZE - 1;
+		if (BCMCPU_IS_6338())
+			shared_res[0].end += (RSET_ENETDMA_SIZE / 2)  - 1;
+		else
+			shared_res[0].end += (RSET_ENETDMA_SIZE)  - 1;
 
 		ret = platform_device_register(&bcm63xx_enet_shared_device);
 		if (ret)
@@ -137,7 +141,7 @@ int __init bcm63xx_enet_register(int unit,
 
 	/* copy given platform data */
 	dpd = pdev->dev.platform_data;
-	memcpy(dpd, pd, sizeof (*pd));
+	memcpy(dpd, pd, sizeof(*pd));
 
 	/* adjust them in case internal phy is used */
 	if (dpd->use_internal_phy) {

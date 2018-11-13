@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2008 OpenWrt.org
+#
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ngircd
-PKG_VERSION:=14.1
-PKG_RELEASE:=1
+PKG_VERSION:=15
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=ftp://ngircd.barton.de/pub/ngircd/
-PKG_MD5SUM:=eef90855414c35bfb6590d17e24ee06f
+PKG_SOURCE_URL:= \
+        ftp://ngircd.barton.de/pub/ngircd/ \
+        ftp://ftp.berlios.de/pub/ngircd/
+PKG_MD5SUM:=c183a85eba6fe51255983848f099c8ae
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -32,14 +36,8 @@ define Package/ngircd/description
   not deduced from the "grandfather of IRC daemons", the daemon of the IRCNet.
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default)
-endef
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
+define Package/ngircd/conffiles
+/etc/ngircd.conf
 endef
 
 define Package/ngircd/install

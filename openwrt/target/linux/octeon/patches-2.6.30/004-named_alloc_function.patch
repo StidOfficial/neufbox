@@ -8,7 +8,7 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
 
 --- a/arch/mips/cavium-octeon/executive/cvmx-bootmem.c
 +++ b/arch/mips/cavium-octeon/executive/cvmx-bootmem.c
-@@ -97,6 +97,32 @@ void *cvmx_bootmem_alloc(uint64_t size, 
+@@ -97,6 +97,32 @@ void *cvmx_bootmem_alloc(uint64_t size,
  	return cvmx_bootmem_alloc_range(size, alignment, 0, 0);
  }
  
@@ -187,7 +187,7 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
  extern int cvmx_bootmem_free_named(char *name);
  
  /**
-@@ -224,6 +282,33 @@ int64_t cvmx_bootmem_phy_alloc(uint64_t 
+@@ -224,6 +282,33 @@ int64_t cvmx_bootmem_phy_alloc(uint64_t
  			       uint32_t flags);
  
  /**

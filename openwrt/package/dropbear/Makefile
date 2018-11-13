@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=0.52
-PKG_RELEASE:=2
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
@@ -34,11 +34,11 @@ define Package/dropbear/description
  A small SSH2 server/client designed for small memory environments.
 endef
 
-#define Package/dropbear/conffiles
+define Package/dropbear/conffiles
 #/etc/dropbear/dropbear_rsa_host_key
 #/etc/dropbear/dropbear_dss_host_key 
 #/etc/config/dropbear 
-#endef
+endef
 
 define Package/dropbearconvert
   $(call Package/dropbear/Default)
@@ -90,14 +90,14 @@ define Package/dropbear/install
 	ln -sf ../sbin/dropbear $(1)/usr/bin/dbclient
 	ln -sf ../sbin/dropbear $(1)/usr/bin/dropbearkey
 	$(INSTALL_DIR) $(1)/etc/config
-#	$(INSTALL_DATA) ./files/dropbear.config $(1)/etc/config/dropbear
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_DATA) ./files/dropbear.config $(1)/etc/config/dropbear)
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/dropbear.init $(1)/etc/init.d/dropbear
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_BIN) ./files/dropbear.init $(1)/etc/init.d/dropbear)
 	$(INSTALL_DIR) $(1)/usr/lib/opkg/info
-	ln -sf /etc/config/dropbear $(1)/etc/dropbear
-#	$(INSTALL_DIR) $(1)/etc/dropbear
-#	touch $(1)/etc/dropbear/dropbear_rsa_host_key
-#	touch $(1)/etc/dropbear/dropbear_dss_host_key
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),ln -sf /etc/config/dropbear $(1)/etc/dropbear)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,$(INSTALL_DIR) $(1)/etc/dropbear)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,touch $(1)/etc/dropbear/dropbear_rsa_host_key)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,touch $(1)/etc/dropbear/dropbear_dss_host_key)
 endef
 
 define Package/dropbearconvert/install

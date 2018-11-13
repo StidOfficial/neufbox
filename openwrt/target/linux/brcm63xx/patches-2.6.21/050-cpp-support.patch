@@ -1,6 +1,6 @@
---- linux-2.6.21.7/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/Makefile	2008-06-12 10:15:41.000000000 +0200
-@@ -2279,6 +279,7 @@ include $(srctree)/scripts/Kbuild.includ
+--- a/Makefile
++++ b/Makefile
+@@ -282,6 +282,7 @@ include $(srctree)/scripts/Kbuild.includ
  AS		= $(CROSS_COMPILE)as
  LD		= $(CROSS_COMPILE)ld
  CC		= $(CROSS_COMPILE)gcc
@@ -8,15 +8,15 @@
  CPP		= $(CC) -E
  AR		= $(CROSS_COMPILE)ar
  NM		= $(CROSS_COMPILE)nm
-@@ -325,6 +326,7 @@ export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODU
+@@ -327,6 +328,7 @@ export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODU
+ 
  export CPPFLAGS NOSTDINC_FLAGS LINUXINCLUDE OBJCOPYFLAGS LDFLAGS
  export CFLAGS CFLAGS_KERNEL CFLAGS_MODULE
 +export CXX CXXFLAGS NOSTDINCXX_FLAGS
  export AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
  
  # When compiling out-of-tree modules, put MODVERDIR in the module
- # tree rather than in the kernel tree. The kernel tree might
-@@ -481,20 +483,25 @@ all: vmlinux
+@@ -484,20 +486,25 @@ all: vmlinux
  
  ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
  CFLAGS		+= -Os
@@ -42,9 +42,9 @@
  endif
  
  # Force gcc to behave correct even for buggy distributions
-@@ -507,6 +514,12 @@ CFLAGS          += $(call cc-option, -fn
- NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
- CHECKFLAGS     += $(NOSTDINC_FLAGS)
+@@ -510,6 +517,12 @@ CHECKFLAGS     += $(NOSTDINC_FLAGS)
+ # improve gcc optimization
+ CFLAGS += $(call cc-option,-funit-at-a-time,)
  
 +# arch Makefile may override CXX so keep this after arch Makefile is included
 +NOSTDINCXX_FLAGS += $(NOSTDINC_FLAGS) -nostdinc
@@ -55,9 +55,8 @@
  # warn about C99 declaration after statement
  CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
  
-diff -pNur linux-2.6.21.7/scripts/Makefile.build linux-2.6.21.7/scripts/Makefile.build
---- linux-2.6.21.7/scripts/Makefile.build	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/scripts/Makefile.build	2008-06-12 01:14:36.000000000 +0200
+--- a/scripts/Makefile.build
++++ b/scripts/Makefile.build
 @@ -97,7 +97,7 @@ ifneq ($(KBUILD_CHECKSRC),0)
  endif
  
@@ -145,9 +144,8 @@ diff -pNur linux-2.6.21.7/scripts/Makefile.build linux-2.6.21.7/scripts/Makefile
  # Compile assembler sources (.S)
  # ---------------------------------------------------------------------------
  
-diff -pNur linux-2.6.21.7/scripts/Makefile.lib linux-2.6.21.7/scripts/Makefile.lib
---- linux-2.6.21.7/scripts/Makefile.lib	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/scripts/Makefile.lib	2008-06-12 01:14:36.000000000 +0200
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
 @@ -87,6 +87,7 @@ modname_flags  = $(if $(filter 1,$(words
                   -D"KBUILD_MODNAME=KBUILD_STR($(call name-fix,$(modname)))")
  

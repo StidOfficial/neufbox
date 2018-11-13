@@ -4,6 +4,7 @@
  * for more details.
  *
  * Copyright (C) 2008 Axel Gembe <ago@bastart.eu.org>
+ * Copyright (C) 2009 Daniel Dickinson <crazycshore@gmail.com>
  */
 
 #include <stdio.h>
@@ -15,16 +16,25 @@
 #include <sys/stat.h>
 #include <netinet/in.h>
 
+#include "bcm_tag.h"
+
 #define IMAGETAG_MAGIC1			"Broadcom Corporatio"
 #define IMAGETAG_MAGIC2			"ver. 2.0"
 #define IMAGETAG_VER			"6"
 #define IMAGETAG_DEFAULT_LOADADDR	0x80010000
-#define IMAGETAG_CRC_START		0xFFFFFFFF
 #define DEFAULT_FW_OFFSET		0x10000
 #define DEFAULT_FLASH_START		0xBFC00000
 #define DEFAULT_FLASH_BS		(64 * 1024)
+#define DEADCODE			0xDEADC0DE
 
-#define ALIGN(x,a) (((x)+(a)-1)&~((a)-1))
+union int2char {
+  uint32_t input;
+  char output[4];
+};
+
+/* Convert uint32_t CRC to bigendian and copy it into a character array */
+#define int2tag(tag, value)  intchar.input = htonl(value);	\
+	  memcpy(tag, intchar.output, sizeof(union int2char))
 
 /* Kernel header */
 struct kernelhdr {
@@ -33,33 +43,7 @@ struct kernelhdr {
 	uint32_t		lzmalen;	/* Compressed length of the LZMA data that follows */
 };
 
-/* Image component */
-struct imagecomp {
-	uint8_t			address[12];	/* Address of this component as ASCII */
-	uint8_t			len[10];	/* Length of this component as ASCII */
-};
-
-/* Image tag */
-struct imagetag {
-	uint8_t			tagver[4];	/*   0 -   3: Version of the tag as ASCII (2) */
-	uint8_t			sig1[20];	/*   4 -  23: BCM_MAGIC_1 */
-	uint8_t			sig2[14];	/*  24 -  37: BCM_MAGIC_2 */
-	uint8_t			chipid[6];	/*  38 -  43: Chip id as ASCII (6345) */
-	uint8_t			boardid[16];	/*  44 -  59: Board id as ASCII (96345GW2, etc...) */
-	uint8_t			bigendian[2];	/*  60 -  61: "1" for big endian, "0" for little endian */
-	uint8_t			imagelen[10];	/*  62 -  71: The length of all data that follows */
-	struct imagecomp	cfe;		/*  72 -  93: The offset and length of CFE */
-	struct imagecomp	rootfs;		/*  94 - 115: The offset and length of the root file system */
-	struct imagecomp	kernel;		/* 116 - 137: The offset and length of the kernel */
-	uint8_t			dualimage[2];	/* 138 - 139: use "0" here */
-	uint8_t			inactive[2];	/* 140 - 141: use "0" here */
-	char			neufbox4[73];	/* 142 - 214: neufbox4 firmware version */
-	uint8_t			net_infra;	/* 215 - 215: neufbox4 network infra (adsl, ftth) */
-	uint32_t		imagecrc;	/* 216 - 219: crc of the images (net byte order) */
-	uint8_t			reserved2[16];	/* 220 - 235: reserved */
-	uint32_t		headercrc;	/* 236 - 239: crc starting from sig1 until headercrc (net byte order) */
-	uint8_t			reserved3[16];	/* 240 - 255: reserved */
-};
+static char pirellitab[NUM_PIRELLI][BOARDID_LEN] = PIRELLI_BOARDS;
 
 static uint32_t crc32tab[256] = {
 	0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
@@ -104,6 +88,29 @@ uint32_t crc32(uint32_t crc, uint8_t *data, size_t len)
 	return crc;
 }
 
+uint32_t compute_crc32(uint32_t crc, FILE *binfile, size_t compute_start, size_t compute_len)
+{
+	uint8_t readbuf[1024];
+	size_t read;
+
+	fseek(binfile, compute_start, SEEK_SET);
+
+	/* read block of 1024 bytes */
+	while (binfile && !feof(binfile) && !ferror(binfile) && (compute_len >= sizeof(readbuf))) {
+		read = fread(readbuf, sizeof(uint8_t), sizeof(readbuf), binfile);
+		crc = crc32(crc, readbuf, read);
+		compute_len = compute_len - read;
+	}
+
+	/* Less than 1024 bytes remains, read compute_len bytes */
+	if (binfile && !feof(binfile) && !ferror(binfile) && (compute_len > 0)) {
+		read = fread(readbuf, sizeof(uint8_t), compute_len, binfile);
+		crc = crc32(crc, readbuf, read);
+	}
+
+	return crc;
+}
+
 size_t getlen(FILE *fp)
 {
 	size_t retval, curpos;
@@ -122,25 +129,38 @@ size_t getlen(FILE *fp)
 int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	    const char *boardid, const char *chipid, const uint32_t fwaddr,
 	    const uint32_t loadaddr, const uint32_t entry,
-	    const char *ver, const char *magic2, const uint32_t flash_bs, const char *neufbox4)
+	    const char *ver, const char *magic2, const uint32_t flash_bs,
+	    const char *rsignature, const char *layoutver)
 {
-	struct imagetag tag;
+	struct bcm_tag tag;
 	struct kernelhdr khdr;
 	FILE *kernelfile = NULL, *rootfsfile = NULL, *binfile;
-	size_t kerneloff, kernellen, rootfsoff, rootfslen, read;
+	size_t kerneloff, kernellen, rootfsoff, rootfslen, read, imagelen, rootfsoffpadlen, kernelfslen;
 	uint8_t readbuf[1024];
-	uint32_t crc;
+	uint32_t imagecrc = IMAGETAG_CRC_START;
+	uint32_t kernelcrc = IMAGETAG_CRC_START;
+	uint32_t rootfscrc = IMAGETAG_CRC_START;
+	uint32_t kernelfscrc = IMAGETAG_CRC_START;
+	const uint32_t deadcode = htonl(DEADCODE);
+        union int2char intchar;
+        int i;
+        int is_pirelli = 0;
 
-	memset(&tag, 0, sizeof(struct imagetag));
+	memset(&tag, 0, sizeof(struct bcm_tag));
 
 	if (strlen(boardid) >= sizeof(tag.boardid)) {
 		fprintf(stderr, "Board id is too long!\n");
 		return 1;
 	}
 
+	/* Likewise chipid */
 	if (strlen(chipid) >= sizeof(tag.chipid)) {
 		fprintf(stderr, "Chip id is too long!\n");
 		return 1;
+	}
+
+	if (!kernel || !rootfs) {
+		fprintf(stderr, "imagetag can't create an image without both kernel and rootfs\n");
 	}
 
 	if (kernel && !(kernelfile = fopen(kernel, "rb"))) {
@@ -153,7 +173,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 		return 1;
 	}
 
-	if (!bin || !(binfile = fopen(bin, "wb"))) {
+	if (!bin || !(binfile = fopen(bin, "wb+"))) {
 		fprintf(stderr, "Unable to open output file \"%s\"\n", bin);
 		return 1;
 	}
@@ -172,21 +192,21 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 
 	/* Build the rootfs address and length (start and end do need to be aligned on flash erase block boundaries */
 	rootfsoff = kerneloff + kernellen;
-	rootfsoff = ALIGN(rootfsoff, flash_bs);
+	rootfsoff = (rootfsoff % flash_bs) > 0 ? (((rootfsoff / flash_bs) + 1) * flash_bs) : rootfsoff;
 	rootfslen = getlen(rootfsfile);
-	rootfslen = ALIGN(rootfslen, flash_bs);
+	rootfslen = ( (rootfslen % flash_bs) > 0 ? (((rootfslen / flash_bs) + 1) * flash_bs) : rootfslen );
+	imagelen = rootfsoff + rootfslen - kerneloff + sizeof(deadcode);
+	rootfsoffpadlen = rootfsoff - (kerneloff + kernellen);
 
 	/* Seek to the start of the kernel */
 	fseek(binfile, kerneloff - fwaddr, SEEK_SET);
 
 	/* Write the kernel header */
-	crc = crc32(IMAGETAG_CRC_START, (uint8_t*)&khdr, sizeof(khdr));
 	fwrite(&khdr, sizeof(khdr), 1, binfile);
 
 	/* Write the kernel */
 	while (kernelfile && !feof(kernelfile) && !ferror(kernelfile)) {
 		read = fread(readbuf, sizeof(uint8_t), sizeof(readbuf), kernelfile);
-		crc = crc32(crc, readbuf, read);
 		fwrite(readbuf, sizeof(uint8_t), read, binfile);
 	}
 
@@ -194,48 +214,82 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	fseek(binfile, rootfsoff - fwaddr, SEEK_SET);
 	while (rootfsfile && !feof(rootfsfile) && !ferror(rootfsfile)) {
 		read = fread(readbuf, sizeof(uint8_t), sizeof(readbuf), rootfsfile);
-		crc = crc32(crc, readbuf, read);
 		fwrite(readbuf, sizeof(uint8_t), read, binfile);
 	}
+
+	/* Align image to specified erase block size and append deadc0de */
+	printf("Data alignment to %dk with 'deadc0de' appended\n", flash_bs/1024);
+	fseek(binfile, rootfsoff + rootfslen - fwaddr, SEEK_SET);
+	fwrite(&deadcode, sizeof(uint32_t), 1, binfile);
+
+	/* Flush the binfile buffer so that when we read from file, it contains
+         * everything in the buffer
+	 */
+	fflush(binfile);
+
+	/* Compute the crc32 of the entire image (deadC0de included) */
+	imagecrc = compute_crc32(imagecrc, binfile, kerneloff - fwaddr, imagelen);
+        /* Compute the crc32 of the kernel and padding between kernel and rootfs) */
+	kernelcrc = compute_crc32(kernelcrc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen);
+        /* Compute the crc32 of the kernel and padding between kernel and rootfs) */
+	kernelfscrc = compute_crc32(kernelfscrc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen + rootfslen + sizeof(deadcode));
+	/* Compute the crc32 of the flashImageStart to rootLength.
+         * The broadcom firmware assumes the rootfs starts the image,
+         * therefore uses the rootfs start to determine where to flash
+         * the image.  Since we have the kernel first we have to give
+         * it the kernel address, but the crc uses the length
+         * associated with this address, which is added to the kernel
+         * length to determine the length of image to flash and thus
+         * needs to be rootfs + deadcode
+         */
+	rootfscrc = compute_crc32(rootfscrc, binfile, kerneloff - fwaddr, rootfslen + sizeof(deadcode));
 
 	/* Close the files */
 	fclose(kernelfile);
 	fclose(rootfsfile);
 
 	/* Build the tag */
-	strcpy(tag.tagver, ver);
-	strncpy(tag.sig1, IMAGETAG_MAGIC1, sizeof(tag.sig1) - 1);
-	strncpy(tag.sig2, magic2, sizeof(tag.sig2) - 1);
+	strncpy(tag.tagVersion, ver, TAGVER_LEN);
+	strncpy(tag.sig_1, IMAGETAG_MAGIC1, sizeof(tag.sig_1) - 1);
+	strncpy(tag.sig_2, magic2, sizeof(tag.sig_2) - 1);
 	strcpy(tag.chipid, chipid);
 	strcpy(tag.boardid, boardid);
-	strcpy(tag.bigendian, "1");
-	sprintf(tag.imagelen, "%lu", kernellen + rootfslen);
-
-	if (neufbox4) {
-		if (strlen(neufbox4) >= sizeof(tag.neufbox4)) {
-			fprintf(stderr, "neufbox4 version is too long!\n");
-			return 1;
-		}
-		sprintf(tag.neufbox4, "%s", neufbox4);
-		tag.net_infra = 0xE0; /* special magic for adsl */
-	}
+	strcpy(tag.big_endian, "1");
+	sprintf(tag.totalLength, "%lu", imagelen);
 
 	/* We don't include CFE */
-	strcpy(tag.cfe.address, "0");
-	strcpy(tag.cfe.len, "0");
+	strcpy(tag.cfeAddress, "0");
+	strcpy(tag.cfeLength, "0");
 
-	if (kernelfile) {
-		sprintf(tag.kernel.address, "%lu", kerneloff);
-		sprintf(tag.kernel.len, "%lu", kernellen);
+        sprintf(tag.kernelAddress, "%lu", kerneloff);
+	sprintf(tag.kernelLength, "%lu", kernellen + rootfsoffpadlen);
+        sprintf(tag.flashImageStart, "%lu", kerneloff);
+	sprintf(tag.rootLength, "%lu", rootfslen + sizeof(deadcode));
+
+	if (rsignature) {
+	    strncpy(tag.rsa_signature, rsignature, RSASIG_LEN);
 	}
 
-	if (rootfsfile) {
-		sprintf(tag.rootfs.address, "%lu", rootfsoff);
-		sprintf(tag.rootfs.len, "%lu", rootfslen);
+        if (layoutver) {
+	    strncpy(tag.flashLayoutVer, layoutver, TAGLAYOUT_LEN);
 	}
 
-	tag.imagecrc = htonl(crc);
-	tag.headercrc = htonl(crc32(IMAGETAG_CRC_START, (uint8_t*)&tag, sizeof(tag) - 20));
+	for (i = 0; i < NUM_PIRELLI; i++) {
+		if (strncmp(boardid, pirellitab[i], BOARDID_LEN) == 0) {
+			is_pirelli = 1;
+			break;
+		}
+	}
+
+	if ( !is_pirelli ) {
+		int2tag(tag.imageCRC, imagecrc);
+	} else {
+	        int2tag(tag.imageCRC, kernelcrc);
+	}
+        int2tag(tag.kernelCRC, kernelcrc);
+        int2tag(tag.rootfsCRC, rootfscrc);
+	int2tag(tag.fskernelCRC, kernelfscrc);
+	int2tag(tag.headerCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&tag, sizeof(tag) - 20));
 
 	fseek(binfile, 0L, SEEK_SET);
 	fwrite(&tag, sizeof(uint8_t), sizeof(tag), binfile);
@@ -247,12 +301,13 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 
 int main(int argc, char **argv)
 {
-	int c;
-	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2, *ver, *neufbox4;
+        int c, i;
+	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2, *ver, *tagid, *rsignature, *layoutver;
 	uint32_t flashstart, fwoffset, loadaddr, entry;
 	uint32_t fwaddr, flash_bs;
-	
-	kernel = rootfs = bin = boardid = chipid = magic2 = ver = neufbox4 = NULL;
+	int tagidfound = 0;
+
+	kernel = rootfs = bin = boardid = chipid = magic2 = ver = rsignature = layoutver = NULL;
 	entry = 0;
 
 	flashstart = DEFAULT_FLASH_START;
@@ -260,10 +315,11 @@ int main(int argc, char **argv)
 	loadaddr = IMAGETAG_DEFAULT_LOADADDR;
 	flash_bs = DEFAULT_FLASH_BS;
 
-	printf("Broadcom image tagger - v0.1.1\n");
+	printf("Broadcom image tagger - v1.0.0\n");
 	printf("Copyright (C) 2008 Axel Gembe\n");
+	printf("Copyright (C) 2009-2010 Daniel Dickinson\n");
 
-	while ((c = getopt(argc, argv, "i:f:o:b:c:s:n:v:m:k:l:e:N:h")) != -1) {
+	while ((c = getopt(argc, argv, "i:f:o:b:c:s:n:v:m:k:l:e:h:r:y:")) != -1) {
 		switch (c) {
 			case 'i':
 				kernel = optarg;
@@ -301,26 +357,30 @@ int main(int argc, char **argv)
 			case 'e':
 				entry = strtoul(optarg, NULL, 16);
 				break;
-			case 'N':
-				neufbox4 = optarg;
+		        case 'r':
+			        rsignature = optarg;
+				break;
+		        case 'y':
+			        layoutver = optarg;
 				break;
 			case 'h':
 			default:
-				fprintf(stderr, "Usage: imagetag <parameters>\n");
-				fprintf(stderr, "-i <kernel>   - The LZMA compressed kernel file to include in the image\n");
-				fprintf(stderr, "-f <rootfs>   - The RootFS file to include in the image\n");
-				fprintf(stderr, "-o <bin>      - The output file\n");
-				fprintf(stderr, "-b <boardid>  - The board id to set in the image (i.e. \"96345GW2\")\n");
-				fprintf(stderr, "-c <chipid>   - The chip id to set in the image (i.e. \"6345\")\n");
-				fprintf(stderr, "-s <flashstart>   - Flash start address (i.e. \"0xBFC00000\"\n");
-				fprintf(stderr, "-n <fwoffset>   - \n");
-				fprintf(stderr, "-v <version>	- \n");
-				fprintf(stderr, "-m <magic2>	- \n");
-				fprintf(stderr, "-k <flash_bs>	- \n");
-				fprintf(stderr, "-l <loadaddr> - Address where the kernel expects to be loaded (defaults to 0x80010000)\n");
-				fprintf(stderr, "-e <entry>    - Address where the kernel entry point will end up\n");
-				fprintf(stderr, "-N <version>  - neufbox4 firmware version\n");
-				fprintf(stderr, "-h            - Displays this text\n");
+				fprintf(stderr, "Usage: imagetag <parameters>\n\n");
+				fprintf(stderr, "	-i <kernel>		- The LZMA compressed kernel file to include in the image\n");
+				fprintf(stderr, "	-f <rootfs>		- The RootFS file to include in the image\n");
+				fprintf(stderr, "	-o <bin>		- The output file\n");
+				fprintf(stderr, "	-b <boardid>		- The board id to set in the image (i.e. \"96345GW2\")\n");
+				fprintf(stderr, "	-c <chipid>		- The chip id to set in the image (i.e. \"6345\")\n");
+				fprintf(stderr, "	-s <flashstart> 	- Flash start address (i.e. \"0xBFC00000\"\n");
+				fprintf(stderr, "	-n <fwoffset>   	- \n");
+				fprintf(stderr, "	-v <version>		- \n");
+				fprintf(stderr, "	-m <magic2>		- \n");
+				fprintf(stderr, "	-k <flash_bs>		- flash erase block size\n");
+				fprintf(stderr, "	-l <loadaddr>		- Address where the kernel expects to be loaded (defaults to 0x80010000)\n");
+				fprintf(stderr, "	-e <entry>		- Address where the kernel entry point will end up\n");
+				fprintf(stderr, "       -r <signature>          - vendor specific signature, for those that need it");
+				fprintf(stderr, "       -y <layoutver>          - Flash Layout Version (2.2x code versions need this)");
+				fprintf(stderr, "	-h			- Displays this text\n\n");
 				return 1;
 		}
 	}
@@ -338,7 +398,7 @@ int main(int argc, char **argv)
 	/* Fallback to defaults */
 
 	fwaddr = flashstart + fwoffset;
-	
+
 	if (!magic2) {
 		magic2 = malloc(sizeof(char) * 14);
 		if (!magic2) {
@@ -357,5 +417,6 @@ int main(int argc, char **argv)
 		strcpy(ver, IMAGETAG_VER);
 	}
 
-	return tagfile(kernel, rootfs, bin, boardid, chipid, fwaddr, loadaddr, entry, ver, magic2, flash_bs, neufbox4);
+
+	return tagfile(kernel, rootfs, bin, boardid, chipid, fwaddr, loadaddr, entry, ver, magic2, flash_bs, rsignature, layoutver);
 }

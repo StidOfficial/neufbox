@@ -12,12 +12,10 @@ define KernelPackage/atm
   TITLE:=ATM support
   DEPENDS:=@LINUX_2_6
   KCONFIG:= \
-	CONFIG_ATM \
-	CONFIG_ATM_BR2684
+	CONFIG_ATM
   FILES:= \
-	$(LINUX_DIR)/net/atm/atm.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/atm/br2684.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,atm br2684)
+	$(LINUX_DIR)/net/atm/atm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,atm)
 endef
 
 define KernelPackage/atm/description
@@ -43,6 +41,29 @@ endef
 $(eval $(call KernelPackage,atmtcp))
 
 
+define KernelPackage/appletalk
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Appletalk protocol support
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:= \
+	CONFIG_ATALK \
+	CONFIG_DEV_APPLETALK \
+	CONFIG_IPDDP \
+	CONFIG_IPDDP_ENCAP=y \
+	CONFIG_IPDDP_DECAP=y
+  FILES:= \
+	$(LINUX_DIR)/net/appletalk/appletalk.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/net/appletalk/ipddp.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,appletalk ipddp)
+endef
+
+define KernelPackage/appletalk/description
+ Kernel module for AppleTalk protocol.
+endef
+
+$(eval $(call KernelPackage,appletalk))
+
+
 define KernelPackage/bonding
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Ethernet bonding driver
@@ -65,11 +86,12 @@ define KernelPackage/capi
   KCONFIG:= \
 	CONFIG_ISDN_CAPI \
 	CONFIG_ISDN_CAPI_CAPI20 \
-	CONFIG_ISDN_CAPIFS
+	CONFIG_ISDN_CAPIFS \
+	CONFIG_ISDN_CAPI_CAPIFS
   FILES:= \
 	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/capi/capifs.$(LINUX_KMOD_SUFFIX)
-	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/capi/capifs.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,kernelcapi capifs capi)
 endef
 
@@ -83,28 +105,24 @@ define KernelPackage/misdn
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=mISDN (ISDN) Support
   KCONFIG:= \
-  	CONFIG_ISDN=y \
   	CONFIG_MISDN \
 	CONFIG_MISDN_DSP \
-	CONFIG_MISDN_L1OIP \
-	CONFIG_ISDN_PPP=n \
-	CONFIG_ISDN_AUDIO=n \
-	CONFIG_ISDN_WITH_ABC=n \
-	CONFIG_ISDN_DRV_LOOP=n \
-	CONFIG_ISDN_DIVERSION=n \
-	CONFIG_ISDN_DRV_HISAX=n \
-	CONFIG_ISDN_DRV_ICN=n \
-	CONFIG_ISDN_DRV_PCBIT=n \
-	CONFIG_ISDN_DRV_SC=n \
-	CONFIG_ISDN_DRV_ACT2000=n \
-	CONFIG_ISDN_DRV_EICON=n \
-	CONFIG_ISDN_DRV_TPAM=n \
-	CONFIG_HYSDN=n
+	CONFIG_MISDN_L1OIP
   FILES:= \
   	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_dsp.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/mISDN/l1oip.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,mISDN_core mISDN_dsp l1oip)
+endef
+
+define KernelPackage/misdn/2.4
+  KCONFIG+= \
+	CONFIG_ISDN
+endef
+
+define KernelPackage/misdn/2.6
+   KCONFIG+= \
+	CONFIG_ISDN=y
 endef
 
 define KernelPackage/misdn/description
@@ -118,31 +136,36 @@ define KernelPackage/isdn4linux
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Old ISDN4Linux (deprecated)
   KCONFIG:= \
-    CONFIG_ISDN=y \
     CONFIG_ISDN_I4L \
     CONFIG_ISDN_PPP=y \
     CONFIG_ISDN_PPP_VJ=y \
     CONFIG_ISDN_MPP=y \
     CONFIG_IPPP_FILTER=y \
     CONFIG_ISDN_PPP_BSDCOMP \
+    CONFIG_ISDN_CAPI_MIDDLEWARE=y \
+    CONFIG_ISDN_CAPI_CAPIFS_BOOL=y \
     CONFIG_ISDN_AUDIO=y \
     CONFIG_ISDN_TTY_FAX=y \
     CONFIG_ISDN_X25=y \
-    CONFIG_ISDN_DIVERSION \
-    CONFIG_ISDN_CAPI_CAPIDRV=n \
-    CONFIG_ISDN_DRV_ACT2000=n \
-    CONFIG_ISDN_DRV_GIGASET=n \
-    CONFIG_ISDN_DRV_HISAX=n \
-    CONFIG_ISDN_DRV_ICN=n \
-    CONFIG_ISDN_DRV_LOOP=n \
-    CONFIG_ISDN_DRV_PCBIT=n \
-    CONFIG_ISDN_DRV_SC=n \
-    CONFIG_HYSDN=n
+    CONFIG_ISDN_DIVERSION
   FILES:= \
-    $(LINUX_DIR)/drivers/isdn/i4l/isdn.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/isdn/i4l/isdn_bsdcomp.$(LINUX_KMOD_SUFFIX) \
     $(LINUX_DIR)/drivers/isdn/divert/dss1_divert.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,isdn isdn_bsdcomp dss1_divert)
+endef
+
+define KernelPackage/isdn4linux/2.4
+  KCONFIG+= \
+	CONFIG_ISDN
+  FILES+= \
+	$(LINUX_DIR)/drivers/isdn/isdn_bsdcomp.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/isdn4linux/2.6
+  KCONFIG+= \
+	CONFIG_ISDN=y
+  FILES+= \
+	$(LINUX_DIR)/drivers/isdn/i4l/isdn.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/i4l/isdn_bsdcomp.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/isdn4linux/description
@@ -168,27 +191,42 @@ endef
 $(eval $(call KernelPackage,ipip))
 
 
+IPSEC-m:= \
+	key/af_key \
+	xfrm/xfrm_ipcomp \
+	xfrm/xfrm_user \
+
 define KernelPackage/ipsec
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv4 and IPv6)
   DEPENDS:=@LINUX_2_6 +kmod-crypto-core +kmod-crypto-des +kmod-crypto-hmac +kmod-crypto-md5 +kmod-crypto-sha1
   KCONFIG:= \
 	CONFIG_NET_KEY \
-	CONFIG_XFRM_USER
-  FILES:= \
-	$(LINUX_DIR)/net/key/af_key.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/xfrm/xfrm_user.$(LINUX_KMOD_SUFFIX)
+	CONFIG_XFRM_USER \
+	CONFIG_XFRM_IPCOMP
+  FILES:=$(foreach mod,$(IPSEC-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,30,$(notdir $(IPSEC-m)))
 endef
 
 define KernelPackage/ipsec/description
  Kernel modules for IPsec support in both IPv4 and IPv6.
  Includes:
  - af_key
+ - xfrm_ipcomp
  - xfrm_user
 endef
 
 $(eval $(call KernelPackage,ipsec))
 
+
+IPSEC4-m:= \
+	ipv4/ah4 \
+	ipv4/esp4 \
+	ipv4/xfrm4_mode_beet \
+	ipv4/xfrm4_mode_transport \
+	ipv4/xfrm4_mode_tunnel \
+	ipv4/xfrm4_tunnel \
+	ipv4/ipcomp \
 
 define KernelPackage/ipsec4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -202,9 +240,8 @@ define KernelPackage/ipsec4
 	CONFIG_INET_XFRM_MODE_TRANSPORT \
 	CONFIG_INET_XFRM_MODE_TUNNEL \
 	CONFIG_INET_XFRM_TUNNEL
-  FILES:= $(foreach mod,ah4 esp4 ipcomp xfrm4_mode_beet xfrm4_mode_transport xfrm4_mode_tunnel xfrm4_tunnel , \
-	$(LINUX_DIR)/net/ipv4/$(mod).$(LINUX_KMOD_SUFFIX) \
-  )
+  FILES:=$(foreach mod,$(IPSEC4-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,32,$(notdir $(IPSEC4-m)))
 endef
 
 define KernelPackage/ipsec4/description
@@ -222,6 +259,15 @@ endef
 $(eval $(call KernelPackage,ipsec4))
 
 
+IPSEC6-m:= \
+	ipv6/ah6 \
+	ipv6/esp6 \
+	ipv6/xfrm6_mode_beet \
+	ipv6/xfrm6_mode_transport \
+	ipv6/xfrm6_mode_tunnel \
+	ipv6/xfrm6_tunnel \
+	ipv6/ipcomp6 \
+
 define KernelPackage/ipsec6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv6)
@@ -234,9 +280,8 @@ define KernelPackage/ipsec6
 	CONFIG_INET6_XFRM_MODE_TRANSPORT \
 	CONFIG_INET6_XFRM_MODE_TUNNEL \
 	CONFIG_INET6_XFRM_TUNNEL
-  FILES:= $(foreach mod,ah6 esp6 ipcomp6 xfrm6_mode_beet xfrm6_mode_transport xfrm6_mode_tunnel xfrm6_tunnel, \
-	$(LINUX_DIR)/net/ipv6/$(mod).$(LINUX_KMOD_SUFFIX) \
-  )
+  FILES:=$(foreach mod,$(IPSEC6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,32,$(notdir $(IPSEC6-m)))
 endef
 
 define KernelPackage/ipsec6/description
@@ -262,9 +307,7 @@ define KernelPackage/iptunnel4
   KCONFIG:= \
 	CONFIG_NET_IPIP \
 	CONFIG_INET_TUNNEL
-  FILES:= $(foreach mod,tunnel4, \
-	$(LINUX_DIR)/net/ipv4/$(mod).$(LINUX_KMOD_SUFFIX) \
-  )
+  FILES:=$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,31,tunnel4)
 endef
 
@@ -281,9 +324,7 @@ define KernelPackage/iptunnel6
   DEPENDS:= @LINUX_2_6 +kmod-ipv6
   KCONFIG:= \
 	CONFIG_INET6_TUNNEL
-  FILES:= $(foreach mod,tunnel6, \
-	$(LINUX_DIR)/net/ipv6/$(mod).$(LINUX_KMOD_SUFFIX) \
-  )
+  FILES:=$(LINUX_DIR)/net/ipv6/tunnel6.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,31,tunnel6)
 endef
 
@@ -301,6 +342,8 @@ define KernelPackage/ipv6
 	CONFIG_IPV6 \
 	CONFIG_IPV6_PRIVACY=y \
 	CONFIG_IPV6_MULTIPLE_TABLES=y \
+	CONFIG_IPV6_MROUTE=y \
+	CONFIG_IPV6_PIMSM_V2=n \
 	CONFIG_IPV6_SUBTREES=y
   FILES:=$(LINUX_DIR)/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ipv6)
@@ -377,6 +420,21 @@ endef
 $(eval $(call KernelPackage,tun))
 
 
+define KernelPackage/veth
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Virtual ethernet pair device
+  KCONFIG:=CONFIG_VETH
+  FILES:=$(LINUX_DIR)/drivers/net/veth.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,veth)
+endef
+
+define KernelPackage/veth/description
+ Kernel support for virtual ethernet pair device
+endef
+
+$(eval $(call KernelPackage,veth))
+
+
 define KernelPackage/ppp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPP modules
@@ -423,6 +481,7 @@ define KernelPackage/pppoe
   FILES:= \
 	$(LINUX_DIR)/drivers/net/pppoe.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/net/pppox.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pppox pppoe)
 endef
 
 define KernelPackage/pppoe/description
@@ -447,6 +506,21 @@ endef
 
 $(eval $(call KernelPackage,pppoa))
 
+define KernelPackage/pppol2tp
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=PPPoL2TP support
+  DEPENDS:=kmod-ppp +kmod-pppoe @!LINUX_2_6_21
+  KCONFIG:=CONFIG_PPPOL2TP
+  FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pppol2tp)
+endef
+
+define KernelPackage/pppol2tp/description
+  Kernel modules for PPPoL2TP (PPP over L2TP) support
+endef
+
+$(eval $(call KernelPackage,pppol2tp))
+
 
 define KernelPackage/ipoa
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -467,7 +541,7 @@ $(eval $(call KernelPackage,ipoa))
 define KernelPackage/mppe
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Microsoft PPP compression/encryption
-  DEPENDS:=kmod-ppp +kmod-crypto-arc4 +kmod-crypto-sha1
+  DEPENDS:=kmod-ppp +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-sha1
   KCONFIG:= \
 	CONFIG_PPP_MPPE_MPPC \
 	CONFIG_PPP_MPPE
@@ -499,6 +573,7 @@ define KernelPackage/sched
 	CONFIG_NET_SCHED=y \
 	CONFIG_NET_SCH_DSMARK \
 	CONFIG_NET_SCH_ESFQ \
+	CONFIG_NET_SCH_ESFQ_NFCT=y \
 	CONFIG_NET_SCH_FIFO \
 	CONFIG_NET_SCH_GRED \
 	CONFIG_NET_SCH_HFSC \
@@ -506,8 +581,8 @@ define KernelPackage/sched
 	CONFIG_NET_SCH_INGRESS \
 	CONFIG_NET_SCH_PRIO \
 	CONFIG_NET_SCH_RED \
-	CONFIG_NET_SCH_SFQ \
 	CONFIG_NET_SCH_TBF \
+	CONFIG_NET_SCH_SFQ \
 	CONFIG_NET_SCH_TEQL \
 	CONFIG_NET_CLS=y \
 	CONFIG_NET_CLS_ACT=y \
@@ -518,7 +593,14 @@ define KernelPackage/sched
 	CONFIG_NET_CLS_TCINDEX \
 	CONFIG_NET_CLS_U32 \
 	CONFIG_NET_ACT_MIRRED \
-	CONFIG_NET_ACT_IPT
+	CONFIG_NET_ACT_IPT \
+	CONFIG_NET_ACT_POLICE \
+	CONFIG_NET_EMATCH=y \
+	CONFIG_NET_EMATCH_CMP \
+	CONFIG_NET_EMATCH_NBYTE \
+	CONFIG_NET_EMATCH_U32 \
+	CONFIG_NET_EMATCH_META \
+	CONFIG_NET_EMATCH_TEXT
   FILES:=$(LINUX_DIR)/net/sched/*.$(LINUX_KMOD_SUFFIX)
 endef
 
@@ -532,7 +614,7 @@ $(eval $(call KernelPackage,sched))
 define KernelPackage/ax25
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=AX25 support
-  DEPENDS:=kmod-crc16
+  DEPENDS:= +!(LINUX_2_4||TARGET_xburst):kmod-crc16
   KCONFIG:= \
 	CONFIG_AX25 \
 	CONFIG_MKISS

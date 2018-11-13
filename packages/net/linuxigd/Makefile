@@ -16,8 +16,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/linux-igd
 PKG_MD5SUM:=929f5c4878c91d534613b7c7070215d9
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 PKG_BUILD_DEPENDS:=iptables libupnp
 
 include $(INCLUDE_DIR)/package.mk
@@ -26,22 +24,22 @@ define Package/linuxigd
   SECTION:=net
   CATEGORY:=Network
   TITLE:=UPnP daemon
-  DEPENDS:=+libiptc +libupnp +libpthread
+  DEPENDS:=+libiptc +libupnp +libpthread @!LINUX_2_4
   URL:=http://linux-igd.sourceforge.net/
 endef
 
 define Package/linuxigd/description
-	It implements the UPnP Internet Gateway Device specification (IGD) 
-	and allows UPnP aware clients, such as MSN Messenger, Azureus or 
-	Miranda to work properly from behind a NAT firewall. 
-	
+	It implements the UPnP Internet Gateway Device specification (IGD)
+	and allows UPnP aware clients, such as MSN Messenger, Azureus or
+	Miranda to work properly from behind a NAT firewall.
+
 	Please edit /etc/upnpd.conf before using upnpd!
 endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)  \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -DIPTABLES_143" \
+		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -DIPTABLES_143 -Wl,-rpath-link=$(STAGING_DIR)/usr/lib" \
 		BINDIR="/usr/sbin" \
 		MANDIR="/usr/man" \
 		HAVE_LIBIPTC=1 \

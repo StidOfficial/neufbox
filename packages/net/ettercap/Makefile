@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,11 +9,15 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ettercap
 PKG_VERSION:=NG-0.7.3
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/ettercap
 PKG_MD5SUM:=28fb15cd024162c55249888fe1b97820
+
+PKG_FIXUP:=libtool
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -55,9 +59,7 @@ CONFIGURE_ARGS += \
 
 MAKE_FLAGS += \
 	DESTDIR="$(PKG_INSTALL_DIR)" \
- 	AM_LDFLAGS="-L$(STAGING_DIR)/usr/lib/libiconv/lib" \
-	all install
-
+ 	AM_LDFLAGS="-L$(STAGING_DIR)/usr/lib/libiconv/lib"
 
 define Package/ettercap/install
 	$(INSTALL_DIR) $(1)/etc

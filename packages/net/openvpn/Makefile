@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,22 +8,31 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openvpn
-PKG_VERSION:=2.1_rc15
-PKG_RELEASE:=1
+PKG_VERSION:=2.1.3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://openvpn.net/release @SF/openvpn
-PKG_MD5SUM:=14a35b05c5a16292d149592d1dad0302
+PKG_MD5SUM:=7486d3e270ba4b033e311d3e022a0ad7
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/openvpn
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-tun +libopenssl +liblzo
+  DEPENDS:=+kmod-tun +libopenssl +PACKAGE_openvpn_complzo:liblzo
   TITLE:=Open source VPN solution using SSL
   URL:=http://openvpn.net
   SUBMENU:=VPN
+endef
+
+define Package/openvpn/config
+config PACKAGE_openvpn_complzo
+	bool "Enable --comp-lzo compression option"
+	depends on PACKAGE_openvpn
+	default y
 endef
 
 define Package/openvpn/conffiles
@@ -46,35 +55,31 @@ define Package/openvpn-easy-rsa/conffiles
 /etc/easy-rsa/vars
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		--disable-pthread \
-		--disable-debug \
-		--disable-plugins \
-		--enable-management \
-		--disable-socks \
-		--enable-password-save \
-		,\
-		ac_cv_func_epoll_create=no \
-	)
-endef
+CONFIGURE_ARGS+= \
+	--disable-pthread \
+	--disable-debug \
+	--disable-plugins \
+	--enable-management \
+	--disable-socks \
+	--enable-password-save \
+	--enable-small
 
-define Build/Compile	
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
+ifndef CONFIG_PACKAGE_openvpn_complzo
+CONFIGURE_ARGS += \
+	--disable-lzo
+endif
 
-define Package/openvpn/install	
+define Package/openvpn/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/openvpn $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(INSTALL_BIN) files/$(PKG_NAME).init $(1)/etc/init.d/$(PKG_NAME)
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) files/$(PKG_NAME).config $(1)/etc/config/$(PKG_NAME)
+	$(INSTALL_DIR) $(1)/etc/openvpn
 endef
 
-define Package/openvpn-easy-rsa/install	
+define Package/openvpn-easy-rsa/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/easy-rsa/2.0/{build-*,clean-all,inherit-inter,list-crl,pkitool,revoke-full,sign-req,whichopensslcnf} $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/easy-rsa

@@ -1,6 +1,6 @@
---- ushare-1.1a.orig/src/ushare.c	2009-02-05 17:07:07.041845354 +0100
-+++ ushare-1.1a/src/ushare.c	2009-02-06 11:32:06.966323807 +0100
-@@ -94,6 +94,8 @@
+--- a/src/ushare.c
++++ b/src/ushare.c
+@@ -94,6 +94,8 @@ ushare_new (void)
    ut->name = strdup (DEFAULT_USHARE_NAME);
    ut->interface = strdup (DEFAULT_USHARE_IFACE);
    ut->model_name = strdup (DEFAULT_USHARE_NAME);
@@ -40,7 +40,7 @@
                                  ut->udn,
                                  "/web/ushare.html",
                                  "/web/cms.xml",
-@@ -334,10 +334,15 @@
+@@ -329,10 +335,15 @@ init_upnp (struct ushare_t *ut)
    {
  #endif /* HAVE_DLNA */ 
    len = strlen (UPNP_DESCRIPTION) + strlen (ut->name)
@@ -58,7 +58,7 @@
  #ifdef HAVE_DLNA
    }
  #endif /* HAVE_DLNA */
-@@ -819,6 +828,8 @@ int
+@@ -783,6 +794,8 @@ int
  main (int argc, char **argv)
  {
    int ret = EXIT_SUCCESS;
@@ -67,7 +67,7 @@
  
    ut = ushare_new ();
    if (!ut)
-@@ -841,19 +853,6 @@
+@@ -805,19 +818,6 @@ main (int argc, char **argv)
               ut->cfg_file ? ut->cfg_file : SYSCONFDIR "/" USHARE_CONFIG_FILE);
    }
  
@@ -87,7 +87,7 @@
    if (ut->daemon)
    {
      /* starting syslog feature as soon as possible */
-@@ -886,6 +897,79 @@ main (int argc, char **argv)
+@@ -846,6 +846,79 @@ main (int argc, char **argv)
      return EXIT_FAILURE;
    }
    
@@ -167,10 +167,9 @@
    /* update nbd status */
    nbd_status_set("ushare_status", "starting");
    nbd_status_set("ushare_sharedcount", "0");
-diff -pruN ushare-1.1a.orig/src/ushare.h ushare-1.1a/src/ushare.h
---- ushare-1.1a.orig/src/ushare.h	2009-02-05 17:07:07.041845354 +0100
-+++ ushare-1.1a/src/ushare.h	2009-02-06 10:14:05.694740510 +0100
-@@ -54,13 +61,13 @@
+--- a/src/ushare.h
++++ b/src/ushare.h
+@@ -54,13 +54,13 @@
  "  <device>" \
  "    <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>" \
  "    <friendlyName>%s: 1</friendlyName>" \
@@ -190,7 +189,7 @@ diff -pruN ushare-1.1a.orig/src/ushare.h ushare-1.1a/src/ushare.h
  "    <UDN>uuid:%s</UDN>" \
  "    <serviceList>" \
  "      <service>" \
-@@ -93,6 +100,8 @@ struct ushare_t {
+@@ -93,6 +93,8 @@ struct ushare_t {
    char *name;
    char *interface;
    char *model_name;

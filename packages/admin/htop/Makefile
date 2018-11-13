@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=htop
-PKG_VERSION:=0.8.1
-PKG_RELEASE:=1
+PKG_VERSION:=0.8.3
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=f0b259ca29175656de48bf0fa0a2e619
+PKG_MD5SUM:=5c9f093f9eaddf6e77aa6d54c2116d0c
+
+PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -28,7 +30,7 @@ endef
 define Package/htop/description
  Htop is an ncursed-based process viewer similar to top, but
  it allows to scroll the list vertically and horizontally to
- see all processes and their full command lines. 
+ see all processes and their full command lines.
 endef
 
 CONFIGURE_VARS += \

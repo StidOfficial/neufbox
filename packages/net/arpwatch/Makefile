@@ -9,11 +9,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=arpwatch
 PKG_VERSION:=2.1a15
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.free.fr/.mirrors1/ftp.gentoo.org/distfiles/
 PKG_MD5SUM:=cebfeb99c4a7c2a6cee2564770415fe7
+
+# use a subdirectory to prevent configure for finding libpcap build dir
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -52,6 +55,8 @@ define Package/arpwatch/install
 	$(CP) $(PKG_BUILD_DIR)/arp.dat $(1)/etc/arpwatch/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/arp{watch,snmp} $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/arpwatch.init $(1)/etc/init.d/arpwatch
 endef
 
 $(eval $(call BuildPackage,arpwatch))

@@ -1,51 +1,50 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
+#
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=sudo
-PKG_VERSION:=1.7.0
+PKG_VERSION:=1.7.2p6
 PKG_RELEASE:=1
 
-PKG_SOURCE:=sudo-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.sudo.ws/sudo/dist/
-PKG_MD5SUM:=5fd96bba35fe29b464f7aa6ad255f0a6
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://www.sudo.ws/sudo/dist
+PKG_MD5SUM:=c4f1a43e8ba94f6bf06d2211442148c4
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/sudo
-  SECTION:= admin
+  SECTION:=admin
   CATEGORY:=Administration
-  TITLE:=delegate authority to run commands
+  TITLE:=Delegate authority to run commands
   URL:=http://www.sudo.ws/
 endef
 
 define Package/sudo/description
-  Sudo (su "do") allows a system administrator to delegate authority to give
-  certain users (or groups of users) the ability to run some (or all) commands
-  as root or another user while providing an audit trail of the commands and
-  their arguments. 
-endef
-
-CONFIGURE_ARGS+= \
-	--without-pam \
-	--disable-pam-session \
-
-CONFIGURE_VARS+= \
-	sudo_cv_uid_t_len=10 \
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
+ Sudo (su "do") allows a system administrator to delegate authority to
+ give certain users (or groups of users) the ability to run some (or
+ all) commands as root or another user while providing an audit trail of
+ the commands and their arguments.
 endef
 
 define Package/sudo/conffiles
 /etc/sudoers
 endef
+
+CONFIGURE_ARGS+= \
+	--without-pam \
+	--disable-pam-session \
+	--with-editor=/bin/vi
+
+CONFIGURE_VARS+= \
+	sudo_cv_uid_t_len=10 \
+	sudo_cv_func_unsetenv_void=no
 
 define Package/sudo/install
 	$(INSTALL_DIR) $(1)/usr/bin

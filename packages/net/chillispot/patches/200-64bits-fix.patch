@@ -1,6 +1,5 @@
-diff -x .svn -pNur chillispot-1.1.0/src/md5.c chillispot-1.1.0/src/md5.c
---- chillispot-1.1.0/src/md5.c	2004-04-02 20:55:11.000000000 +0200
-+++ chillispot-1.1.0/src/md5.c	2008-08-26 10:01:35.000000000 +0200
+--- a/src/md5.c
++++ b/src/md5.c
 @@ -17,17 +17,17 @@
  #include <string.h>		/* for memcpy() */
  #include "md5.h"
@@ -41,9 +40,8 @@ diff -x .svn -pNur chillispot-1.1.0/src/md5.c chillispot-1.1.0/src/md5.c
      unsigned char *p;
  
      /* Compute number of bytes mod 64 */
-diff -x .svn -pNur chillispot-1.1.0/src/md5.h chillispot-1.1.0/src/md5.h
---- chillispot-1.1.0/src/md5.h	2004-04-02 20:55:11.000000000 +0200
-+++ chillispot-1.1.0/src/md5.h	2008-08-26 10:01:35.000000000 +0200
+--- a/src/md5.h
++++ b/src/md5.h
 @@ -1,11 +1,8 @@
  #ifndef MD5_H
  #define MD5_H
@@ -66,10 +64,8 @@ diff -x .svn -pNur chillispot-1.1.0/src/md5.h chillispot-1.1.0/src/md5.h
  void MD5Final(unsigned char digest[16], struct MD5Context *context);
  void MD5Transform(uint32 buf[4], uint32 const in[16]);
  
-
-diff -pNur chillispot-1.1.0/src/radius.h chillispot-1.1.0/src/radius.h
---- chillispot-1.1.0/src/radius.h	2008-08-28 09:54:45.000000000 +0200
-+++ chillispot-1.1.0/src/radius.h	2008-08-28 09:56:47.000000000 +0200
+--- a/src/radius.h
++++ b/src/radius.h
 @@ -218,6 +218,8 @@ struct radius_packet_t {
  } __attribute__((packed));
  
@@ -92,11 +88,9 @@ diff -pNur chillispot-1.1.0/src/radius.h chillispot-1.1.0/src/radius.h
  };
  
  
-Index: chillispot-1.1.0/src/dhcp.c
-===================================================================
---- chillispot-1.1.0/src/dhcp.c	(révision 8365)
-+++ chillispot-1.1.0/src/dhcp.c	(copie de travail)
-@@ -751,7 +751,7 @@
+--- a/src/dhcp.c
++++ b/src/dhcp.c
+@@ -740,7 +740,7 @@ if (this->debug) printf("Sending IP pack
   * dhcp_hash()
   * Generates a 32 bit hash based on a mac address
   **/
@@ -105,11 +99,9 @@ Index: chillispot-1.1.0/src/dhcp.c
    return lookup(hwaddr, DHCP_ETH_ALEN, 0);
  }
  
-Index: chillispot-1.1.0/src/ippool.c
-===================================================================
---- chillispot-1.1.0/src/ippool.c	(révision 8365)
-+++ chillispot-1.1.0/src/ippool.c	(copie de travail)
-@@ -138,12 +138,12 @@
+--- a/src/ippool.c
++++ b/src/ippool.c
+@@ -121,12 +121,12 @@ int ippool_hashdel(struct ippool_t *this
  }
  
  
@@ -124,7 +116,7 @@ Index: chillispot-1.1.0/src/ippool.c
    return lookup((unsigned char*) addr->u6_addr8, sizeof(addr->u6_addr8), 0);
  }
  #endif
-@@ -696,7 +696,7 @@
+@@ -552,7 +552,7 @@ int ippool_freeip(struct ippool_t *this,
  
  
  #ifndef IPPOOL_NOIP6
@@ -133,11 +125,9 @@ Index: chillispot-1.1.0/src/ippool.c
  extern int ippool_getip6(struct ippool_t *this, struct in6_addr *addr);
  extern int ippool_returnip6(struct ippool_t *this, struct in6_addr *addr);
  #endif
-Index: chillispot-1.1.0/src/ippool.h
-===================================================================
---- chillispot-1.1.0/src/ippool.h	(révision 8365)
-+++ chillispot-1.1.0/src/ippool.h	(copie de travail)
-@@ -103,7 +103,7 @@
+--- a/src/ippool.h
++++ b/src/ippool.h
+@@ -102,7 +102,7 @@ struct ippoolm_t {
     bytes for each address. */
  
  /* Hash an IP address using code based on Bob Jenkins lookupa */
@@ -146,7 +136,7 @@ Index: chillispot-1.1.0/src/ippool.h
  
  /* Create new address pool */
  extern int ippool_new(struct ippool_t **this, char *dyn,  char *stat, 
-@@ -133,7 +133,7 @@
+@@ -129,7 +129,7 @@ extern int ippool_aton(struct in_addr *a
  
  
  #ifndef IPPOOL_NOIP6
@@ -155,10 +145,8 @@ Index: chillispot-1.1.0/src/ippool.h
  extern int ippool_getip6(struct ippool_t *this, struct in6_addr *addr);
  extern int ippool_returnip6(struct ippool_t *this, struct in6_addr *addr);
  #endif
-Index: chillispot-1.1.0/src/lookup.c
-===================================================================
---- chillispot-1.1.0/src/lookup.c	(révision 8365)
-+++ chillispot-1.1.0/src/lookup.c	(copie de travail)
+--- a/src/lookup.c
++++ b/src/lookup.c
 @@ -49,10 +49,12 @@
   * statistical properties and speed. It is NOT recommended for cryptographic
   * purposes.
@@ -175,7 +163,7 @@ Index: chillispot-1.1.0/src/lookup.c
  {
  
  #define mix(a,b,c) \
-@@ -68,9 +70,9 @@
+@@ -68,9 +70,9 @@ register unsigned long int level; /* the
    c -= a; c -= b; c ^= (b>>15); \
  }
  
@@ -187,18 +175,16 @@ Index: chillispot-1.1.0/src/lookup.c
    
    /* Set up the internal state */
    len = length;
-Index: chillispot-1.1.0/src/lookup.h
-===================================================================
---- chillispot-1.1.0/src/lookup.h	(révision 8365)
-+++ chillispot-1.1.0/src/lookup.h	(copie de travail)
+--- a/src/lookup.h
++++ b/src/lookup.h
 @@ -52,6 +52,9 @@
  
  #ifndef _LOOKUP_H
  #define _LOOKUP_H
 -unsigned long int lookup( unsigned char *k, unsigned long int length, unsigned long int level);
- 
++
 +#include <stdint.h>
 +
 +uint32_t lookup( unsigned char *k, uint32_t length, uint32_t level);
-+
+ 
  #endif	/* !_LOOKUP_H */

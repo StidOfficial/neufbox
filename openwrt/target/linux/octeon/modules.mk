@@ -7,7 +7,6 @@ define KernelPackage/cavium-octeon-ethernet
   FILES:=$(LINUX_DIR)/drivers/net/cavium-ethernet/cavium-ethernet.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_CAVIUM_ETHERNET
   DEPENDS:=@LINUX_2_6 @TARGET_octeon
-  AUTOLOAD:=$(call AutoLoad,50, cavium-ethernet)
 endef
 
 define KernelPackage/cavium-octeon-ethernet/description

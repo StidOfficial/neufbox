@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,19 +9,22 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=openswan
-PKG_VERSION:=2.6.18
+PKG_VERSION:=2.6.29
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openswan.org/download
-PKG_MD5SUM:=b485b38b1074155bc337f80557c24c0d
+PKG_MD5SUM:=cd6c127585ec6db63780e9a40d5387fb
+
+PKG_BUILD_PARALLEL:=1
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/openswan/Default
   TITLE:=Openswan
   URL:=http://www.openswan.org/
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@!LINUX_2_4
 endef
 
 define Package/openswan/Default/description
@@ -30,11 +33,11 @@ endef
 
 define Package/openswan
 $(call Package/openswan/Default)
+  SUBMENU:=VPN
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS+= +kmod-openswan +libgmp +ip
   TITLE+= (daemon)
-  URL:=http://www.openswan.org/
+  DEPENDS+= +kmod-openswan +libgmp +ip
 endef
 
 define Package/openswan/description
@@ -54,15 +57,16 @@ $(call Package/openswan/Default/description)
  This package contains the Openswan kernel module.
 endef
 
-TARGET_CPPFLAGS += -I$(LINUX_DIR)/include
+TARGET_CPPFLAGS += -I$(LINUX_DIR)/include -D__EXPORTED_HEADERS__
 
-OPENSWAN_MAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
+OPENSWAN_MAKEFLAGS:= \
+	-C $(PKG_BUILD_DIR) \
 	$(TARGET_CONFIGURE_OPTS) \
 	LINUX_RELEASE="$(LINUX_RELEASE)" \
 	KERNELSRC="$(LINUX_DIR)" \
 	ARCH="$(LINUX_KARCH)" \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
-	USERCOMPILE="$(TARGET_CFLAGS) -I$(PKG_BUILD_DIR)/linux/include $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)" \
+	USERCOMPILE="$(TARGET_CFLAGS) -I$(PKG_BUILD_DIR)/ports/linux/include -I$(PKG_BUILD_DIR)/linux/include -I$(PKG_BUILD_DIR)/include $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)" \
 	IPSECDIR="/usr/lib/ipsec" \
 	INC_USRLOCAL="/usr" \
 	INC_RCDEFAULT="/etc/init.d" \
@@ -71,8 +75,12 @@ OPENSWAN_MAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
 	DESTDIR="$(PKG_INSTALL_DIR)"
 
 define Build/Compile
-	$(OPENSWAN_MAKE) \
-		programs module install
+	$(MAKE) $(PKG_JOBS) $(OPENSWAN_MAKEFLAGS) programs
+	$(MAKE) $(PKG_JOBS) $(OPENSWAN_MAKEFLAGS) module
+endef
+
+define Build/Install
+	$(MAKE) $(OPENSWAN_MAKEFLAGS) install
 endef
 
 define Package/openswan/install

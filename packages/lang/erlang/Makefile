@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=erlang
 PKG_VERSION:=R13A
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=otp_src_$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= http://www.erlang.org/download/ \
@@ -29,7 +29,7 @@ define Package/erlang/Default
   SECTION:=lang
   CATEGORY:=Languages
   TITLE:=Erlang/OTP programming language
-  URL:=http://www.erlnag.org/
+  URL:=http://www.erlang.org/
 endef
 
 define Package/erlang/Default/description
@@ -228,10 +228,11 @@ HOST_CONFIGURE_ARGS += \
 	--disable-hipe \
 	--disable-smp-support \
 	--without-java \
-	--without-ssl \
+	--without-ssl
 
 HOST_CONFIGURE_VARS += \
-	ac_cv_prog_javac_ver_1_2=no \
+	ac_cv_prog_JAVAC="" \
+	ac_cv_prog_javac_ver_1_2=no
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) all
@@ -250,16 +251,19 @@ CONFIGURE_ARGS += \
 	--disable-threads \
 	--without-java \
 	--with-ssl="$(STAGING_DIR)/usr" \
-	--enable-dynamic-ssl-lib \
+	--enable-dynamic-ssl-lib
 
 CONFIGURE_VARS += \
 	SHLIB_LD="$(TARGET_CC)" \
 	TARGET_ARCH="$(TARGET_ARCH)" \
 	ac_cv_prog_RX_LD="$(TARGET_LD)" \
+	ac_cv_prog_JAVAC="" \
 	ac_cv_prog_javac_ver_1_2=no \
 	ac_cv_func_getaddrinfo=no \
 	ac_cv_func_mmap_fixed_mapped=yes \
-	ac_cv_path_WX_CONFIG_PATH=no \
+	ac_cv_path_WX_CONFIG_PATH=no
+
+EXTRA_LDFLAGS+=-lz
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \

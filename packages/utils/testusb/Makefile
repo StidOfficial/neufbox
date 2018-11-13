@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/testusb
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_6 @DEVEL +libpthread
+  DEPENDS:=@!LINUX_2_4 @DEVEL +libpthread
   TITLE:=USB testing utility
   URL:=http://www.linux-usb.org/usbtest/testusb.c
 endef
@@ -28,7 +28,6 @@ define Package/testusb/description
 endef
 
 define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,10 +12,11 @@ PKG_VERSION:=0.2.6
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://weechat.flashtux.org/download/
+PKG_SOURCE_URL:=http://www.weechat.org/files/src
 PKG_MD5SUM:=ccdecf663b0050a23049acb4b9a76193
 
 PKG_FIXUP = libtool
+PKG_CONFIG_DEPENDS = CONFIG_PACKAGE_weechat-mod-lua
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -24,7 +25,7 @@ define Package/weechat/Default
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Lightweight IRC client
-  URL:=http://weechat.flashtux.org/
+  URL:=http://www.weechat.org/
 endef
 
 define Package/weechat/Default/description
@@ -58,7 +59,7 @@ endef
 define Package/weechat-mod-lua
 $(call Package/weechat/Default)
  TITLE+= (Lua plugin)
- DEPENDS:=weechat +liblua
+ DEPENDS:=weechat +liblua @BROKEN
 endef
 
 define Package/weechat-mod-lua/description
@@ -78,9 +79,11 @@ CONFIGURE_ARGS+= \
 	--disable-python \
 	--disable-ruby \
 	LUACONFIG="" \
+	ac_cv_path_LIBGNUTLS_CONFIG="pkg-config gnutls" \
 
-CONFIGURE_VARS+= \
-	LDFLAGS="$$$$LDFLAGS -L$(STAGING_DIR)/usr/lib/libiconv/lib -Wl,-rpath-link,$(STAGING_DIR)/usr/lib" \
+TARGET_LDFLAGS += \
+	-L$(STAGING_DIR)/usr/lib/libiconv/lib \
+	-Wl,-rpath-link,$(STAGING_DIR)/usr/lib
 
 ifneq ($(CONFIG_PACKAGE_weechat-mod-lua),)
   CONFIGURE_ARGS+= \
@@ -105,7 +108,7 @@ define Build/Compile
 		all install
 endef
 
-define Package/weechat/install	
+define Package/weechat/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/weechat-curses $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/usr/lib/weechat/plugins
@@ -113,7 +116,7 @@ endef
 
 define BuildPlugin
 
-  define Package/weechat-mod-$(1)/install	
+  define Package/weechat-mod-$(1)/install
 	$(INSTALL_DIR) $$(1)/usr/lib/weechat/plugins
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/weechat/plugins/$(1).so* $$(1)/usr/lib/weechat/plugins/
   endef

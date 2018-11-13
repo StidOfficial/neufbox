@@ -8,13 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=send
-PKG_VERSION:=0.2-4
+PKG_VERSION:=0.2-5.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)d_$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://mobisend.org/debian-mobisend/pool/main/s/sendd/
-PKG_MD5SUM:=57907178cad20fe3a21e2e449de1dc13
+PKG_MD5SUM:=99c18e5d965e57d580f146d00145251a
 PKG_BUILD_DIR:=$(BUILD_DIR)/sendd-0.2
+
+PKG_BUILD_PARALLEL:=0
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -37,6 +39,8 @@ define Package/send/conffiles
 /etc/sendd/sendd.conf
 /etc/sendd/params.conf
 endef
+
+TARGET_CPPFLAGS+=-D_GNU_SOURCE
 
 MAKE_FLAGS += \
 	CC="$(TARGET_CC)" \

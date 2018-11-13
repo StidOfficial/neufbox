@@ -1,6 +1,5 @@
-diff -ruN samba-2.0.10.orig/source/include/smb.h samba-2.0.10/source/include/smb.h
---- samba-2.0.10.orig/source/include/smb.h	2006-03-06 22:25:53.000000000 +0100
-+++ samba-2.0.10/source/include/smb.h	2006-03-06 22:27:31.000000000 +0100
+--- a/source/include/smb.h
++++ b/source/include/smb.h
 @@ -24,8 +24,14 @@
  #ifndef _SMB_H
  #define _SMB_H
@@ -16,10 +15,9 @@ diff -ruN samba-2.0.10.orig/source/include/smb.h samba-2.0.10/source/include/smb
  
  #define NMB_PORT 137
  #define DGRAM_PORT 138
-diff -ruN samba-2.0.10.orig/source/lib/util_sock.c samba-2.0.10/source/lib/util_sock.c
---- samba-2.0.10.orig/source/lib/util_sock.c	2000-03-16 23:59:18.000000000 +0100
-+++ samba-2.0.10/source/lib/util_sock.c	2006-03-06 22:27:31.000000000 +0100
-@@ -649,19 +649,21 @@
+--- a/source/lib/util_sock.c
++++ b/source/lib/util_sock.c
+@@ -649,19 +649,21 @@ BOOL receive_smb(int fd,char *buffer, un
    memset(buffer,'\0',smb_size + 100);
  
    len = read_smb_length_return_keepalive(fd,buffer,timeout);
@@ -46,10 +44,9 @@ diff -ruN samba-2.0.10.orig/source/lib/util_sock.c samba-2.0.10/source/lib/util_
  
    if(len > 0) {
      ret = read_socket_data(fd,buffer+4,len);
-diff -ruN samba-2.0.10.orig/source/smbd/oplock.c samba-2.0.10/source/smbd/oplock.c
---- samba-2.0.10.orig/source/smbd/oplock.c	2000-04-25 04:32:14.000000000 +0200
-+++ samba-2.0.10/source/smbd/oplock.c	2006-03-06 22:27:31.000000000 +0100
-@@ -887,13 +887,13 @@
+--- a/source/smbd/oplock.c
++++ b/source/smbd/oplock.c
+@@ -887,13 +887,13 @@ static BOOL oplock_break(SMB_DEV_T dev,
       messages crossing on the wire.
     */
  
@@ -65,10 +62,9 @@ diff -ruN samba-2.0.10.orig/source/smbd/oplock.c samba-2.0.10/source/smbd/oplock
    {
      DEBUG(0,("oplock_break: malloc fail for output buffer.\n"));
      free(inbuf);
-diff -ruN samba-2.0.10.orig/source/smbd/process.c samba-2.0.10/source/smbd/process.c
---- samba-2.0.10.orig/source/smbd/process.c	2006-03-06 22:25:28.000000000 +0100
-+++ samba-2.0.10/source/smbd/process.c	2006-03-06 22:27:31.000000000 +0100
-@@ -995,8 +995,8 @@
+--- a/source/smbd/process.c
++++ b/source/smbd/process.c
+@@ -995,8 +995,8 @@ void smbd_process(void)
    time_t last_timeout_processing_time = time(NULL);
    unsigned int num_smbs = 0;
  
@@ -79,7 +75,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/process.c samba-2.0.10/source/smbd/proce
    if ((InBuffer == NULL) || (OutBuffer == NULL)) 
      return;
  
-@@ -1027,7 +1027,7 @@
+@@ -1027,7 +1027,7 @@ void smbd_process(void)
      /* free up temporary memory */
      lp_talloc_free();
  
@@ -88,10 +84,9 @@ diff -ruN samba-2.0.10.orig/source/smbd/process.c samba-2.0.10/source/smbd/proce
      {
        if(!timeout_processing( deadtime, &select_timeout, &last_timeout_processing_time))
          return;
-diff -ruN samba-2.0.10.orig/source/smbd/reply.c samba-2.0.10/source/smbd/reply.c
---- samba-2.0.10.orig/source/smbd/reply.c	2006-03-06 22:25:53.000000000 +0100
-+++ samba-2.0.10/source/smbd/reply.c	2006-03-06 22:27:31.000000000 +0100
-@@ -2551,17 +2551,28 @@
+--- a/source/smbd/reply.c
++++ b/source/smbd/reply.c
+@@ -2551,17 +2551,28 @@ int reply_write_and_X(connection_struct
    size_t numtowrite = SVAL(inbuf,smb_vwv10);
    BOOL write_through = BITSETW(inbuf+smb_vwv7,0);
    ssize_t nwritten = -1;
@@ -122,7 +117,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/reply.c samba-2.0.10/source/smbd/reply.c
    data = smb_base(inbuf) + smb_doff;
  
    if(CVAL(inbuf,smb_wct) == 14) {
-@@ -2586,8 +2597,9 @@
+@@ -2586,8 +2597,9 @@ int reply_write_and_X(connection_struct
  #endif /* LARGE_SMB_OFF_T */
    }
  
@@ -133,7 +128,7 @@ diff -ruN samba-2.0.10.orig/source/smbd/reply.c samba-2.0.10/source/smbd/reply.c
  
    /* X/Open SMB protocol says that, unlike SMBwrite
       if the length is zero then NO truncation is
-@@ -2598,12 +2610,15 @@
+@@ -2598,12 +2610,15 @@ int reply_write_and_X(connection_struct
    else
      nwritten = write_file(fsp,data,startpos,numtowrite);
    

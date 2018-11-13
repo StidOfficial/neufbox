@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=srelay
-PKG_VERSION:=0.4.6
+PKG_VERSION:=0.4.8b3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/socks-relay
-PKG_MD5SUM:=4a9f3298b38d8588f0ffde31b946a47f
+PKG_MD5SUM:=a6d9521594172710ffa308d6b5dbece4
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -31,9 +31,10 @@ endef
 
 CONFIGURE_ARGS += \
 	--disable-thread \
+	--with-libwrap="$(STAGING_DIR)/usr" \
 
 CONFIGURE_VARS += \
-	CPPFLAGS="-DLINUX" \
+	CPPFLAGS="-DLINUX $$$$CPPFLAGS" \
 
 define Package/srelay/install	
 	$(INSTALL_DIR) $(1)/usr/bin

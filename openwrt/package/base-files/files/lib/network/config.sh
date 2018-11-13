@@ -24,8 +24,7 @@ find_config() {
 }
 
 scan_interfaces() {
-	local cfgfile="$1"
-	local mode iftype iface ifname device
+	local cfgfile="${1:-network}"
 	interfaces=
 	config_cb() {
 		case "$1" in
@@ -33,18 +32,19 @@ scan_interfaces() {
 				config_set "$2" auto 1
 			;;
 		esac
+		local iftype ifname device proto
 		config_get iftype "$CONFIG_SECTION" TYPE
 		case "$iftype" in
 			interface)
-				config_get proto "$CONFIG_SECTION" proto
 				append interfaces "$CONFIG_SECTION"
+				config_get proto "$CONFIG_SECTION" proto
 				config_get iftype "$CONFIG_SECTION" type
 				config_get ifname "$CONFIG_SECTION" ifname
-				config_get device "$CONFIG_SECTION" device
-				config_set "$CONFIG_SECTION" device "${device:-$ifname}"
+				config_get device "$CONFIG_SECTION" device "$ifname"
+				config_set "$CONFIG_SECTION" device "$device"
 				case "$iftype" in
 					bridge)
-						config_set "$CONFIG_SECTION" ifnames "${device:-$ifname}"
+						config_set "$CONFIG_SECTION" ifnames "$device"
 						config_set "$CONFIG_SECTION" ifname br-"$CONFIG_SECTION"
 					;;
 				esac
@@ -52,18 +52,64 @@ scan_interfaces() {
 			;;
 		esac
 	}
-	config_load "${cfgfile:-network}"
+	config_load "${cfgfile}"
 }
 
 add_vlan() {
 	local vif="${1%\.*}"
-	
+
 	[ "$1" = "$vif" ] || ifconfig "$1" >/dev/null 2>/dev/null || {
 		ifconfig "$vif" up 2>/dev/null >/dev/null || add_vlan "$vif"
 		$DEBUG vconfig add "$vif" "${1##*\.}"
 		return 0
 	}
 	return 1
+}
+
+# add dns entries if they are not in resolv.conf yet
+add_dns() {
+	local cfg="$1"; shift
+
+	remove_dns "$cfg"
+
+	# We may be called by pppd's ip-up which has a nonstandard umask set.
+	# Create an empty file here and force its permission to 0644, otherwise
+	# dnsmasq will not be able to re-read the resolv.conf.auto .
+	[ ! -f /tmp/resolv.conf.auto ] && {
+		touch /tmp/resolv.conf.auto
+		chmod 0644 /tmp/resolv.conf.auto
+	}
+
+	local dns
+	local add
+	for dns in "$@"; do
+		grep -qsF "nameserver $dns" /tmp/resolv.conf.auto || {
+			add="${add:+$add }$dns"
+			echo "nameserver $dns" >> /tmp/resolv.conf.auto
+		}
+	done
+
+	[ -n "$cfg" ] && {
+		uci_set_state network "$cfg" dns "$add"
+		uci_set_state network "$cfg" resolv_dns "$add"
+	}
+}
+
+# remove dns entries of the given iface
+remove_dns() {
+	local cfg="$1"
+
+	[ -n "$cfg" ] && {
+		[ -f /tmp/resolv.conf.auto ] && {
+			local dns=$(uci_get_state network "$cfg" resolv_dns)
+			for dns in $dns; do
+				sed -i -e "/^nameserver $dns$/d" /tmp/resolv.conf.auto
+			done
+		}
+
+		uci_revert_state network "$cfg" dns
+		uci_revert_state network "$cfg" resolv_dns
+	}
 }
 
 # sort the device list, drop duplicates
@@ -89,11 +135,15 @@ prepare_interface() {
 	# to create any interfaces here. The scripts have already done that, otherwise
 	# the bridge interface wouldn't exist.
 	[ "br-$config" = "$iface" -o -e "$iface" ] && return 0;
-	
+
 	ifconfig "$iface" 2>/dev/null >/dev/null && {
-		# make sure the interface is removed from any existing bridge and deconfigured 
-		ifconfig "$iface" 0.0.0.0
+		local proto
+		config_get proto "$config" proto
+
+		# make sure the interface is removed from any existing bridge and deconfigured,
+		# (deconfigured only if the interface is not set to proto=none)
 		unbridge "$iface"
+		[ "$proto" = none ] || ifconfig "$iface" 0.0.0.0
 
 		# Change interface MAC address if requested
 		[ -n "$vifmac" ] && {
@@ -107,32 +157,46 @@ prepare_interface() {
 	ifconfig "$iface" 2>/dev/null >/dev/null || return 0
 
 	# Setup bridging
+	local iftype
 	config_get iftype "$config" type
-	config_get stp "$config" stp
 	case "$iftype" in
 		bridge)
+			local macaddr
+			config_get macaddr "$config" macaddr
 			[ -x /usr/sbin/brctl ] && {
-				ifconfig "br-$config" 2>/dev/null >/dev/null && {
-					local newdevs=
+				# Remove IPv6 link local addr before adding the iface to the bridge
+				local llv6="$(ifconfig "$iface")"
+				case "$llv6" in
+					*fe80:*/64*)
+						llv6="${llv6#* fe80:}"
+						ifconfig "$iface" del "fe80:${llv6%% *}"
+					;;
+				esac
 
+				ifconfig "br-$config" 2>/dev/null >/dev/null && {
+					local newdevs devices
 					config_get devices "$config" device
 					for dev in $(sort_list "$devices" "$iface"); do
 						append newdevs "$dev"
 					done
 					uci_set_state network "$config" device "$newdevs"
+					$DEBUG ifconfig "$iface" 0.0.0.0
 					$DEBUG brctl addif "br-$config" "$iface"
 					# Bridge existed already. No further processing necesary
 				} || {
+					local stp
+					config_get_bool stp "$config" stp 0
 					$DEBUG brctl addbr "br-$config"
 					$DEBUG brctl setfd "br-$config" 0
 					$DEBUG ifconfig "br-$config" up
+					$DEBUG ifconfig "$iface" 0.0.0.0
 					$DEBUG brctl addif "br-$config" "$iface"
-					$DEBUG brctl stp "br-$config" ${stp:-0}
+					$DEBUG brctl stp "br-$config" $stp
 					# Creating the bridge here will have triggered a hotplug event, which will
 					# result in another setup_interface() call, so we simply stop processing
 					# the current event at this point.
 				}
-				ifconfig "$iface" up 2>/dev/null >/dev/null
+				ifconfig "$iface" ${macaddr:+hw ether "${macaddr}"} up 2>/dev/null >/dev/null
 				return 1
 			}
 		;;
@@ -144,6 +208,7 @@ set_interface_ifname() {
 	local config="$1"
 	local ifname="$2"
 
+	local device
 	config_get device "$1" device
 	uci_set_state network "$config" ifname "$ifname"
 	uci_set_state network "$config" device "$device"
@@ -157,29 +222,26 @@ setup_interface_static() {
 	local iface="$1"
 	local config="$2"
 
+	local ipaddr netmask ip6addr
 	config_get ipaddr "$config" ipaddr
 	config_get netmask "$config" netmask
 	config_get ip6addr "$config" ip6addr
 	[ -z "$ipaddr" -o -z "$netmask" ] && [ -z "$ip6addr" ] && return 1
-	
+
+	local gateway ip6gw dns bcast metric
 	config_get gateway "$config" gateway
 	config_get ip6gw "$config" ip6gw
 	config_get dns "$config" dns
 	config_get bcast "$config" broadcast
-	
+	config_get metric "$config" metric
+
 	[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
 	[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
-	[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" dev "$iface"
-	[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw" dev "$iface"
-	[ -z "$dns" ] || {
-		for ns in $dns; do
-			grep "$ns" /tmp/resolv.conf.auto 2>/dev/null >/dev/null || {
-				echo "nameserver $ns" >> /tmp/resolv.conf.auto
-			}
-		done
-	}
+	[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" ${metric:+metric $metric} dev "$iface"
+	[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw" ${metric:+metric $metric} dev "$iface"
+	[ -z "$dns" ] || add_dns "$config" $dns
 
-	config_get type "$config" TYPE                                                                               
+	config_get type "$config" TYPE
 	[ "$type" = "alias" ] && return 0
 
 	env -i ACTION="ifup" INTERFACE="$config" DEVICE="$iface" PROTO=static /sbin/hotplug-call "iface" &
@@ -190,26 +252,51 @@ setup_interface_alias() {
 	local parent="$2"
 	local iface="$3"
 
+	local cfg
 	config_get cfg "$config" interface
 	[ "$parent" == "$cfg" ] || return 0
 
+	# parent device and ifname
+	local p_device p_type
+	config_get p_device "$cfg" device
+	config_get p_type   "$cfg" type
+
+	# select alias ifname
+	local layer use_iface
+	config_get layer "$config" layer 2
+	case "$layer:$p_type" in
+		# layer 3: e.g. pppoe-wan or pptp-vpn
+		3:*)      use_iface="$iface" ;;
+
+		# layer 2 and parent is bridge: e.g. br-wan
+		2:bridge) use_iface="br-$cfg" ;;
+
+		# layer 1: e.g. eth0 or ath0
+		*)        use_iface="$p_device" ;;
+	esac
+
 	# alias counter
-	config_get ctr "$parent" alias_count
+	local ctr
+	config_get ctr "$parent" alias_count 0
 	ctr="$(($ctr + 1))"
 	config_set "$parent" alias_count "$ctr"
 
 	# alias list
+	local list
 	config_get list "$parent" aliases
 	append list "$config"
 	config_set "$parent" aliases "$list"
 
-	set_interface_ifname "$config" "$iface:$ctr"
-	config_get proto "$config" proto
-	case "${proto:-static}" in
+	use_iface="$use_iface:$ctr"
+	set_interface_ifname "$config" "$use_iface"
+
+	local proto
+	config_get proto "$config" proto "static"
+	case "${proto}" in
 		static)
-			setup_interface_static "$iface:$ctr" "$config"
+			setup_interface_static "$use_iface" "$config"
 		;;
-		*) 
+		*)
 			echo "Unsupported type '$proto' for alias config '$config'"
 			return 1
 		;;
@@ -219,87 +306,106 @@ setup_interface_alias() {
 setup_interface() {
 	local iface="$1"
 	local config="$2"
+	local proto="$3"
 	local vifmac="$4"
-	local proto
-	local macaddr
 
 	[ -n "$config" ] || {
 		config=$(find_config "$iface")
 		[ "$?" = 0 ] || return 1
 	}
-	proto="${3:-$(config_get "$config" proto)}"
-	
+
 	prepare_interface "$iface" "$config" "$vifmac" || return 0
-	
+
 	[ "$iface" = "br-$config" ] && {
-		# need to bring up the bridge and wait a second for 
+		# need to bring up the bridge and wait a second for
 		# it to switch to the 'forwarding' state, otherwise
 		# it will lose its routes...
 		ifconfig "$iface" up
 		sleep 1
 	}
-	
+
 	# Interface settings
-	config_get mtu "$config" mtu
-	config_get macaddr "$config" macaddr
-	grep "$iface:" /proc/net/dev > /dev/null && \
-		$DEBUG ifconfig "$iface" down && \
+	grep "$iface:" /proc/net/dev > /dev/null && {
+		local mtu macaddr
+		config_get mtu "$config" mtu
+		config_get macaddr "$config" macaddr
+		[ -n "$macaddr" ] && $DEBUG ifconfig "$iface" down
 		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
+	}
 	set_interface_ifname "$config" "$iface"
 
-	pidfile="/var/run/$iface.pid"
+	[ -n "$proto" ] || config_get proto "$config" proto
 	case "$proto" in
 		static)
 			setup_interface_static "$iface" "$config"
 		;;
 		dhcp)
-			# prevent udhcpc from starting more than once
-			lock "/var/lock/dhcp-$iface"
-			pid="$(cat "$pidfile" 2>/dev/null)"
-			if [ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null; then
-				lock -u "/var/lock/dhcp-$iface"
-			else
+			# kill running udhcpc instance
+			local pidfile="/var/run/dhcp-${iface}.pid"
+			service_kill udhcpc "$pidfile"
 
-				config_get ipaddr "$config" ipaddr
-				config_get netmask "$config" netmask
-				config_get hostname "$config" hostname
-				config_get proto1 "$config" proto
-				config_get clientid "$config" clientid
+			local ipaddr netmask hostname proto1 clientid vendorid broadcast
+			config_get ipaddr "$config" ipaddr
+			config_get netmask "$config" netmask
+			config_get hostname "$config" hostname
+			config_get proto1 "$config" proto
+			config_get clientid "$config" clientid
+			config_get vendorid "$config" vendorid
+			config_get_bool broadcast "$config" broadcast 0
 
-				[ -z "$ipaddr" ] || \
-					$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
+			[ -z "$ipaddr" ] || \
+				$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
 
-				# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
-				[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
-				$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -R &}
-				lock -u "/var/lock/dhcp-$iface"
-			fi
+			# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
+			local dhcpopts
+			[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
+			[ "$broadcast" = 1 ] && broadcast="-O broadcast" || broadcast=
+
+			$DEBUG eval udhcpc -t 0 -i "$iface" \
+				${ipaddr:+-r $ipaddr} \
+				${hostname:+-H $hostname} \
+				${clientid:+-c $clientid} \
+				${vendorid:+-V $vendorid} \
+				-b -p "$pidfile" $broadcast \
+				${dhcpopts:- -O rootpath -R &}
 		;;
 		none)
 			setup_interface_none "$iface" "$config"
 		;;
 		*)
 			if ( eval "type setup_interface_$proto" ) >/dev/null 2>/dev/null; then
-				eval "setup_interface_$proto '$iface' '$config' '$proto'" 
+				eval "setup_interface_$proto '$iface' '$config' '$proto'"
 			else
 				echo "Interface type $proto not supported."
 				return 1
 			fi
 		;;
 	esac
-	config_set "$config" aliases ""
-	config_set "$config" alias_count 0
-	config_foreach setup_interface_alias alias "$config" "$iface"
-	config_get aliases "$config" aliases
-	[ -z "$aliases" ] || uci_set_state network "$config" aliases "$aliases"
+}
+
+stop_interface_dhcp() {
+	local config="$1"
+
+	local ifname
+	config_get ifname "$config" ifname
+
+	local lock="/var/lock/dhcp-${ifname}"
+	[ -f "$lock" ] && lock -u "$lock"
+
+	remove_dns "$config"
+
+	local pidfile="/var/run/dhcp-${ifname}.pid"
+	service_kill udhcpc "$pidfile"
+
+	uci -P /var/state revert "network.$config"
 }
 
 unbridge() {
 	local dev="$1"
 	local brdev
-	
+
 	[ -x /usr/sbin/brctl ] || return 0
-	brctl show | grep "$dev" >/dev/null && {
+	brctl show 2>/dev/null | grep "$dev" >/dev/null && {
 		# interface is still part of a bridge, correct that
 
 		for brdev in $(brctl show | awk '$2 ~ /^[0-9].*\./ { print $1 }'); do

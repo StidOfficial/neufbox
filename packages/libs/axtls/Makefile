@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,37 +8,49 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=axtls
-PKG_VERSION:=1.1.6
-PKG_RELEASE:=2
+PKG_VERSION:=1.2.4
+PKG_RELEASE:=1
 
 PKG_SOURCE:=axTLS-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/axtls http://www.leroc.com.au/axTLS/
-PKG_MD5SUM:=50e63d5fe002399e2ae63591908f7f5a
-
-PKG_BUILD_DIR:=$(BUILD_DIR)/axTLS
+PKG_SOURCE_URL:=@SF/axtls
+PKG_MD5SUM:=4b7a6dafbe45357f63813410dae676fd
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libaxtls
+  SUBMENU:=SSL
   SECTION:=libs
   CATEGORY:=Libraries
+  SUBMENU:=SSL
   TITLE:=Embedded client/server TLSv1 SSL library
   URL:=http://sourceforge.net/projects/axtls
 endef
 
 define Package/axhttpd
+  SUBMENU:=Web
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=A small embedded web server using the axTLS library
+  URL:=http://www.axtls.co.nr/
+  DEPENDS:=+libaxtls
+endef
+
+define Package/axtlswrap
+  SUBMENU:=SSL
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Web
+  TITLE:=A simple TLS/SSL wrapper using the axTLS library
+  URL:=http://sourceforge.net/projects/axtls
   DEPENDS:=+libaxtls
-  TITLE:=A small embedded web server using the axTLS library
-  URL:=http://www.axtls.co.nr/
 endef
 
 define Build/Configure
 	$(CP) ./files/config $(PKG_BUILD_DIR)/config/.config
 	$(MAKE) -C $(PKG_BUILD_DIR) oldconfig
 endef
+
+TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) --strip-components 1 $(TAR_OPTIONS)
 
 TARGET_CFLAGS += $(FPIC)
 
@@ -54,9 +66,10 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/axTLS $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libaxtls.{a,so*} $(1)/usr/lib/
 endef
 
@@ -67,8 +80,14 @@ endef
 
 define Package/axhttpd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/axhttpd $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/axhttpd $(1)/usr/sbin/
+endef
+
+define Package/axtlswrap/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/_stage/axtlswrap $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,libaxtls))
 $(eval $(call BuildPackage,axhttpd))
+$(eval $(call BuildPackage,axtlswrap))

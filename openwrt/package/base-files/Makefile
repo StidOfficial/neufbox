@@ -1,5 +1,6 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,9 +10,11 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=20
+PKG_RELEASE:=43.10
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
+PKG_BUILD_DEPENDS:=opkg/host
+PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_efixo-base-files-common
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -21,23 +24,15 @@ ifneq ($(DUMP),1)
     TARGET:=$(TARGET)-$(PROFILE)
   endif
   LIBGCC_VERSION:=$(GCC_VERSION)
-  ifeq ($(ARCH),x86_64)
+  ifneq ($(findstring $(ARCH) , mips64 x86_64 ),)
     LIB_SUFFIX:=64
   endif
-  ifeq ($(ARCH),mips64)
-    LIB_SUFFIX:=64
-  endif
-  LIBC_VERSION:=$(LIBCV)
 else
   LIBC_VERSION:=<LIBC_VERSION>
   LIBGCC_VERSION:=<LIBGCC_VERSION>
 endif
 
-LIB_NATIVE:=$(if $(CONFIG_NATIVE_TOOLCHAIN),$(LIB_SUFFIX))
-
-CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
-
-define Package/base-files$(TARGET)
+define Package/base-files
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=Base filesystem for OpenWrt
@@ -50,38 +45,78 @@ define Package/base-files$(TARGET)
   $(call Config,network.lan.dns,ip,,LAN DNS server)
 endef
 
-define Package/base-files$(TARGET)/conffiles
+define Package/base-files/conffiles
 /etc/banner
-/etc/group
-/etc/passwd
 /etc/profile
-/etc/sysctl.conf
 $(call $(TARGET)/conffiles)
 endef
 
-define Package/base-files$(TARGET)/description
+define Package/base-files/description
  This package contains a base filesystem and system scripts for OpenWrt.
 endef
+
 
 define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  DEPENDS:=
   URL:=http://gcc.gnu.org/
   VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
 endef
 
+
 define Package/libgcc
 $(call Package/gcc/Default)
   TITLE:=GCC support library
-  DEPENDS+=@!TARGET_avr32
+  DEPENDS+=@!(TARGET_avr32||TARGET_coldfire)
 endef
+
+define Package/libgcc/config
+	menu "Configuration"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libgcc
+
+	config LIBGCC_ROOT_DIR
+		string
+		prompt "libgcc shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libgcc
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBGCC_FILE_SPEC
+		string
+		prompt "libgcc shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libgcc
+		default "./lib/libgcc_s.so.*"
+
+	endmenu
+endef
+
 
 define Package/libssp
 $(call Package/gcc/Default)
   DEPENDS+=@SSP_SUPPORT
   TITLE:=GCC support library
 endef
+
+define Package/libssp/config
+	menu "Configuration"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libssp
+
+	config LIBSPP_ROOT_DIR
+		string
+		prompt "libssp shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libssp
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBSSP_FILE_SPEC
+		string
+		prompt "libssp shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libssp
+		default "./lib/libssp.so.*"
+
+	endmenu
+endef
+
 
 define Package/libstdcpp
 $(call Package/gcc/Default)
@@ -90,18 +125,64 @@ $(call Package/gcc/Default)
   DEPENDS+=@INSTALL_LIBSTDCPP
 endef
 
+define Package/libstdcpp/config
+	menu "Configuration"
+	depends EXTERNAL_TOOLCHAIN && PACKAGE_libstdcpp
+
+	config LIBSTDCPP_ROOT_DIR
+		string
+		prompt "libstdcpp shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libstdcpp
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBSTDCPP_FILE_SPEC
+		string
+		prompt "libstdc++ shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libstdcpp
+		default "./lib/libstdc++.so.*"
+
+	endmenu
+endef
+
+
 define Package/libc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  DEPENDS:=
   VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
+ifneq ($(TARGET_avr32)$(TARGET_coldfire),)
+  DEPENDS:=+libgcc
+endif
   URL:=$(LIBC_URL)
+  PKG_FLAGS:=hold essential
 endef
+
 
 define Package/libc
 $(call Package/libc/Default)
   TITLE:=C library
 endef
+
+define Package/libc/config
+	menu "Configuration"
+	depends EXTERNAL_TOOLCHAIN && PACKAGE_libc
+
+	config LIBC_ROOT_DIR
+		string
+		prompt "libc shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libc
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBC_FILE_SPEC
+		string
+		prompt "libc shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libc
+		default "./lib/ld{-*.so,-linux*.so.*} ./lib/lib{anl,c,cidn,crypt,dl,m,nsl,nss_dns,nss_files,resolv,util}{-*.so,.so.*}"
+
+	endmenu
+endef
+
 
 define Package/libpthread
 $(call Package/libc/Default)
@@ -109,10 +190,52 @@ $(call Package/libc/Default)
   DEPENDS:= +librt
 endef
 
+define Package/libpthread/config
+	menu "Configuration"
+	depends EXTERNAL_TOOLCHAIN && PACKAGE_libpthread
+
+	config LIBPTHREAD_ROOT_DIR
+		string
+		prompt "libpthread shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libpthread
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBPTHREAD_FILE_SPEC
+		string
+		prompt "libpthread shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libpthread
+		default "./lib/libpthread{-*.so,.so.*}"
+
+	endmenu
+endef
+
+
 define Package/librt
 $(call Package/libc/Default)
   TITLE:=POSIX.1b RealTime extension library
 endef
+
+define Package/librt/config
+	menu "Configuration"
+	depends EXTERNAL_TOOLCHAIN && PACKAGE_librt
+
+	config LIBRT_ROOT_DIR
+		string
+		prompt "librt shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_librt
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBRT_FILE_SPEC
+		string
+		prompt "librt shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_librt
+		default "./lib/librt{-*.so,.so.*}"
+
+	endmenu
+endef
+
 
 define Package/ldd
 $(call Package/libc/Default)
@@ -121,6 +244,27 @@ $(call Package/libc/Default)
   TITLE:=LDD trace utility
 endef
 
+define Package/ldd/config
+	menu "Configuration"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldd
+
+	config LDD_ROOT_DIR
+		string
+		prompt "ldd trace utility base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldd
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LDD_FILE_SPEC
+		string
+		prompt "ldd trace utility file"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldd
+		default "./usr/bin/ldd"
+
+	endmenu
+endef
+
+
 define Package/ldconfig
 $(call Package/libc/Default)
   SECTION:=utils
@@ -128,6 +272,44 @@ $(call Package/libc/Default)
   TITLE:=Shared library path configuration
 endef
 
+define Package/ldconfig/config
+	menu "Configuration"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldconfig
+
+	config LDCONFIG_ROOT_DIR
+		string
+		prompt "ldconfig base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldconfig
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LDCONFIG_FILE_SPEC
+		string
+		prompt "ldconfig file"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldconfig
+		default "./sbin/ldconfig"
+
+	endmenu
+endef
+
+
+ifneq ($(CONFIG_PREINITOPT),)
+define ImageConfigOptions
+	mkdir -p $(1)/lib/preinit
+	echo 'pi_suppress_stderr="$(CONFIG_TARGET_PREINIT_SUPPRESS_STDERR)"' >$(1)/lib/preinit/00_preinit.conf
+	echo 'fs_failsafe_wait_timeout=$(if $(CONFIG_TARGET_PREINIT_TIMEOUT),$(CONFIG_TARGET_PREINIT_TIMEOUT),2)' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_init_path=$(if $(CONFIG_TARGET_INIT_PATH),$(CONFIG_TARGET_INIT_PATH),"/bin:/sbin:/usr/bin:/usr/sbin")' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_init_env=$(if $(CONFIG_TARGET_INIT_ENV),$(CONFIG_TARGET_INIT_ENV),"")' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_init_cmd=$(if $(CONFIG_TARGET_INIT_CMD),$(CONFIG_TARGET_INIT_CMD),"/sbin/init")' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_init_suppress_stderr="$(CONFIG_TARGET_INIT_SUPPRESS_STDERR)"' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_ifname=$(if $(CONFIG_TARGET_PREINIT_IFNAME),$(CONFIG_TARGET_PREINIT_IFNAME),"")' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_ip=$(if $(CONFIG_TARGET_PREINIT_IP),$(CONFIG_TARGET_PREINIT_IP),"192.168.1.1")' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_netmask=$(if $(CONFIG_TARGET_PREINIT_NETMASK),$(CONFIG_TARGET_PREINIT_NETMASK),"255.255.255.0")' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_broadcast=$(if $(CONFIG_TARGET_PREINIT_BROADCAST),$(CONFIG_TARGET_PREINIT_BROADCAST),"192.168.1.255")' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_preinit_net_messages="$(CONFIG_TARGET_PREINIT_SHOW_NETMSG)"' >>$(1)/lib/preinit/00_preinit.conf
+	echo 'pi_preinit_no_failsafe_netmsg="$(CONFIG_TARGET_SUPPRESS_FAILSAFE_NETMSG)"' >>$(1)/lib/preinit/00_preinit.conf
+endef
+endif
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
@@ -140,44 +322,27 @@ define Build/Compile
 	$(call Build/Compile/Default)
 endef
 
-ifeq ($(CONFIG_TARGET_brcm63xx_neufbox4)$(CONFIG_TARGET_cavium_octeon_neufbox5),)
-  define Package/base-files$(TARGET)/install/copy
+ifeq ($(CONFIG_PACKAGE_efixo-base-files-common),)
+  define Package/base-files/install/copy
 	$(CP) ./files/* $(1)/
   endef
 else
-  define Package/base-files$(TARGET)/install/copy
+  define Package/base-files/install/copy
 	mkdir -p $(1)/etc
 	$(CP) ./files/etc/banner $(1)/etc/
-	$(CP) ./files/etc/passwd $(1)/etc/
-	$(CP) ./files/etc/group $(1)/etc/
 	$(CP) ./files/etc/protocols $(1)/etc/
 	$(CP) ./files/etc/profile $(1)/etc/
-	$(CP) ./files/etc/sysctl.conf $(1)/etc/
 	mkdir -p $(1)/etc/init.d
 	$(CP) ./files/etc/init.d/rcS $(1)/etc/init.d
 	$(CP) ./files/etc/init.d/usb $(1)/etc/init.d
-	$(CP) ./files/etc/init.d/watchdog $(1)/etc/init.d
 	$(CP) ./files/etc/init.d/sysctl $(1)/etc/init.d
 	$(CP) ./files/etc/init.d/umount $(1)/etc/init.d
-	$(CP) ./files/etc/init.d/nfs $(1)/etc/init.d
-	$(CP) ./files/etc/init.d/nfs $(1)/etc/init.d
-	$(if $(CONFIG_PACKAGE_hotplug2), $(CP) ./files/etc/hotplug2-common.rules $(1)/etc/)
-	$(if $(CONFIG_PACKAGE_hotplug2), $(CP) ./files/etc/hotplug2-init.rules $(1)/etc/)
-	mkdir -p $(1)/etc/hotplug.d
-	mkdir -p $(1)/etc/hotplug.d/net
-	$(CP) ./files/etc/hotplug.d/net/10-tun $(1)/etc/hotplug.d/net/
-	mkdir -p $(1)/etc/hotplug.d/usb
-	$(CP) ./files/etc/hotplug.d/usb/20-usb-printer $(1)/etc/hotplug.d/usb/
-	mkdir -p $(1)/etc/hotplug.d/block
-	$(CP) ./files/etc/hotplug.d/block/10-mount $(1)/etc/hotplug.d/block/
-	mkdir -p $(1)/etc/hotplug.d/sound
-	$(CP) ./files/etc/hotplug.d/sound/10-usb-speaker $(1)/etc/hotplug.d/sound/
-	echo $(CONFIG_HOSTNAME) > $(1)/etc/hostname
+	$(CP) ./files/etc/init.d/watchdog $(1)/etc/init.d
   endef
 endif
 
-define Package/base-files$(TARGET)/install
-	$(call Package/base-files$(TARGET)/install/copy,$(1))
+define Package/base-files/install
+	$(call Package/base-files/install/copy,$(1))
 	if [ -d $(GENERIC_PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(GENERIC_PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
@@ -203,25 +368,26 @@ define Package/base-files$(TARGET)/install
 	)
 # Form valid /etc/shadow entries, by copying the user:pw pairs
 # from /etc/passwd, and adding on pw change data
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),, \
 	$(if $(CONFIG_BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS), \
-		$(CP) ./files/etc/shadow $(1)/etc/shadow; \
-	)
-	$(SED) 's,$$$$R,$(OPENWRT_RELEASE),g' $(1)/etc/banner
-	$(SED) 's,$$$$E,$(FIRMWARE_RELEASE),g' $(1)/etc/banner
-	$(SED) 's,$$$$S,$(SVN_RELEASE),g' $(1)/etc/banner
+		cut -d ':' -f 1-2 $(1)/etc/passwd > $(1)/etc/shadow; \
+		$(SED) 's/$$$$/:13848:0:99999:7:::/' $(1)/etc/shadow \
+	))
+	$(SED) 's,$$$$R,$(OPENWRT_REVISION),g' $(1)/etc/banner
+	$(SED) 's,$$$$E,$(call qstrip,$(CONFIG_FIRMWARE_RELEASE)),g' $(1)/etc/banner
+	$(SED) 's,$$$$S,$(EFIXO_REVISION),g' $(1)/etc/banner
 	mkdir -p $(1)/CONTROL
 	mkdir -p $(1)/dev
-	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,mkdir -p $(1)/etc/crontabs)
-	$(if $(CONFIG_PACKAGE_efixo-base-files-common),,mkdir -p $(1)/jffs)
+	mkdir -p $(1)/etc/crontabs
+	mkdir -p $(1)/etc/rc.d
+	mkdir -p $(1)/overlay
 	mkdir -p $(1)/lib/firmware
-	$(if $(LIB_SUFFIX),rm -f $(1)/lib$(LIB_SUFFIX))
-	$(if $(LIB_SUFFIX),ln -s lib $(1)/lib$(LIB_SUFFIX))
-	$(if $(CONFIG_PACKAGE_efixo-base-files-nb4-main),ln -sf /tmp/mnt $(1)/mnt,mkdir -p $(1)/mnt)
+	$(if $(LIB_SUFFIX),-ln -s lib $(1)/lib$(LIB_SUFFIX))
+	mkdir -p $(1)/mnt
 	mkdir -p $(1)/proc
 	mkdir -p $(1)/tmp
 	mkdir -p $(1)/usr/lib
-	$(if $(LIB_SUFFIX),rm -f $(1)/usr/lib$(LIB_SUFFIX))
-	$(if $(LIB_SUFFIX),ln -s lib $(1)/usr/lib$(LIB_SUFFIX))
+	$(if $(LIB_SUFFIX),-ln -s lib $(1)/usr/lib$(LIB_SUFFIX))
 	mkdir -p $(1)/usr/bin
 	mkdir -p $(1)/sys
 	mkdir -p $(1)/www
@@ -230,94 +396,183 @@ define Package/base-files$(TARGET)/install
 	rm -f $(1)/var
 	ln -sf /tmp $(1)/var
 	mkdir -p $(1)/etc
-	$(if $(CONFIG_PACKAGE_efixo-base-files-common),ln -sf /tmp/resolv.conf $(1)/etc/,ln -sf /tmp/resolv.conf /tmp/fstab /tmp/TZ $(1)/etc/)
+	$(if $(CONFIG_PACKAGE_efixo-base-files-common),, \
+	ln -sf /tmp/resolv.conf /tmp/fstab /tmp/TZ $(1)/etc/)
+	$(call ImageConfigOptions,$(1))
 	$(call Package/base-files/install-target,$(1))
 	for conffile in $(1)/etc/config/*; do \
 		if [ -f "$$$$conffile" ]; then \
-			grep "$$$$conffile" $(1)/CONTROL/conffiles || \
+			grep "$$$${conffile##$(1)}" $(1)/CONTROL/conffiles || \
 				echo "$$$${conffile##$(1)}" >> $(1)/CONTROL/conffiles; \
 		fi \
 	done
 endef
 
-define Package/libgcc/install
-	$(INSTALL_DIR) $(1)/lib
-	$(if $(CONFIG_USE_UCLIBC)$(CONFIG_USE_EGLIBC), \
-		$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_SUFFIX)/libgcc_s.so.* $(1)/lib/, \
-		$(CP) $(TOOLCHAIN_DIR)/usr/lib$(LIB_SUFFIX)/libgcc_s.so.* $(1)/lib/ \
-	)
-endef
+ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
-define Package/libssp/install
+  define Package/libgcc/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_SUFFIX)/libssp.so.* $(1)/lib/
-endef
+	$(CP) $(TOOLCHAIN_DIR)/lib/libgcc_s.so.* $(1)/lib/
+  endef
 
-define Package/libstdcpp/install
+  define Package/libssp/install
+	$(INSTALL_DIR) $(1)/lib
+	$(CP) $(TOOLCHAIN_DIR)/lib/libssp.so.* $(1)/lib/
+  endef
+
+  define Package/libstdcpp/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(if $(wildcard $(TOOLCHAIN_DIR)/lib/libstdc++.so*), \
-		$(CP) $(TOOLCHAIN_DIR)/lib/libstdc++.so* $(1)/usr/lib/, \
-		$(CP) $(TOOLCHAIN_DIR)/usr/lib$(LIB_SUFFIX)/libstdc++.so.* $(1)/usr/lib/ \
-	)
-endef
+	$(CP) $(TOOLCHAIN_DIR)/usr/lib/libstdc++.so.* $(1)/usr/lib/
+  endef
 
-use_libutil=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),libutil)
-use_libnsl=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NIS),libnsl)
-use_nsswitch=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),libnss_dns libnss_files)
+  use_libutil=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),libutil)
+  use_libnsl=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NIS),libnsl)
+  use_nsswitch=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),libnss_dns libnss_files)
 
-define Package/glibc/install
+  define Package/glibc/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_NATIVE)/ld*.so.* $(1)/lib/
-	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_NATIVE)/ld-$(LIBC_SO_VERSION).so $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/ld*.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/ld-$(LIBC_SO_VERSION).so $(1)/lib/
 	for file in libanl libc libcidn libcrypt libdl libm $(use_libnsl) $(use_nsswitch) libresolv $(use_libutil); do \
-		$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_NATIVE)/$$$$file.so.* $(1)/lib/; \
-		$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_NATIVE)/$$$$file-$(LIBC_SO_VERSION).so $(1)/lib/; \
-	done
-endef
-
-define Package/eglibc/install
-$(call Package/glibc/install,$1)
-endef
-
-define Package/uClibc/install
-	$(INSTALL_DIR) $(1)/lib
-	for file in ld$(LIB_SUFFIX)-uClibc libc libcrypt libdl libm libnsl libresolv libuClibc libutil; do \
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(1)/lib/; \
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so $(1)/lib/; \
 	done
-endef
+  endef
 
-define Package/libc/install
-$(call Package/$(LIBC)/install,$1)
-endef
+  define Package/eglibc/install
+    $(call Package/glibc/install,$1)
+  endef
 
-define Package/libpthread/install
+  define Package/uClibc/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_NATIVE)/libpthread.so.* $(1)/lib/
-	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_NATIVE)/libpthread-$(LIBC_SO_VERSION).so $(1)/lib/
-endef
+	$(CP) \
+		$(TOOLCHAIN_DIR)/lib/ld*-uClibc.so.* \
+		$(TOOLCHAIN_DIR)/lib/ld*-uClibc-$(LIBC_SO_VERSION).so \
+		$(1)/lib/
+	$(CP) \
+		$(TOOLCHAIN_DIR)/lib/libc.so.* \
+		$(TOOLCHAIN_DIR)/lib/libuClibc-$(LIBC_SO_VERSION).so \
+		$(1)/lib/
+	for file in libcrypt libdl libm libnsl libresolv libutil; do \
+		$(CP) \
+			$(TOOLCHAIN_DIR)/lib/$$$$file.so.* \
+			$(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so \
+			$(1)/lib/; \
+	done
+  endef
 
-define Package/librt/install
+  define Package/libc/install
+    $(call Package/$(LIBC)/install,$1)
+  endef
+
+  define Package/libc/install_lib
+	$(CP) $(filter-out %/libdl_pic.a %/libpthread_pic.a %/libresolv_pic.a,$(wildcard $(TOOLCHAIN_DIR)/usr/lib/lib*.a)) $(1)/lib/
+	$(if $(wildcard $(TOOLCHAIN_DIR)/usr/lib/libc_so.a),$(CP) $(TOOLCHAIN_DIR)/usr/lib/libc_so.a $(1)/lib/libc_pic.a)
+	$(if $(wildcard $(TOOLCHAIN_DIR)/usr/lib/gcc/*/*/libgcc.map), \
+		$(CP) $(TOOLCHAIN_DIR)/usr/lib/gcc/*/*/libgcc_pic.a $(1)/lib/libgcc_s_pic.a; \
+		$(CP) $(TOOLCHAIN_DIR)/usr/lib/gcc/*/*/libgcc.map $(1)/lib/libgcc_s_pic.map \
+	)
+  endef
+
+  define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_NATIVE)/librt.so.* $(1)/lib/
-	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_NATIVE)/librt-$(LIBC_SO_VERSION).so $(1)/lib/
-endef
+	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_SO_VERSION).so $(1)/lib/
+  endef
 
-define Package/ldd/install
+  define Package/libpthread/install_lib
+	$(if $(wildcard $(TOOLCHAIN_DIR)/usr/lib/libpthread_so.a),$(CP) $(TOOLCHAIN_DIR)/usr/lib/libpthread_so.a $(1)/lib/libpthread_pic.a)
+  endef
+
+  define Package/librt/install
+	$(INSTALL_DIR) $(1)/lib
+	$(CP) $(TOOLCHAIN_DIR)/lib/librt.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/librt-$(LIBC_SO_VERSION).so $(1)/lib/
+  endef
+
+  define Package/ldd/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(CP) $(TOOLCHAIN_DIR)/usr/bin/ldd $(1)/usr/bin/
-endef
+  endef
 
-define Package/ldconfig/install
+  define Package/ldconfig/install
 	$(INSTALL_DIR) $(1)/sbin/
 	$(CP) $(TOOLCHAIN_DIR)/sbin/ldconfig $(1)/sbin/
-endef
+  endef
+
+else
+
+  define Package/libgcc/install
+	for file in $(call qstrip,$(CONFIG_LIBGCC_FILE_SPEC)); do \
+		dir=`dirname $$$$file | sed "s,lib64,lib,g"` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBGCC_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/libssp/install
+	for file in $(call qstrip,$(CONFIG_LIBSSP_FILE_SPEC)); do \
+		dir=`dirname $$$$file | sed "s,lib64,lib,g"` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBSSP_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/libstdcpp/install
+	for file in $(call qstrip,$(CONFIG_LIBSTDCPP_FILE_SPEC)); do \
+		dir=`dirname $$$$file | sed "s,lib64,lib,g"` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBSTDCPP_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/libc/install
+	for file in $(call qstrip,$(CONFIG_LIBC_FILE_SPEC)); do \
+		dir=`dirname $$$$file | sed "s,lib64,lib,g"` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBC_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/libpthread/install
+	for file in $(call qstrip,$(CONFIG_LIBPTHREAD_FILE_SPEC)); do \
+		dir=`dirname $$$$file | sed "s,lib64,lib,g"` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBPTHREAD_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/librt/install
+	for file in $(call qstrip,$(CONFIG_LIBRT_FILE_SPEC)); do \
+		dir=`dirname $$$$file | sed "s,lib64,lib,g"` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBRT_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/ldd/install
+	for file in $(call qstrip,$(CONFIG_LDD_FILE_SPEC)); do \
+		dir=`dirname $$$$file | sed "s,lib64,lib,g"` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LDD_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/ldconfig/install
+	for file in $(call qstrip,$(CONFIG_LDCONFIG_FILE_SPEC)); do \
+		dir=`dirname $$$$file | sed "s,lib64,lib,g"` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LDCONFIG_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+endif
 
 ifneq ($(DUMP),1)
   -include $(PLATFORM_DIR)/base-files.mk
 endif
 
-$(eval $(call BuildPackage,base-files$(TARGET)))
+$(eval $(call BuildPackage,base-files))
 $(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,libssp))

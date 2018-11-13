@@ -1,115 +1,67 @@
-define Efixo/brcm63xx/Install
-	$(call Exec,$(CP) $(LINUX_DIR)/vmlinux.elf $(TFTPBOOT_DIR)/vmlinux)
-	$(call Exec,$(CP) $(OPENWRT_DIR)/bin/system-$(BOX).xml $(TFTPBOOT_DIR)/openwrt-$(BOX)-config || true)
-	$(call Exec,$(CP) $(BIN_DIR)/openwrt-96358VW-squashfs-cfe.bin $(TFTPBOOT_DIR)/$(FIRMWARE_RELEASE))
+ifneq ($(strip $(findstring $(BOX),$(boxes_list))),)
+
+TOOLS_DIR	:= $(PWD)/tools
+UBOOT_DIR	:= $(PWD)/u-boot
+CFE_DIR		:= $(PWD)/cfe
+TFTPBOOT_DIR	?= /tftpboot
+HOST		?= $(shell ip route show | sed -n -e 's/.*scope link \+src \+\([^ ]\+\).*$$/\1/p')
+EFIXO_REVISION	 = $(shell $(OPENWRT_DIR)/scripts/getver.sh)
+
+include include/$(BOX).mk
+
+define Efixo/Size/Check
+	if [ "`stat -c%s $(2)`" -gt "$(1)" ]; then \
+		echo "firmware to big stat -c%s $(2) > $(1)"; false; \
+	fi
 endef
 
-define Efixo/octeon/Install
-	$(call Exec,$(CP) $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf $(TFTPBOOT_DIR)/vmlinux.64)
-	$(call Exec,$(CP) $(OPENWRT_DIR)/bin/system-$(BOX).xml $(TFTPBOOT_DIR)/openwrt-$(BOX)-config || true)
-	$(call Exec,$(CP) $(BIN_DIR)/openwrt-$(BOARD)-nb5 $(TFTPBOOT_DIR)/$(FIRMWARE_RELEASE))
+define Efixo/Install
+	$(call Exec,$(CP) $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf $(TFTPBOOT_DIR)/ || true)
+	$(call Exec,$(CP) $(BIN_DIR)/system-$(BOX).xml $(TFTPBOOT_DIR)/$($(UBOX)_CONFIG_VERSION) || true)
+	$(if $($(UBOX)_SEED_VERSION),$(call Exec,xxd -c 64 -ps $(BIN_DIR)/seed-$(BOX).bin > $(TFTPBOOT_DIR)/$($(UBOX)_SEED_VERSION) || true))
+	$(call Efixo/$(BOX)/Install)
+	$(call Exec,$(CP) $(TFTPBOOT_DIR)/$($(UBOX)_$(UPROFILE)_FIRMWARE) $(TFTPBOOT_DIR)/openwrt-$(FIRMWARE))
+	$(call Exec,$(CP) $(TFTPBOOT_DIR)/openwrt-$(FIRMWARE) $(BIN_DIR)/openwrt-$(FIRMWARE))
+	$(if $(NO_REV),,$(call Exec,$(CP) $(TFTPBOOT_DIR)/$($(UBOX)_$(UPROFILE)_FIRMWARE) $(TFTPBOOT_DIR)/$($(UBOX)_$(UPROFILE)_FIRMWARE)-$(EFIXO_REVISION)))
+	$(call Efixo/Size/Check,$($(UBOX)_$(UPROFILE)_MAX_SIZE),$(TFTPBOOT_DIR)/openwrt-$(FIRMWARE))
+	$(call trace,$(foreach h,$(HOST),"tftp -b 20000 -g -r $($(UBOX)_$(UPROFILE)_FIRMWARE) $(h)"))
+	$(call trace,$(foreach h,$(HOST),"tftp -b 20000 -g -r openwrt-$(FIRMWARE) $(h)"))
+	$(call trace,"flashcp -v openwrt-$(FIRMWARE) /dev/mtd-$(PROFILE)")
 endef
 
-define Efixo/Release/Install
-	$(call Exec,$(CP) $(TFTPBOOT_DIR)/$(1) $(TFTPBOOT_DIR)/$(BOX)/release-$(RELEASE)/$(2))
-	$(call Exec,cd $(TFTPBOOT_DIR)/$(BOX)/release-$(RELEASE)/ && sha256sum $(2) >> $(BOX)-$(RELEASE).sha256sum)
-endef
+# Generic targets
+.PHONY: $(TFTPBOOT_DIR)/$($(UBOX)_BOOTLOADER)
 
-define Firmware/Version
-	$(shell strings $(1) | grep $(UBOX))
-endef
+.PHONY: $(TFTPBOOT_DIR)/$($(UBOX)_MAIN_FIRMWARE)
+$(TFTPBOOT_DIR)/$($(UBOX)_MAIN_FIRMWARE):
+	@$(call Exec,env -u EFIXO_BUILD -u VALID RELEASE_BUILD=1 $(MAKE) -rs -C $(PWD) $(BOX)-main)
 
-define Release/Check
-	@echo $(call Firmware/Version,$(1)) $(2)
-	@echo "subst: $(subst $(call Str/Upper,$(2)),,$(call Firmware/Version,$(1)))"
-	$(if $(subst $(2),,$(call Firmware/Version,$(1))),$(error $(1) is not $(2)))
-endef
+.PHONY: $(TFTPBOOT_DIR)/$($(UBOX)_RESCUE_FIRMWARE)
+$(TFTPBOOT_DIR)/$($(UBOX)_RESCUE_FIRMWARE):
+	@$(call Exec,env -u EFIXO_BUILD -u VALID RELEASE_BUILD=1 $(MAKE) -rs -C $(PWD) $(BOX)-rescue)
 
-define Efixo/Release
-	$(call Exec,mkdir -p $(TFTPBOOT_DIR)/$(BOX)/release-$(RELEASE))
-	$(call Exec,echo "# $(BOX) $(RELEASE) release sha256sum..." >  $(TFTPBOOT_DIR)/$(BOX)/release-$(RELEASE)/$(BOX)-$(RELEASE).sha256sum)
-	$(call Efixo/Release/Install,openwrt-$(BOX)-bootloader,$(UBOX)-BOOTLOADER-R$($(UBOX)_BOOTLOADER_VERSION))
-	$(call Efixo/Release/Install,openwrt-$(BOX)-config,$($(UBOX)_CONFIG_VERSION))
-	$(call Efixo/Release/Install,openwrt-$(BOX)-main,$(UBOX)-MAIN-R$($(UBOX)_MAIN_VERSION))
-	$(call Efixo/Release/Install,openwrt-$(BOX)-rescue,$(UBOX)-RESCUE-R$($(UBOX)_RESCUE_VERSION))
-	$(call Efixo/Release/Install,openwrt-$(BOX)-all,$(UBOX)-ALL-R$($(UBOX)_ALL_VERSION))
-endef
+.PHONY: $(TFTPBOOT_DIR)/$($(UBOX)_ADSL_FIRMWARE)
+$(TFTPBOOT_DIR)/$($(UBOX)_ADSL_FIRMWARE): $(TFTPBOOT_DIR)/$($(UBOX)_MAIN_FIRMWARE)
 
-nb4-bootloader:
-	$(MAKE) -C cfe/
-	$(MAKE_VARS) $(MAKE) -C tools/make-bootloader
-	$(OPENWRT_DIR)/staging_dir/host/bin/make-bootloader-$(BOX) \
-		$(PWD)/cfe/images/cfe6358.bin \
-		$(PWD)/cfe/images/$(NB4_BOOTLOADER_VERSION) \
-		$(NB4_BOOTLOADER_VERSION)
+.PHONY: $(TFTPBOOT_DIR)/$($(UBOX)_IMAGE)
+ifneq ($(I_DO_NOT_WANT_REBUILD),1)
+$(TFTPBOOT_DIR)/$($(UBOX)_IMAGE): efixo/bootloader efixo/main-firmware efixo/rescue-firmware efixo/adsl-phy
+endif
 
-	$(CP) $(PWD)/cfe/images/$(NB4_BOOTLOADER_VERSION) \
-		$(TFTPBOOT_DIR)/openwrt-$(BOX)-bootloader
+efixo/bootloader: $(TFTPBOOT_DIR)/$($(UBOX)_BOOTLOADER)
+efixo/main-firmware: $(TFTPBOOT_DIR)/$($(UBOX)_MAIN_FIRMWARE)
+efixo/rescue-firmware: $(TFTPBOOT_DIR)/$($(UBOX)_RESCUE_FIRMWARE)
+efixo/adsl-phy: $(TFTPBOOT_DIR)/$($(UBOX)_ADSL_FIRMWARE)
+efixo/image: $(TFTPBOOT_DIR)/$($(UBOX)_IMAGE)
+-include include/note.mk
+efixo/release: efixo/image
+	@$(call Efixo/Release)
 
-nb4-main-adslphy:
-	# Build adsl firmware
-	$(MAKE_VARS) $(MAKE) -C tools/make-adsl-firmware
-	$(OPENWRT_DIR)/staging_dir/host/bin/make-adsl-firmware \
-		$(LINUX_DIR)/broadcom-adsl/driver/adsl_phy.bin \
-		$(TFTPBOOT_DIR)/openwrt-$(BOX)-adslphy \
-		$(NB4_ADSLDRIVER_VERSION)
+$(BOX)-note:
+	@$(call Efixo/Release)
+endif
 
-nb4-release:
-#	$(call Release/Check,$(TFTPBOOT_DIR)/openwrt-$(BOX)-bootloader,NB4-$(NB4_BOOTLOADER_VERSION)-CFE)
-	$(call Release/Check,$(TFTPBOOT_DIR)/openwrt-$(BOX)-main,NB4-MAIN-R$(NB4_MAIN_VERSION))
-	$(call Release/Check,$(TFTPBOOT_DIR)/openwrt-$(BOX)-rescue,NB4-RESCUE-R$(NB4_MAIN_RESCUE))
-	$(call Release/Check,$(TFTPBOOT_DIR)/openwrt-$(BOX)-adslphy,$(NB4_ADSLDRIVER_VERSION))
-	# fill with ones
-	cat /dev/zero | tr '\000' '\377' | dd bs=64k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all count=128 seek=0
-	# bootloader
-	dd bs=64k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all if=$(TFTPBOOT_DIR)/openwrt-$(BOX)-bootloader seek=0
-	# main firmware
-	dd bs=64k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all if=$(TFTPBOOT_DIR)/openwrt-$(BOX)-main seek=1
-	# config
-	# cat /dev/zero | tr '\000' '\377' | dd bs=64k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all count=10 seek=86
-	# rescue firmware
-	dd bs=64k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all if=$(TFTPBOOT_DIR)/openwrt-$(BOX)-rescue seek=96
-	# adsl phy
-	dd bs=64k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all if=$(TFTPBOOT_DIR)/openwrt-$(BOX)-adslphy seek=120
-	# bootcounter
-	dd if=/dev/zero bs=64k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all count=1 seek=127
-	# install release
-	$(call Efixo/Release)
-
-
-nb5-bootloader:
-	$(MAKE_VARS) PATH=$(PATH):$(TOOLCHAIN_DIR_BIN) $(MAKE) -C u-boot clobber
-	$(MAKE_VARS) PATH=$(PATH):$(TOOLCHAIN_DIR_BIN) $(MAKE) -C u-boot octeon_neufbox5_config
-	$(MAKE_VARS) PATH=$(PATH):$(TOOLCHAIN_DIR_BIN) $(MAKE) -C u-boot
-	$(MAKE_VARS) $(MAKE) -C tools/make-bootloader
-	$(OPENWRT_DIR)/staging_dir/host/bin/make-bootloader-$(BOX) \
-		$(PWD)/u-boot/u-boot-octeon_neufbox5.bin \
-		$(TFTPBOOT_DIR)/openwrt-$(BOX)-bootloader \
-		NB5-BOOTLOADER-R$(NB5_BOOTLOADER_VERSION)
-
-nb5-release:
-#	$(call Release/Check,$(TFTPBOOT_DIR)/openwrt-$(BOX)-bootloader,NB5-BOOTLOADER-R$(NB5_BOOTLOADER_VERSION))
-	$(call Release/Check,$(TFTPBOOT_DIR)/openwrt-$(BOX)-main,$(call Str/Upper,NB5-MAIN-R$(NB5_MAIN_VERSION)))
-	$(call Release/Check,$(TFTPBOOT_DIR)/openwrt-$(BOX)-rescue,$(call Str/Upper,NB5-RESCUE-R$(NB5_RESCUE_VERSION)))
-	# fill with ones
-	cat /dev/zero | tr '\000' '\377' | dd bs=128k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all count=128 seek=0
-	# bootloader
-	dd bs=128k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all if=$(TFTPBOOT_DIR)/openwrt-$(BOX)-bootloader seek=0
-	# bootloader nvram
-	# cat /dev/zero | tr '\000' '\377' | dd bs=128k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all count=1 seek=3
-	# main firmware
-	dd bs=128k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all if=$(TFTPBOOT_DIR)/openwrt-$(BOX)-main seek=4
-	# rescue firmware
-	dd bs=128k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all if=$(TFTPBOOT_DIR)/openwrt-$(BOX)-rescue seek=100
-	# config
-	cat /dev/zero | tr '\000' '\377' | dd bs=128k of=$(TFTPBOOT_DIR)/openwrt-$(BOX)-all count=8 seek=120
-	# install release
-	$(call Efixo/Release)
-
-nb4-full nb5-full:
-	# should build bootloader
-	$(MAKE) -C $(PWD) $(BOX)-bootloader
-	$(MAKE) -C $(PWD) $(BOX)-main
-	$(MAKE) -C $(PWD) $(BOX)-rescue
-	$(MAKE) -C $(PWD) $(BOX)-release
-
+string="azertyuiopqsdfghjklmwxcvbnAZERTYUIOPQSDFGHJKLMWXCVBN0123456789\.,;:!\*&~\"/\#'{([+-|\`_^@)]=}%$$"
+.PHONY: passwd
+passwd:
+	makepasswd --chars 14 --count 40 --crypt-md5 --string=${string}

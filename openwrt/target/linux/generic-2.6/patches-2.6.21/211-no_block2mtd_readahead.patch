@@ -1,6 +1,6 @@
 --- a/drivers/mtd/devices/block2mtd.c
 +++ b/drivers/mtd/devices/block2mtd.c
-@@ -41,7 +41,7 @@ struct block2mtd_dev {
+@@ -40,7 +40,7 @@ struct block2mtd_dev {
  static LIST_HEAD(blkmtd_device_list);
  
  

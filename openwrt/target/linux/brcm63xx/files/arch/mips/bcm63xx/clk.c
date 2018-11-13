@@ -15,7 +15,7 @@
 #include <bcm63xx_regs.h>
 #include <bcm63xx_clk.h>
 
-DEFINE_MUTEX(clocks_mutex);
+static DEFINE_MUTEX(clocks_mutex);
 
 
 static void clk_enable_unlocked(struct clk *clk)
@@ -49,7 +49,11 @@ static void enet_misc_set(struct clk *clk, int enable)
 {
 	u32 mask;
 
-	if (BCMCPU_IS_6348())
+	if (BCMCPU_IS_6338())
+		mask = CKCTL_6338_ENET_EN;
+	else if (BCMCPU_IS_6345())
+		mask = CKCTL_6345_ENET_EN;
+	else if (BCMCPU_IS_6348())
 		mask = CKCTL_6348_ENET_EN;
 	else
 		/* BCMCPU_IS_6358 */
@@ -113,9 +117,10 @@ static struct clk clk_ephy = {
  */
 static void pcm_set(struct clk *clk, int enable)
 {
-	if (!BCMCPU_IS_6358())
-		return;
-	bcm_hwclock_set(CKCTL_6358_PCM_EN, enable);
+	if (BCMCPU_IS_6358())
+		bcm_hwclock_set(CKCTL_6358_PCM_EN, enable);
+	else if (BCMCPU_IS_6362())
+		bcm_hwclock_set(CKCTL_6362_PCM_EN, enable);
 }
 
 static struct clk clk_pcm = {
@@ -127,9 +132,10 @@ static struct clk clk_pcm = {
  */
 static void usbh_set(struct clk *clk, int enable)
 {
-	if (!BCMCPU_IS_6348())
-		return;
-	bcm_hwclock_set(CKCTL_6348_USBH_EN, enable);
+	if (BCMCPU_IS_6348())
+		bcm_hwclock_set(CKCTL_6348_USBH_EN, enable);
+	else if (BCMCPU_IS_6362())
+		bcm_hwclock_set(CKCTL_6362_USBH_EN, enable);
 }
 
 static struct clk clk_usbh = {
@@ -144,8 +150,12 @@ static void usbs_set(struct clk *clk, int enable)
 	u32 mask;
 
 	switch(bcm63xx_get_cpu_id()) {
-	case BCM6338_CPU_ID: mask = CKCTL_6338_USBS_EN; break;
-	case BCM6348_CPU_ID: mask = CKCTL_6348_USBS_EN; break;
+	case BCM6338_CPU_ID:
+		mask = CKCTL_6338_USBS_EN;
+		break;
+	case BCM6348_CPU_ID:
+		mask = CKCTL_6348_USBS_EN;
+		break;
 	default:
 		return;
 	}
@@ -153,7 +163,7 @@ static void usbs_set(struct clk *clk, int enable)
 }
 
 static struct clk clk_usbs = {
-	.set	= usbs_set,
+	.set    = usbs_set,
 };
 
 /*
@@ -163,16 +173,72 @@ static void spi_set(struct clk *clk, int enable)
 {
 	u32 mask;
 
-	if (BCMCPU_IS_6348())
+	if (BCMCPU_IS_6338())
+		mask = CKCTL_6338_SPI_EN;
+	else if (BCMCPU_IS_6348())
 		mask = CKCTL_6348_SPI_EN;
-	else
-		/* BCMCPU_IS_6358 */
+	else if (BCMCPU_IS_6358())
 		mask = CKCTL_6358_SPI_EN;
+	else
+		/* BCMCPU_IS_6362 */
+		mask = CKCTL_6362_SPI_EN;
 	bcm_hwclock_set(mask, enable);
 }
 
 static struct clk clk_spi = {
 	.set	= spi_set,
+};
+
+/*
+ * HSSPI clock
+ */
+static void hsspi_set(struct clk *clk, int enable)
+{
+	if (BCMCPU_IS_6338())
+		bcm_hwclock_set(CKCTL_6362_HS_SPI_EN, enable);
+}
+
+static struct clk clk_hsspi = {
+	.set	= hsspi_set,
+};
+
+/*
+ * PCIE clock
+ */
+static void pcie_set(struct clk *clk, int enable)
+{
+	if (BCMCPU_IS_6362())
+		bcm_hwclock_set(CKCTL_6362_PCIE_EN, enable);
+}
+
+static struct clk clk_pcie = {
+	.set	= pcie_set,
+};
+
+/*
+ * WLAN clock
+ */
+static void wlan_set(struct clk *clk, int enable)
+{
+	if (BCMCPU_IS_6362())
+		bcm_hwclock_set(CKCTL_6362_WLAN_OCP_EN, enable);
+}
+
+static struct clk clk_wlan = {
+	.set	= wlan_set,
+};
+
+/*
+ * FAP clock
+ */
+static void fap_set(struct clk *clk, int enable)
+{
+	if (BCMCPU_IS_6362())
+		bcm_hwclock_set(CKCTL_6362_FAP_EN, enable);
+}
+
+static struct clk clk_fap = {
+	.set	= fap_set,
 };
 
 /*
@@ -226,9 +292,17 @@ struct clk *clk_get(struct device *dev, const char *id)
 		return &clk_usbs;
 	if (!strcmp(id, "spi"))
 		return &clk_spi;
+	if (BCMCPU_IS_6362() && !strcmp(id, "hsspi"))
+		return &clk_hsspi;
+	if (BCMCPU_IS_6362() && !strcmp(id, "pcie"))
+		return &clk_pcie;
+	if (BCMCPU_IS_6362() && !strcmp(id, "wlan"))
+		return &clk_wlan;
+	if (BCMCPU_IS_6362() && !strcmp(id, "fap"))
+		return &clk_fap;
 	if (!strcmp(id, "periph"))
 		return &clk_periph;
-	if (BCMCPU_IS_6358() && !strcmp(id, "pcm"))
+	if ((BCMCPU_IS_6358() || BCMCPU_IS_6362()) && !strcmp(id, "pcm"))
 		return &clk_pcm;
 	return ERR_PTR(-ENOENT);
 }

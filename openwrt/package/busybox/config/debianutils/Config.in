@@ -26,8 +26,8 @@ config BUSYBOX_CONFIG_RUN_PARTS
 	  It is useful to set up a directory like cron.daily, where you need to
 	  execute all the scripts in that directory.
 
-	  In this implementation of run-parts some features (such as report mode)
-	  are not implemented.
+	  In this implementation of run-parts some features (such as report
+	  mode) are not implemented.
 
 	  Unless you know that run-parts is used in some of your scripts
 	  you can safely say N here.
@@ -35,7 +35,7 @@ config BUSYBOX_CONFIG_RUN_PARTS
 config BUSYBOX_CONFIG_FEATURE_RUN_PARTS_LONG_OPTIONS
 	bool "Enable long options"
 	default n
-	depends on BUSYBOX_CONFIG_RUN_PARTS && BUSYBOX_CONFIG_GETOPT_LONG
+	depends on BUSYBOX_CONFIG_RUN_PARTS && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Support long options for the run-parts applet.
 
@@ -64,11 +64,12 @@ config BUSYBOX_CONFIG_FEATURE_START_STOP_DAEMON_FANCY
 	  Support additional arguments.
 	  -o|--oknodo ignored since we exit with 0 anyway
 	  -v|--verbose
+	  -N|--nicelevel N
 
 config BUSYBOX_CONFIG_FEATURE_START_STOP_DAEMON_LONG_OPTIONS
 	bool "Enable long options"
 	default n
-	depends on BUSYBOX_CONFIG_START_STOP_DAEMON && BUSYBOX_CONFIG_GETOPT_LONG
+	depends on BUSYBOX_CONFIG_START_STOP_DAEMON && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Support long options for the start-stop-daemon applet.
 

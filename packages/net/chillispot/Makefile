@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,12 +9,17 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=chillispot
 PKG_VERSION:=1.1.0
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.chillispot.org/download
+PKG_SOURCE_URL:=http://www.chillispot.info/download
 PKG_MD5SUM:=9d2597756af3fa14d7331b4a3651fc9b
 
+PKG_FIXUP:=libtool
+PKG_INSTALL:=1
+
+PKG_BUILD_DEPENDS:=PACKAGE_efixo-libnbd:efixo-libnbd
+PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_efixo-libnbd
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -22,9 +27,9 @@ define Package/chillispot
   SUBMENU:=Captive Portals
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-tun +efixo-libnbd
+  DEPENDS:=+kmod-tun
   TITLE:=Wireless LAN HotSpot controller
-  URL:=http://www.chillispot.org/
+  URL:=http://www.chillispot.info/
 endef
 
 define Package/chillispot/description
@@ -37,19 +42,14 @@ define Package/chillispot/description
 	radius server.
 endef
 
-#define Package/chillispot/conffiles
+define Package/chillispot/conffiles
 #/etc/chilli.conf
-#endef
+endef
 
 # uses GNU configure
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
-		LDFLAGS="$(TARGET_LDFLAGS) -lnbu -lnbd" \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
+TARGET_CFLAGS+=$(if $(CONFIG_PACKAGE_efixo-libnbd),$(TARGET_CPPFLAGS) -DHAVE_LIBNBD)
+TARGET_LDFLAGS+=$(if $(CONFIG_PACKAGE_efixo-libnbd),-lnbd)
 
 define Package/chillispot/install
 	$(INSTALL_DIR) $(1)/etc/init.d

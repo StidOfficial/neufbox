@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=monit
-PKG_VERSION:=4.10.1
+PKG_VERSION:=5.1.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.tildeslash.com/monit/dist/
-PKG_MD5SUM:=d3143b0bbd79b53f1b019d2fc1dae656
+PKG_SOURCE_URL:=http://mmonit.com/monit/dist/
+PKG_MD5SUM:=4bbd3845ae1cbab13ec211824e0486dc
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -22,7 +22,7 @@ define Package/monit/Default
   CATEGORY:=Administration
   DEPENDS:= +libpthread
   TITLE:=System services monitoring utility
-  URL:=http://www.tildeslash.com/monit
+  URL:=http://mmonit.com/monit/
 endef
 
 define Package/monit/Default/description

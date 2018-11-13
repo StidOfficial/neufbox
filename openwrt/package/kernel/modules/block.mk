@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,22 +10,27 @@ BLOCK_MENU:=Block Devices
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
-  DEPENDS:=@PCI_SUPPORT @LINUX_2_6 +kmod-scsi-core
+  DEPENDS:=@PCI_SUPPORT @LINUX_2_6 +kmod-scsi-core @(!TARGET_ubicom32||!TARGET_etrax||!TARGET_x86)
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,21,libata)
+  AUTOLOAD:=$(call AutoLoad,21,libata,1)
 endef
 
 $(eval $(call KernelPackage,ata-core))
 
 
-define KernelPackage/ata-ahci
+define KernelPackage/ata/Depends
   SUBMENU:=$(BLOCK_MENU)
+  DEPENDS:=!TARGET_x86:kmod-ata-core $(1)
+endef
+
+
+define KernelPackage/ata-ahci
+$(call KernelPackage/ata/Depends,)
   TITLE:=AHCI Serial ATA support
-  DEPENDS:=kmod-ata-core
   KCONFIG:=CONFIG_SATA_AHCI
   FILES:=$(LINUX_DIR)/drivers/ata/ahci.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,ahci)
+  AUTOLOAD:=$(call AutoLoad,41,ahci,1)
 endef
 
 define KernelPackage/ata-ahci/description
@@ -34,14 +39,27 @@ endef
 
 $(eval $(call KernelPackage,ata-ahci))
 
+define KernelPackage/ata-sil
+$(call KernelPackage/ata/Depends,)
+  TITLE:=Silicon Image SATA support
+  KCONFIG:=CONFIG_SATA_SIL
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,sata_sil,1)
+endef
+
+define KernelPackage/ata-sil/description
+ Support for Silicon Image Serial ATA controllers.
+endef
+
+$(eval $(call KernelPackage,ata-sil))
+
 
 define KernelPackage/ata-sil24
-  SUBMENU:=$(BLOCK_MENU)
+$(call KernelPackage/ata/Depends,)
   TITLE:=Silicon Image 3124/3132 SATA support
-  DEPENDS:=kmod-ata-core
   KCONFIG:=CONFIG_SATA_SIL24
   FILES:=$(LINUX_DIR)/drivers/ata/sata_sil24.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,sata_sil24)
+  AUTOLOAD:=$(call AutoLoad,41,sata_sil24,1)
 endef
 
 define KernelPackage/ata-sil24/description
@@ -52,12 +70,11 @@ $(eval $(call KernelPackage,ata-sil24))
 
 
 define KernelPackage/ata-artop
-  SUBMENU:=$(BLOCK_MENU)
+$(call KernelPackage/ata/Depends,)
   TITLE:=ARTOP 6210/6260 PATA support
-  DEPENDS:=kmod-ata-core
   KCONFIG:=CONFIG_PATA_ARTOP
   FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,pata_artop)
+  AUTOLOAD:=$(call AutoLoad,41,pata_artop,1)
 endef
 
 define KernelPackage/ata-artop/description
@@ -66,14 +83,27 @@ endef
 
 $(eval $(call KernelPackage,ata-artop))
 
+define KernelPackage/ata-octeon-cf
+$(call KernelPackage/ata/Depends,@TARGET_octeon)
+  TITLE:=Octeon Compact Flash support
+  KCONFIG:=CONFIG_PATA_OCTEON_CF
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_octeon_cf.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,pata_octeon_cf,1)
+endef
+
+define KernelPackage/ata-octeon-cf/description
+  Octeon Compact Flash support.
+endef
+
+$(eval $(call KernelPackage,ata-octeon-cf))
+
 
 define KernelPackage/ata-ixp4xx-cf
-  SUBMENU:=$(BLOCK_MENU)
+$(call KernelPackage/ata/Depends,@TARGET_ixp4xx)
   TITLE:=IXP4XX Compact Flash support
-  DEPENDS:=kmod-ata-core
   KCONFIG:=CONFIG_PATA_IXP4XX_CF
   FILES:=$(LINUX_DIR)/drivers/ata/pata_ixp4xx_cf.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,pata_ixp4xx_cf)
+  AUTOLOAD:=$(call AutoLoad,41,pata_ixp4xx_cf,1)
 endef
 
 define KernelPackage/ata-ixp4xx-cf/description
@@ -83,16 +113,15 @@ endef
 $(eval $(call KernelPackage,ata-ixp4xx-cf))
 
 define KernelPackage/ata-rb532-cf
-  SUBMENU:=$(BLOCK_MENU)
+$(call KernelPackage/ata/Depends,@TARGET_rb532 @BROKEN)
   TITLE:=RB532 Compact Flash support
-  DEPENDS:=@TARGET_rb532 kmod-ata-core @BROKEN
   KCONFIG:= \
   	CONFIG_PATA_PLATFORM \
   	CONFIG_PATA_RB532
   FILES:=\
   	$(LINUX_DIR)/drivers/ata/pata_platform.$(LINUX_KMOD_SUFFIX) \
   	$(LINUX_DIR)/drivers/ata/pata_rb532_cf.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,pata_platform pata_rb532_cf)
+  AUTOLOAD:=$(call AutoLoad,41,pata_platform pata_rb532_cf,1)
 endef
 
 define KernelPackage/ata-rb532-cf/description
@@ -102,24 +131,37 @@ endef
 $(eval $(call KernelPackage,ata-rb532-cf))
 
 define KernelPackage/ata-nvidia-sata
-  SUBMENU:=$(BLOCK_MENU)
+$(call KernelPackage/ata/Depends,)
   TITLE:=Nvidia Serial ATA support
-  DEPENDS:=kmod-ata-core
   KCONFIG:=CONFIG_SATA_NV
   FILES:=$(LINUX_DIR)/drivers/ata/sata_nv.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,sata_nv)
+  AUTOLOAD:=$(call AutoLoad,41,sata_nv,1)
 endef
 
 $(eval $(call KernelPackage,ata-nvidia-sata))
 
 
+define KernelPackage/ata-magicbox-cf
+$(call KernelPackage/ata/Depends,@TARGET_ppc40x)
+  TITLE:=Magicbox v2/OpenRB Compact flash support
+  KCONFIG:=CONFIG_PATA_MAGICBOX_CF
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_magicbox_cf.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,pata_magicbox_cf,1)
+endef
+
+define KernelPackage/ata-magicbox-cf/description
+  Support for Magicbox v2/OpenRB on-board CF slot.
+endef
+
+$(eval $(call KernelPackage,ata-magicbox-cf))
+
+
 define KernelPackage/ata-piix
-  SUBMENU:=$(BLOCK_MENU)
+$(call KernelPackage/ata/Depends,)
   TITLE:=Intel PIIX PATA/SATA support
-  DEPENDS:=kmod-ata-core
   KCONFIG:=CONFIG_ATA_PIIX
   FILES:=$(LINUX_DIR)/drivers/ata/ata_piix.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,ata_piix)
+  AUTOLOAD:=$(call AutoLoad,41,ata_piix,1)
 endef
 
 define KernelPackage/ata-piix/description
@@ -131,12 +173,11 @@ $(eval $(call KernelPackage,ata-piix))
 
 
 define KernelPackage/ata-via-sata
-  SUBMENU:=$(BLOCK_MENU)
+$(call KernelPackage/ata/Depends,)
   TITLE:=VIA SATA support
-  DEPENDS:=kmod-ata-core
   KCONFIG:=CONFIG_SATA_VIA
   FILES:=$(LINUX_DIR)/drivers/ata/sata_via.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,sata_via)
+  AUTOLOAD:=$(call AutoLoad,41,sata_via,1)
 endef
 
 define KernelPackage/ata-via-sata/description
@@ -152,8 +193,6 @@ define KernelPackage/ide-core
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:= \
 	CONFIG_IDE \
-	CONFIG_IDE_GENERIC \
-	CONFIG_BLK_DEV_GENERIC \
 	CONFIG_BLK_DEV_IDE \
 	CONFIG_BLK_DEV_IDEDISK \
 	CONFIG_IDE_GD \
@@ -161,35 +200,27 @@ define KernelPackage/ide-core
 	CONFIG_IDE_GD_ATAPI=n \
 	CONFIG_BLK_DEV_IDEDMA_PCI=y \
 	CONFIG_BLK_DEV_IDEPCI=y
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
-    FILES:= \
-  	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/ide/ide-gd_mod.$(LINUX_KMOD_SUFFIX)
-      AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,40,ide-gd_mod)
-else
-    FILES:= \
-  	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
-      AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,40,ide-disk)
-endif
+  FILES:= \
+	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:= \
+	$(call AutoLoad,20,ide-core,1)
 endef
 
 define KernelPackage/ide-core/2.4
-  FILES+=$(LINUX_DIR)/drivers/ide/ide-detect.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD+=$(call AutoLoad,30,ide-detect)
+  FILES+= \
+	$(LINUX_DIR)/drivers/ide/ide-detect.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+= \
+	$(call AutoLoad,35,ide-detect,1) \
+	$(call AutoLoad,40,ide-disk,1)
 endef
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),eq,2.6.26)),1)
-  define KernelPackage/ide-core/2.6
-    FILES+=$(LINUX_DIR)/drivers/ide/pci/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
-    AUTOLOAD+=$(call AutoLoad,30,ide-pci-generic)
-  endef
-else
-  define KernelPackage/ide-core/2.6
-    FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
-    AUTOLOAD+=$(call AutoLoad,30,ide-generic)
-  endef
-endif
+define KernelPackage/ide-core/2.6
+  FILES+= \
+  	$(LINUX_DIR)/drivers/ide/ide-gd_mod.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+= \
+	$(call AutoLoad,40,ide-gd_mod,1)
+endef
 
 define KernelPackage/ide-core/description
  Kernel support for IDE, useful for usb mass storage devices (e.g. on WL-HDD)
@@ -202,49 +233,77 @@ endef
 $(eval $(call KernelPackage,ide-core))
 
 
-define KernelPackage/ide-aec62xx
+define KernelPackage/ide/Depends
   SUBMENU:=$(BLOCK_MENU)
+  DEPENDS:=kmod-ide-core $(1)
+endef
+
+
+define KernelPackage/ide-generic
+$(call KernelPackage/ide/Depends,@PCI_SUPPORT)
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for generic PCI IDE chipsets
+  KCONFIG:=CONFIG_BLK_DEV_GENERIC
+endef
+
+define KernelPackage/ide-generic/2.4
+  FILES+= \
+	$(LINUX_DIR)/drivers/ide/pci/generic.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+= \
+	$(call AutoLoad,30,generic,1)
+endef
+
+define KernelPackage/ide-generic/2.6
+  FILES+= \
+	$(LINUX_DIR)/drivers/ide/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+= \
+	$(call AutoLoad,30,ide-pci-generic,1)
+endef
+
+$(eval $(call KernelPackage,ide-generic))
+
+
+define KernelPackage/ide-generic-old
+$(call KernelPackage/ide/Depends,@LINUX_2_6)
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for generic (legacy) IDE chipsets
+  KCONFIG:=CONFIG_IDE_GENERIC
+  FILES:=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ide-generic,1)
+endef
+
+$(eval $(call KernelPackage,ide-generic-old))
+
+
+define KernelPackage/ide-aec62xx
+$(call KernelPackage/ide/Depends,@PCI_SUPPORT)
   TITLE:=Acard AEC62xx IDE driver
-  DEPENDS:=@PCI_SUPPORT +kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_AEC62XX
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
   FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.$(LINUX_KMOD_SUFFIX)
-else
+  AUTOLOAD:=$(call AutoLoad,30,aec62xx,1)
+endef
+
+define KernelPackage/ide-aec62xx/2.4
   FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
-endif
-  AUTOLOAD:=$(call AutoLoad,30,aec62xx)
 endef
 
 define KernelPackage/ide-aec62xx/description
  Support for Acard AEC62xx (Artop ATP8xx) IDE controllers.
 endef
 
-$(eval $(call KernelPackage,ide-aec62xx))
-
-
-define KernelPackage/ide-magicbox
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=Magicbox 2.0 IDE CF driver
-  DEPENDS:=@TARGET_magicbox +kmod-ide-core
-  KCONFIG:=CONFIG_BLK_DEV_MAGICBOX_IDE
-  FILES:=$(LINUX_DIR)/drivers/ide/ppc/magicbox_ide.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,magicbox_ide)
-endef
-
-define KernelPackage/ide-magicbox/description
- Support for Magicbox 2.0 onboard CF slot.
-endef
-
-$(eval $(call KernelPackage,ide-magicbox))
+$(eval $(call KernelPackage,ide-aec62xx,1))
 
 
 define KernelPackage/ide-pdc202xx
-  SUBMENU:=$(BLOCK_MENU)
+$(call KernelPackage/ide/Depends,@PCI_SUPPORT)
   TITLE:=Promise PDC202xx IDE driver
-  DEPENDS:=@LINUX_2_4 +kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
+  FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old,1)
+endef
+
+define KernelPackage/ide-pdc202xx/2.4
   FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old)
 endef
 
 define KernelPackage/ide-pdc202xx/description
@@ -256,16 +315,11 @@ $(eval $(call KernelPackage,ide-pdc202xx))
 
 
 define KernelPackage/ide-it821x
-  SUBMENU:=$(BLOCK_MENU)
+$(call KernelPackage/ide/Depends,@PCI_SUPPORT)
   TITLE:=ITE IT821x IDE driver
-  DEPENDS:=+kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_IT821X
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
   FILES=$(LINUX_DIR)/drivers/ide/it821x.$(LINUX_KMOD_SUFFIX)
-else
-  FILES=$(LINUX_DIR)/drivers/ide/pci/it821x.$(LINUX_KMOD_SUFFIX)
-endif
-  AUTOLOAD:=$(call AutoLoad,30,it821x)
+  AUTOLOAD:=$(call AutoLoad,30,it821x,1)
 endef
 
 define KernelPackage/ide-it821x/description
@@ -278,13 +332,14 @@ $(eval $(call KernelPackage,ide-it821x))
 define KernelPackage/scsi-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SCSI device support
+  DEPENDS:=@!TARGET_x86
   KCONFIG:= \
 	CONFIG_SCSI \
 	CONFIG_BLK_DEV_SD
   FILES:= \
-	$(LINUX_DIR)/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX) \
+	$(if $(findstring y,$(CONFIG_SCSI)),,$(LINUX_DIR)/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX)) \
 	$(LINUX_DIR)/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,20,scsi_mod) $(call AutoLoad,40,sd_mod)
+  AUTOLOAD:=$(call AutoLoad,20,scsi_mod,1) $(call AutoLoad,40,sd_mod,1)
 endef
 
 $(eval $(call KernelPackage,scsi-core))
@@ -335,20 +390,49 @@ endef
 $(eval $(call KernelPackage,nbd))
 
 
-define KernelPackage/pata-rb153-cf
+define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
-  DEPENDS:=kmod-ata-core @TARGET_adm5120_router_le
+  TITLE:=Device Mapper
+  # All the "=n" are unnecessary, they're only there
+  # to stop the config from asking the question.
+  # MIRROR is M because I've needed it for pvmove.
+  KCONFIG:= \
+       CONFIG_BLK_DEV_MD=n \
+       CONFIG_DM_DEBUG=n \
+       CONFIG_DM_CRYPT=n \
+       CONFIG_DM_UEVENT=n \
+       CONFIG_DM_DELAY=n \
+       CONFIG_DM_MULTIPATH=n \
+       CONFIG_DM_ZERO=n \
+       CONFIG_DM_SNAPSHOT=n \
+       CONFIG_DM_LOG_USERSPACE=n \
+       CONFIG_MD=y \
+       CONFIG_BLK_DEV_DM \
+       CONFIG_DM_MIRROR
+  FILES:=$(LINUX_DIR)/drivers/md/dm-*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-log dm-region-hash dm-mirror)
+endef
+
+define KernelPackage/dm/description
+ Kernel module necessary for LVM2 support
+endef
+
+$(eval $(call KernelPackage,dm))
+
+
+define KernelPackage/pata-rb153-cf
+$(call KernelPackage/ata/Depends,@TARGET_adm5120_router_le)
   TITLE:=RouterBOARD 153 CF Slot support
   KCONFIG:=CONFIG_PATA_RB153_CF
   FILES:=$(LINUX_DIR)/drivers/ata/pata_rb153_cf.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,pata_rb153_cf)
+  AUTOLOAD:=$(call AutoLoad,30,pata_rb153_cf,1)
 endef
 
 define KernelPackage/pata-rb153-cf/description
   Kernel support for the RouterBoard 153 CF slot.
 endef
 
-$(eval $(call KernelPackage,pata-rb153-cf))
+$(eval $(call KernelPackage,pata-rb153-cf,1))
 
 
 define KernelPackage/aoe
@@ -379,3 +463,58 @@ define KernelPackage/ps3vram/description
 endef
 
 $(eval $(call KernelPackage,ps3vram))
+
+define KernelPackage/axonram
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Axon DDR2 memory device driver
+  DEPENDS:=@TARGET_pxcab
+  KCONFIG:=CONFIG_AXON_RAM
+  FILES:=$(LINUX_DIR)/arch/powerpc/sysdev/axonram.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,01,axonram)
+endef
+
+define KernelPackage/axonram/description
+  Kernel support for Axon DDR2 memory device
+endef
+
+$(eval $(call KernelPackage,axonram))
+
+define KernelPackage/libsas
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=SAS Domain Transport Attributes
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
+	CONFIG_SCSI_SAS_ATTRS \
+	CONFIG_SCSI_SAS_ATA=y \
+	CONFIG_SCSI_SAS_HOST_SMP=y \
+	CONFIG_SCSI_SAS_LIBSAS_DEBUG=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/scsi/scsi_transport_sas.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/scsi/libsas/libsas.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,29,scsi_transport_sas libsas,1)
+endef
+
+define KernelPackage/libsas/description
+  SAS Domain Transport Attributes support.
+endef
+
+$(eval $(call KernelPackage,libsas,1))
+
+define KernelPackage/mvsas
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Marvell 88SE6440 SAS/SATA driver
+  DEPENDS:=@TARGET_x86 +kmod-libsas
+  KCONFIG:=CONFIG_SCSI_MVSAS
+  ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_LINUX_2_6_30),)
+	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.$(LINUX_KMOD_SUFFIX)
+  else
+	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas/mvsas.$(LINUX_KMOD_SUFFIX)
+  endif
+  AUTOLOAD:=$(call AutoLoad,40,mvsas,1)
+endef
+
+define KernelPackage/mvsas/description
+  Kernel support for the Marvell SAS SCSI adapters
+endef
+
+$(eval $(call KernelPackage,mvsas))

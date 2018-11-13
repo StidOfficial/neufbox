@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,15 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xsupplicant
 PKG_VERSION:=1.2.8
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/open1x
 PKG_MD5SUM:=75f89731b905eb8d36a52621661e1226
 
-PKG_BUILD_DEPENDS:=madwifi
+PKG_BUILD_DEPENDS:=PACKAGE_kmod-madwifi:madwifi
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=0
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -36,6 +38,8 @@ define Package/xsupplicant/conffiles
 /etc/xsupplicant.conf
 endef
 
+TARGET_CFLAGS += --std=gnu99
+
 CONFIGURE_ARGS+= \
 	--with-openssl="$(STAGING_DIR)/usr" \
 	--with-madwifi-path="$(STAGING_DIR)/usr/include/madwifi" \
@@ -53,13 +57,7 @@ define Build/Prepare
 	);
 endef
 
-define Build/Compile	
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
-
-define Package/xsupplicant/install	
+define Package/xsupplicant/install
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/etc/xsupplicant.conf $(1)/etc/
 	$(INSTALL_DIR) $(1)/usr/bin

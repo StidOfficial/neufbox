@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,15 +8,23 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=python
-PKG_VERSION:=2.6.1
-PKG_RELEASE:=1
+PKG_VERSION:=2.6.4
+PKG_RELEASE:=3
 
 PKG_SOURCE:=Python-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.python.org/ftp/python/$(PKG_VERSION)/
-PKG_MD5SUM:=e81c2f0953aa60f8062c05a4673f2be0
+PKG_MD5SUM:=fee5408634a54e721a93531aba37f8c1
+
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
+HOST_BUILD_PARALLEL:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/Python-$(PKG_VERSION)
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/Python-$(PKG_VERSION)
 
+PKG_BUILD_DEPENDS:=python/host
+
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 -include $(if $(DUMP),,./files/python-package.mk)
 
@@ -40,7 +48,7 @@ endef
 define Package/python
 $(call Package/python/Default)
   TITLE+= (full)
-  DEPENDS:=+libpthread +zlib +PACKAGE_python:libffi +python-mini
+  DEPENDS:=+libpthread +zlib +libffi +python-mini
 endef
 
 define Package/python/description
@@ -73,10 +81,22 @@ $(call Package/python/Default)
   DEPENDS+=+python-mini +libexpat
 endef
 
+define Package/python-gzip
+$(call Package/python/Default)
+  TITLE:=Python support for gzip
+  DEPENDS+=+python-mini
+endef
+
 define Package/python-openssl
 $(call Package/python/Default)
  TITLE:=Python support for OpenSSL
  DEPENDS+=+python-mini +libopenssl
+endef
+
+define Package/python-shutil
+$(call Package/python/Default)
+  TITLE:=Python support for shutil
+  DEPENDS+=+python-mini
 endef
 
 define Package/python-sqlite3
@@ -85,48 +105,38 @@ $(call Package/python/Default)
  DEPENDS+=+python-mini +libsqlite3
 endef
 
+define Package/python-gdbm
+$(call Package/python/Default)
+ TITLE:=Python support for gdbm
+ DEPENDS+=+python-mini +libgdbm
+endef
 
 PY_DISABLED_MODULES:= \
 	readline _curses _curses_panel _tkinter nis
 
-MAKE_OPTS:=\
+MAKE_FLAGS:=\
 	$(TARGET_CONFIGURE_OPTS) \
 	PYTHON_DISABLE_MODULES="$(PY_DISABLED_MODULES)" \
 	PYTHON_MODULES_INCLUDE="$(STAGING_DIR)/usr/include" \
 	PYTHON_MODULES_LIB="$(STAGING_DIR)/usr/lib" \
+	DESTDIR="$(PKG_INSTALL_DIR)" \
 	CROSS_COMPILE=yes \
 	CFLAGS="$(TARGET_CFLAGS) -fno-inline" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	LD="$(TARGET_CC)" \
 	HOSTPYTHON=./hostpython \
-	HOSTPGEN=./hostpgen \
+	HOSTPGEN=./hostpgen
 
 define Build/Configure
-endef
-
-define Build/Compile
 	-$(MAKE) -C $(PKG_BUILD_DIR) distclean
-	(cd $(PKG_BUILD_DIR); autoreconf --force --install || exit 0);
-	(cd $(PKG_BUILD_DIR); \
-		rm -rf config.cache; \
-		CONFIG_SITE= \
-		OPT="$(HOST_CFLAGS)" \
-		./configure --without-cxx-main --without-threads --prefix=$(PKG_INSTALL_DIR)/host; \
-	);
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		python Parser/pgen
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		HOSTPYTHON=$(PKG_BUILD_DIR)/python \
-		sharedmods install
-	(cd $(PKG_BUILD_DIR);mv Parser/pgen hostpgen)
+	(cd $(PKG_BUILD_DIR); autoreconf --force --install || exit 0)
 	# The python executable needs to stay in the rootdir since its location will
 	# be used to compute the path of the config files.
-	$(CP) $(PKG_BUILD_DIR)/python $(PKG_BUILD_DIR)/hostpython
-	$(MAKE) -C $(PKG_BUILD_DIR) distclean
+	$(CP) $(STAGING_DIR_HOST)/bin/pgen $(PKG_BUILD_DIR)/hostpgen
+	$(CP) $(STAGING_DIR_HOST)/bin/python $(PKG_BUILD_DIR)/hostpython
 	$(call Build/Configure/Default, \
 		--sysconfdir=/etc \
 		--disable-shared \
-		--disable-ipv6 \
 		--without-cxx-main \
 		--with-threads \
 		--with-system-ffi \
@@ -136,36 +146,32 @@ define Build/Compile
 		ac_cv_py_format_size_t=no \
 		OPT="$(TARGET_CFLAGS)" \
 	)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(MAKE_OPTS) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
 endef
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/mk $(2)/bin $(1)/usr/bin $(1)/usr/include $(1)/usr/lib
-	$(INSTALL_DATA) ./files/python-package.mk $(1)/mk/
+	$(INSTALL_DIR) $(2)/bin $(1)/usr/bin $(1)/usr/include $(1)/usr/lib
+	$(INSTALL_DIR) $(STAGING_DIR)/mk/
+	$(INSTALL_DATA) ./files/python-package.mk $(STAGING_DIR)/mk/
 	$(CP) \
 		$(PKG_INSTALL_DIR)/usr/include/python$(PYTHON_VERSION) \
 		$(1)/usr/include/
 	$(CP) \
-		$(PKG_INSTALL_DIR)/host/lib/python$(PYTHON_VERSION) \
+		$(STAGING_DIR_HOST)/lib/python$(PYTHON_VERSION) \
 		$(PKG_BUILD_DIR)/libpython$(PYTHON_VERSION).a \
 		$(1)/usr/lib/
-
 	$(CP) \
 		$(PKG_INSTALL_DIR)/usr/lib/python$(PYTHON_VERSION)/config \
 		$(1)/usr/lib/python$(PYTHON_VERSION)/
 
 	$(CP) \
-		$(PKG_INSTALL_DIR)/host/bin/python \
+		$(STAGING_DIR_HOST)/bin/python \
 		$(1)/usr/bin/hostpython
 	(cd $(2)/bin; \
 	ln -sf ../../usr/bin/hostpython python$(PYTHON_VERSION); \
 	ln -sf python$(PYTHON_VERSION) python)
 
 	$(CP) \
-		$(PKG_INSTALL_DIR)/host/bin/python$(PYTHON_VERSION)-config \
+		$(STAGING_DIR_HOST)/bin/python$(PYTHON_VERSION)-config \
 		$(2)/bin/
 	$(SED) 's,^#!.*,#!/usr/bin/env python$(PYTHON_VERSION),g' $(2)/bin/python$(PYTHON_VERSION)-config
 
@@ -174,7 +180,6 @@ define Build/InstallDev
 endef
 
 define PyPackage/python/filespec
-+|/usr/bin/python$(PYTHON_VERSION)
 +|/usr/lib/python$(PYTHON_VERSION)
 -|/usr/lib/python$(PYTHON_VERSION)/bsddb/test
 -|/usr/lib/python$(PYTHON_VERSION)/config
@@ -190,6 +195,7 @@ define PyPackage/python/filespec
 -|/usr/lib/python$(PYTHON_VERSION)/test
 -|/usr/lib/python$(PYTHON_VERSION)/lib2to3
 -|/usr/lib/python$(PYTHON_VERSION)/lib-old
+-|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/gdbm.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_sqlite3.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_ssl.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/pyexpat.so
@@ -220,9 +226,13 @@ define PyPackage/python/filespec
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/grp.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/itertools.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/math.so
+-|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_md5.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/operator.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_random.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/select.so
+-|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_sha.so
+-|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_sha256.so
+-|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_sha512.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_socket.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/strop.so
 -|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_struct.so
@@ -270,10 +280,6 @@ define PyPackage/python/filespec
 -|/usr/lib/python$(PYTHON_VERSION)/weakref.py
 endef
 
-define PyPackage/python/install
-	ln -sf python$(PYTHON_VERSION) $(1)/usr/bin/python
-endef
-
 define PyPackage/python-mini/filespec
 +|/usr/bin/python$(PYTHON_VERSION)
 +|/usr/lib/python$(PYTHON_VERSION)/__future__.py
@@ -299,9 +305,13 @@ define PyPackage/python-mini/filespec
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/grp.so
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/itertools.so
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/math.so
++|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_md5.so
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/operator.so
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_random.so
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/select.so
++|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_sha.so
++|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_sha256.so
++|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_sha512.so
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_socket.so
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/strop.so
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_struct.so
@@ -347,6 +357,7 @@ define PyPackage/python-mini/filespec
 +|/usr/lib/python$(PYTHON_VERSION)/UserDict.py
 +|/usr/lib/python$(PYTHON_VERSION)/warnings.py
 +|/usr/lib/python$(PYTHON_VERSION)/weakref.py
++|/usr/include/python$(PYTHON_VERSION)/pyconfig.h
 endef
 
 define PyPackage/python-mini/install
@@ -362,20 +373,73 @@ define PyPackage/python-expat/filespec
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/pyexpat.so
 endef
 
+define PyPackage/python-gzip/filespec
++|/usr/lib/python$(PYTHON_VERSION)/gzip.py
+endef
+
 define PyPackage/python-openssl/filespec
 +|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_ssl.so
 endef
+
+define PyPackage/python-shutil/filespec
++|/usr/lib/python$(PYTHON_VERSION)/shutil.py
+endef
+
+define PyPackage/python-sqlite3/filespec
++|/usr/lib/python$(PYTHON_VERSION)/sqlite3
++|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/_sqlite3.so
+endef
+
+define PyPackage/python-gdbm/filespec
++|/usr/lib/python$(PYTHON_VERSION)/lib-dynload/gdbm.so
+endef
+
+define Host/Configure
+	-$(MAKE) -C $(HOST_BUILD_DIR) distclean
+	(cd $(HOST_BUILD_DIR); autoreconf --force --install || exit 0)
+	(cd $(HOST_BUILD_DIR); \
+		rm -rf config.cache; \
+		CONFIG_SITE= \
+		OPT="$(HOST_CFLAGS)" \
+		./configure --without-cxx-main --without-threads --prefix=$(STAGING_DIR_HOST); \
+	)
+endef
+
+define Host/Compile
+	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) \
+		python Parser/pgen
+	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) \
+		HOSTPYTHON=$(HOST_BUILD_DIR)/python \
+		sharedmods
+endef
+
+define Host/Install
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin/
+	$(MAKE) -C $(HOST_BUILD_DIR) \
+		HOSTPYTHON=$(HOST_BUILD_DIR)/python \
+		install
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/Parser/pgen $(STAGING_DIR_HOST)/bin/
+endef
+
+
+$(eval $(call HostBuild))
 
 $(eval $(call PyPackage,python))
 $(eval $(call PyPackage,python-mini))
 $(eval $(call PyPackage,python-doc))
 $(eval $(call PyPackage,python-expat))
+$(eval $(call PyPackage,python-gzip))
 $(eval $(call PyPackage,python-openssl))
+$(eval $(call PyPackage,python-shutil))
 $(eval $(call PyPackage,python-sqlite3))
+$(eval $(call PyPackage,python-gdbm))
 
 $(eval $(call BuildPackage,python))
 $(eval $(call BuildPackage,python-mini))
 $(eval $(call BuildPackage,python-doc))
 $(eval $(call BuildPackage,python-expat))
+$(eval $(call BuildPackage,python-gzip))
 $(eval $(call BuildPackage,python-openssl))
+$(eval $(call BuildPackage,python-shutil))
 $(eval $(call BuildPackage,python-sqlite3))
+$(eval $(call BuildPackage,python-gdbm))

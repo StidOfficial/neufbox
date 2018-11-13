@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 # Make sure to also update the dbus-x package
 PKG_NAME:=dbus
 PKG_VERSION:=1.2.4.6permissive
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://dbus.freedesktop.org/releases/dbus/
@@ -74,6 +74,11 @@ $(call Package/dbus/Default/description)
 endef
 
 
+define Build/Prepare
+	$(Build/Prepare/Default)
+	$(SED) 's/-Wl,--gc-sections/--gc-sections/' $(PKG_BUILD_DIR)/configure
+endef
+
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
@@ -97,7 +102,7 @@ CONFIGURE_ARGS += \
 
 CONFIGURE_VARS+= \
 	ac_cv_have_abstract_sockets="yes" \
-	$(if $(CONFIG_LINUX_2_4),ac_cv_header_sys_inotify_h=no) \
+	ac_cv_lib_expat_XML_ParserCreate_MM="yes" \
 
 
 define Build/InstallDev

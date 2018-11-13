@@ -1,12 +1,21 @@
 #!/bin/sh
 [ -e /etc/functions.sh ] && . /etc/functions.sh || . ./functions.sh
-[ -x /sbin/modprobe ] && insmod="modprobe" || insmod="insmod"
+[ -x /sbin/modprobe ] && {
+	insmod="modprobe"
+	rmmod="$insmod -r"
+} || {
+	insmod="insmod"
+	rmmod="rmmod"
+}
 
 add_insmod() {
 	eval "export isset=\${insmod_$1}"
 	case "$isset" in
 		1) ;;
-		*) append INSMOD "$insmod $* >&- 2>&-" "$N"; export insmod_$1=1;;
+		*) {
+			[ "$2" ] && append INSMOD "$rmmod $1 >&- 2>&-" "$N"
+			append INSMOD "$insmod $* >&- 2>&-" "$N"; export insmod_$1=1
+		};;
 	esac
 }
 
@@ -272,14 +281,14 @@ start_interface() {
 		return 1 
 	}
 	config_get upload "$iface" upload
-	config_get halfduplex "$iface" halfduplex
+	config_get_bool halfduplex "$iface" halfduplex
 	config_get download "$iface" download
 	config_get classgroup "$iface" classgroup
 	config_get_bool overhead "$iface" overhead 0
 	
 	download="${download:-${halfduplex:+$upload}}"
 	enum_classes "$classgroup"
-	for dir in up${halfduplex} ${download:+down}; do
+	for dir in ${halfduplex:-up} ${download:+down}; do
 		case "$dir" in
 			up)
 				[ "$overhead" = 1 ] && upload=$(($upload * 98 / 100 - (15 * 128 / $upload)))
@@ -289,7 +298,7 @@ start_interface() {
 				prefix="cls"
 			;;
 			down)
-				add_insmod imq numdevs="$num_imq"
+				[ "$(ls -d /proc/sys/net/ipv4/conf/imq* 2>&- | wc -l)" -ne "$num_imq" ] && add_insmod imq numdevs="$num_imq"
 				config_get imqdev "$iface" imqdev
 				[ "$overhead" = 1 ] && download=$(($download * 98 / 100 - (80 * 1024 / $download)))
 				dev="imq$imqdev"
@@ -306,8 +315,10 @@ start_interface() {
 			cls_var maxrate "$class" limitrate $dir 100
 			cls_var prio "$class" priority $dir 1
 			cls_var avgrate "$class" avgrate $dir 0
+			cls_var qdisc_esfq "$class" qdisc_esfq $dir ""
+			[ "$qdisc_esfq" != "" ] && add_insmod sch_esfq
 			config_get classnr "$class" classnr
-			append cstr "$classnr:$prio:$avgrate:$pktsize:$pktdelay:$maxrate" "$N"
+			append cstr "$classnr:$prio:$avgrate:$pktsize:$pktdelay:$maxrate:$qdisc_esfq" "$N"
 		done
 		append ${prefix}q "$(tcrules)" "$N"
 		export dev_${dir}="ifconfig $dev up txqueuelen 5 >&- 2>&-
@@ -369,7 +380,6 @@ start_cg() {
 	local iptrules
 	local pktrules
 	local sizerules
-	local download
 	enum_classes "$cg"
 	add_rules iptrules "$ctrules" "iptables -t mangle -A ${cg}_ct"
 	config_get classes "$cg" classes
@@ -386,17 +396,19 @@ start_cg() {
 		config_get classgroup "$iface" classgroup
 		config_get device "$iface" device
 		config_get imqdev "$iface" imqdev
-		config_get dl "$iface" download
+		config_get upload "$iface" upload
+		config_get download "$iface" download
 		config_get halfduplex "$iface" halfduplex
+		download="${download:-${halfduplex:+$upload}}"
 		add_insmod ipt_IMQ
 		append up "iptables -t mangle -A OUTPUT -o $device -j ${cg}" "$N"
 		append up "iptables -t mangle -A FORWARD -o $device -j ${cg}" "$N"
-		[ -z "$dl" ] || {
+		[ -z "$download" ] || {
+			append down "iptables -t mangle -A POSTROUTING -o $device -j ${cg}" "$N"
 			[ -z "$halfduplex" ] || {
 				append down "iptables -t mangle -A POSTROUTING -o $device -j IMQ --todev $imqdev" "$N"
 			}
 			append down "iptables -t mangle -A PREROUTING -i $device -j ${cg}" "$N"
-			append down "iptables -t mangle -A POSTROUTING -o $device -j ${cg}" "$N"
 			append down "iptables -t mangle -A PREROUTING -i $device -j IMQ --todev $imqdev" "$N"
 		}
 	done

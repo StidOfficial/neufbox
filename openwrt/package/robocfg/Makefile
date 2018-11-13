@@ -14,11 +14,13 @@ PKG_RELEASE:=1
 PKG_BUILD_DIR:=$(BUILD_DIR)/robocfg
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 define Package/robocfg
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=BCM5325E/536x switch configuration utility
+  DEPENDS:=+efixo-bcm53xx
 endef
 
 define Package/robocfg/description
@@ -30,6 +32,10 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
+
+EXTRA_CFLAGS+=$(if $(CONFIG_TARGET_brcm63xx),-DBROADCOM_5325E_SWITCH)
+EXTRA_CFLAGS+=$(if $(CONFIG_TARGET_octeon),-DBROADCOM_5395S_SWITCH)
+EXTRA_CFLAGS+=-I. -I$(LINUX_DIR)/include
 
 define Package/robocfg/install
 	$(INSTALL_DIR) $(1)/sbin

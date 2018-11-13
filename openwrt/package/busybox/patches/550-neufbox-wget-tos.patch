@@ -1,24 +1,27 @@
-diff --exclude=.svn -pNur busybox-1.11.3/networking/wget.c busybox-1.11.3/networking/wget.c
---- busybox-1.11.3/networking/wget.c	2009-01-21 15:33:38.670187097 +0100
-+++ busybox-1.11.3/networking/wget.c	2009-01-21 15:44:37.810283513 +0100
-@@ -7,6 +7,10 @@
+--- a/networking/wget.c
++++ b/networking/wget.c
+@@ -7,6 +7,12 @@
+  * Licensed under GPLv2, see file LICENSE in this tarball for details.
   */
- 
  #include "libbb.h"
++#ifdef VOIP_DSCP
 +#include <sys/socket.h>
 +#include <netinet/in.h>
 +#include <netinet/ip.h> /* superset of previous */
++#endif
 +
  
  struct host_info {
  	// May be used if we ever will want to free() all xstrdup()s...
-@@ -239,11 +243,20 @@ static char *base64enc_512(char buf[512]
+@@ -285,11 +291,24 @@ static char* sanitize_string(char *s)
  
  static FILE *open_socket(len_and_sockaddr *lsa)
  {
 +	int fd;
- 	FILE *fp;
++#ifdef VOIP_DSCP
 +	int tos;
++#endif
+ 	FILE *fp;
  
  	/* glibc 2.4 seems to try seeking on it - ??! */
  	/* hopefully it understands what ESPIPE means... */
@@ -27,8 +30,10 @@ diff --exclude=.svn -pNur busybox-1.11.3/networking/wget.c busybox-1.11.3/networ
 +	if (fd < 0)
 +		bb_perror_msg_and_die("fdopen");
 +
-+	tos = (0x2D<<2);
++#ifdef VOIP_DSCP
++	tos = (VOIP_DSCP << 2);
 +	setsockopt(fd, SOL_IP, IP_TOS, &tos, sizeof(tos));
++#endif
 +
 +	fp = fdopen(fd, "r+");
  	if (fp == NULL)

@@ -16,7 +16,6 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/speedtouch-usb-firmware-$(PKG_VERSION)
 PKG_SOURCE:=SpeedTouch330_firmware_$(PKG_VERSION)$(PKG_RELEASE).zip
 PKG_SOURCE_URL:=http://www.speedtouch.com/download/drivers/USB/
 PKG_MD5SUM:=2551ce46ef785642f2c6768511f70ff3
-PKG_CAT:=unzip
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -25,7 +24,8 @@ define Package/speedtouch-usb-firmware
   SECTION:=net
   CATEGORY:=Network
   TITLE:=SpeedTouch 330 ADSL USB firmware
-  DEPENDS:=+kmod-usb-atm +kmod-usb-atm-speedtouch @LINUX_2_6
+  DEPENDS:=+kmod-usb-atm +kmod-usb-atm-speedtouch @!LINUX_2_4
+  PKGARCH:=all
 endef
 
 define Package/speedtouch-usb-firmware/description

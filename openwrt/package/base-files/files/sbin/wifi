@@ -34,6 +34,19 @@ bridge_interface() {(
 	[ "$iftype" = bridge ] && config_get "$cfg" ifname
 )}
 
+prepare_key_wep() {
+	local key="$1"
+	local hex=1
+
+	echo -n "$key" | grep -qE "[^a-fA-F0-9]" && hex=0
+	[ "${#key}" -eq 10 -a $hex -eq 1 ] || \
+	[ "${#key}" -eq 26 -a $hex -eq 1 ] || {
+		[ "${key:0:2}" = "s:" ] && key="${key#s:}"
+        	key="$(echo -n "$key" | hexdump -ve '1/1 "%02x" ""')"
+	}
+	echo "$key"
+}
+
 wifi_fixup_hwmode() {
 	local device="$1"
 	local default="$2"
@@ -48,7 +61,7 @@ wifi_fixup_hwmode() {
 		11g) hwmode=g;;
 		11n*)
 			hwmode_11n="${hwmode##11n}"
-			case "$hwmode" in
+			case "$hwmode_11n" in
 				a|g) ;;
 				default) hwmode_11n="$default"
 			esac
@@ -71,7 +84,10 @@ wifi_fixup_hwmode() {
 }
 
 wifi_updown() {
-	[ enable = "$1" ] && wifi_updown disable "$2"
+	[ enable = "$1" ] && {
+		wifi_updown disable "$2"
+		scan_wifi
+	}
 	for device in ${2:-$DEVICES}; do (
 		config_get disabled "$device" disabled
 		[ 1 == "$disabled" ] && {
@@ -121,7 +137,7 @@ set_wifi_down() {
 	local vifs vif vifstr
 
 	[ -f "/var/run/wifi-${cfg}.pid" ] &&
-		kill "$(cat "/var/run/wifi-${cfg}.pid")"
+		kill "$(cat "/var/run/wifi-${cfg}.pid")" 2>/dev/null
 	uci_revert_state wireless "$cfg"
 	config_get vifs "$cfg" vifs
 	for vif in $vifs; do
@@ -131,11 +147,13 @@ set_wifi_down() {
 
 scan_wifi() {
 	local cfgfile="$1"
+	DEVICES=
 	config_cb() {
 		config_get TYPE "$CONFIG_SECTION" TYPE
 		case "$TYPE" in
 			wifi-device)
 				append DEVICES "$CONFIG_SECTION"
+				config_set "$CONFIG_SECTION" vifs ""
 			;;
 			wifi-iface)
 				config_get device "$CONFIG_SECTION" device

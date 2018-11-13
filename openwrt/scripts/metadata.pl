@@ -49,6 +49,7 @@ sub parse_target_metadata() {
 		/^Target-Name:\s*(.+)\s*$/ and $target->{name} = $1;
 		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
 		/^Target-Arch:\s*(.+)\s*$/ and $target->{arch} = $1;
+		/^Target-Arch-Packages:\s*(.+)\s*$/ and $target->{arch_packages} = $1;
 		/^Target-Features:\s*(.+)\s*$/ and $target->{features} = [ split(/\s+/, $1) ];
 		/^Target-Depends:\s*(.+)\s*$/ and $target->{depends} = [ split(/\s+/, $1) ];
 		/^Target-Description:/ and $target->{desc} = get_multiline(*FILE);
@@ -152,18 +153,23 @@ sub target_config_features(@) {
 
 	while ($_ = shift @_) {
 		/broken/ and $ret .= "\tdepends BROKEN\n";
+		/audio/ and $ret .= "\tselect AUDIO_SUPPORT\n";
 		/display/ and $ret .= "\tselect DISPLAY_SUPPORT\n";
 		/gpio/ and $ret .= "\tselect GPIO_SUPPORT\n";
 		/pci/ and $ret .= "\tselect PCI_SUPPORT\n";
+		/pcie/ and $ret .= "\tselect PCIE_SUPPORT\n";
 		/usb/ and $ret .= "\tselect USB_SUPPORT\n";
 		/pcmcia/ and $ret .= "\tselect PCMCIA_SUPPORT\n";
 		/squashfs/ and $ret .= "\tselect USES_SQUASHFS\n";
 		/jffs2/ and $ret .= "\tselect USES_JFFS2\n";
 		/ext2/ and $ret .= "\tselect USES_EXT2\n";
-		/tgz/ and $ret .= "\tselect USES_TGZ\n";
+		/targz/ and $ret .= "\tselect USES_TARGZ\n";
 		/cpiogz/ and $ret .= "\tselect USES_CPIOGZ\n";
+		/ubifs/ and $ret .= "\tselect USES_UBIFS\n";
 		/fpu/ and $ret .= "\tselect HAS_FPU\n";
 		/ramdisk/ and $ret .= "\tselect USES_INITRAMFS\n";
+		/powerpc64/ and $ret .= "\tselect powerpc64\n";
+		/nommu/ and $ret .= "\tselect NOMMU\n";
 	}
 	return $ret;
 }
@@ -222,25 +228,26 @@ EOF
 	}
 	if (@{$target->{subtargets}} > 0) {
 		$confstr .= "\tselect HAS_SUBTARGETS\n";
-	} else {
-		$confstr .= "\tselect $target->{arch}\n";
-		foreach my $dep (@{$target->{depends}}) {
-			my $mode = "depends";
-			my $flags;
-			my $name;
-
-			$dep =~ /^([@\+\-]+)(.+)$/;
-			$flags = $1;
-			$name = $2;
-
-			next if $name =~ /:/;
-			$flags =~ /-/ and $mode = "deselect";
-			$flags =~ /\+/ and $mode = "select";
-			$flags =~ /@/ and $confstr .= "\t$mode $name\n";
-		}
-		$confstr .= $features;
 	}
 
+	if ($target->{arch} =~ /\w/) {
+		$confstr .= "\tselect $target->{arch}\n";
+	}
+	foreach my $dep (@{$target->{depends}}) {
+		my $mode = "depends";
+		my $flags;
+		my $name;
+
+		$dep =~ /^([@\+\-]+)(.+)$/;
+		$flags = $1;
+		$name = $2;
+
+		next if $name =~ /:/;
+		$flags =~ /-/ and $mode = "deselect";
+		$flags =~ /\+/ and $mode = "select";
+		$flags =~ /@/ and $confstr .= "\t$mode $name\n";
+	}
+	$confstr .= $features;
 	$confstr .= "$help\n\n";
 	print $confstr;
 }
@@ -328,6 +335,15 @@ EOF
 		$target->{subtarget} or	print "\t\tdefault \"".$target->{board}."\" if TARGET_".$target->{conf}."\n";
 	}
 	print <<EOF;
+config TARGET_ARCH_PACKAGES
+	string
+	
+EOF
+	foreach my $target (@target) {
+		next if @{$target->{subtargets}} > 0;
+		print "\t\tdefault \"".($target->{arch_packages} || $target->{board})."\" if TARGET_".$target->{conf}."\n";
+	}
+	print <<EOF;
 
 config DEFAULT_TARGET_OPTIMIZATION
 	string
@@ -412,11 +428,13 @@ sub mconf_depends {
 	my @depends = @$depends;
 	foreach my $depend (@depends) {
 		my $m = "depends";
-		$depend =~ s/^([@\+]+)//;
-		my $flags = $1;
+		my $flags = "";
+		$depend =~ s/^([@\+]+)// and $flags = $1;
 		my $vdep;
 		my $condition = $parent_condition;
 
+		next if $seen->{$depend};
+		$seen->{$depend} = 1;
 		if ($depend =~ /^(.+):(.+)$/) {
 			if ($1 ne "PACKAGE_$pkgname") {
 				if ($condition) {
@@ -427,9 +445,7 @@ sub mconf_depends {
 			}
 			$depend = $2;
 		}
-		next if $seen->{$depend};
 		next if $package{$depend} and $package{$depend}->{buildonly};
-		$seen->{$depend} = 1;
 		if ($vdep = $package{$depend}->{vdepends}) {
 			$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
 		} else {
@@ -530,22 +546,52 @@ sub print_package_config_category($) {
 	undef $category{$cat};
 }
 
+sub print_package_features() {
+	keys %features > 0 or return;
+	print "menu \"Package features\"\n";
+	foreach my $n (keys %features) {
+		my @features = sort { $b->{priority} <=> $a->{priority} or $a->{title} cmp $b->{title} } @{$features{$n}};
+		print <<EOF;
+choice
+	prompt "$features[0]->{target_title}"
+	default FEATURE_$features[0]->{name}
+EOF
+
+		foreach my $feature (@features) {
+			print <<EOF;
+	config FEATURE_$feature->{name}
+		bool "$feature->{title}"
+EOF
+			$feature->{description} =~ /\w/ and do {
+				print "\t\thelp\n".$feature->{description}."\n";
+			};
+		}
+		print "endchoice\n"
+	}
+	print "endmenu\n\n";
+}
+
 sub gen_package_config() {
 	parse_package_metadata($ARGV[0]) or exit 1;
-	print "menuconfig UCI_PRECONFIG\n\tbool \"Image configuration\"\n" if %preconfig;
+	print "menuconfig IMAGEOPT\n\tbool \"Image configuration\"\n\tdefault n\n";
 	foreach my $preconfig (keys %preconfig) {
 		foreach my $cfg (keys %{$preconfig{$preconfig}}) {
 			my $conf = $preconfig{$preconfig}->{$cfg}->{id};
 			$conf =~ tr/\.-/__/;
 			print <<EOF
 	config UCI_PRECONFIG_$conf
-		string "$preconfig{$preconfig}->{$cfg}->{label}" if UCI_PRECONFIG
+		string "$preconfig{$preconfig}->{$cfg}->{label}" if IMAGEOPT
 		depends PACKAGE_$preconfig
 		default "$preconfig{$preconfig}->{$cfg}->{default}"
 
 EOF
 		}
 	}
+	print "source \"package/*/image-config.in\"\n";
+	if (scalar glob "package/feeds/*/*/image-config.in") {
+	    print "source \"package/feeds/*/*/image-config.in\"\n";
+	}
+	print_package_features();
 	print_package_config_category 'Base system';
 	foreach my $cat (keys %category) {
 		print_package_config_category $cat;
@@ -591,6 +637,12 @@ sub gen_package_mk() {
 		if ($config) {
 			$pkg->{buildonly} and $config = "";
 			print "package-$config += $pkg->{subdir}$pkg->{src}\n";
+			if ($pkg->{variant}) {
+				if (!defined($done{$pkg->{src}})) {
+					print "\$(curdir)/$pkg->{subdir}$pkg->{src}/default-variant := $pkg->{variant}\n";
+				}
+				print "\$(curdir)/$pkg->{subdir}$pkg->{src}/variants += \$(if $config,$pkg->{variant})\n"
+			}
 			$pkg->{prereq} and print "prereq-$config += $pkg->{subdir}$pkg->{src}\n";
 		}
 
@@ -626,14 +678,15 @@ sub gen_package_mk() {
 					$dep = $1;
 					$suffix = $2;
 				}
-				my $pkg_dep = $package{$dep};
-				next unless $pkg_dep;
 
 				my $idx = "";
-				if (defined $pkg_dep->{src}) {
+				my $pkg_dep = $package{$dep};
+				if (defined($pkg_dep) && defined($pkg_dep->{src})) {
 					$idx = $pkg_dep->{subdir}.$pkg_dep->{src};
 				} elsif (defined($srcpackage{$dep})) {
 					$idx = $subdir{$dep}.$dep;
+				} else {
+					next;
 				}
 				my $depstr = "\$(curdir)/$idx$suffix/compile";
 				my $depline = get_conditional_dep($condition, $depstr);
@@ -722,14 +775,17 @@ sub gen_package_mk() {
 		next unless $cmds;
 		print <<EOF
 
+ifndef DUMP_TARGET_DB
 \$(TARGET_DIR)/etc/uci-defaults/$preconfig: FORCE
 	( \\
 $cmds \\
 	) > \$@
 	
-ifneq (\$(UCI_PRECONFIG)\$(CONFIG_UCI_PRECONFIG),)
+ifneq (\$(IMAGEOPT)\$(CONFIG_IMAGEOPT),)
   package/preconfig: \$(TARGET_DIR)/etc/uci-defaults/$preconfig
 endif
+endif
+
 EOF
 	}
 }

@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=wireless-tools
 PKG_VERSION:=29
 PKG_MINOR:=
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=wireless_tools.$(PKG_VERSION)$(PKG_MINOR).tar.gz
 PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
@@ -55,6 +55,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -I." \
+		BUILD_WE_ESSENTIAL=y \
 		libiw.so.$(PKG_VERSION) iwmulticall
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX="$(PKG_INSTALL_DIR)" \

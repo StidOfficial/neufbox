@@ -3,7 +3,7 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2008 Florian Fainelli <florian@openwrt.org> 
+ * Copyright (C) 2008 Florian Fainelli <florian@openwrt.org>
  */
 
 #include <linux/init.h>
@@ -31,5 +31,7 @@ int __init bcm63xx_wdt_register(void)
 	wdt_resources[0].start = bcm63xx_regset_address(RSET_WDT);
 	wdt_resources[0].end = wdt_resources[0].start;
 	wdt_resources[0].end += RSET_WDT_SIZE - 1;
+
 	return platform_device_register(&bcm63xx_wdt_device);
 }
+arch_initcall(bcm63xx_wdt_register);

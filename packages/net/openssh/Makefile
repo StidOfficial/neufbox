@@ -8,16 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssh
-PKG_VERSION:=5.2p1
+PKG_VERSION:=5.6p1
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/ \
 		ftp://openbsd.wiretapped.net/pub/OpenBSD/OpenSSH/portable/ \
 		ftp://ftp.belnet.be/packages/openbsd/OpenSSH/portable/ \
 		ftp://ftp.de.openbsd.org/pub/unix/OpenBSD/OpenSSH/portable/
-PKG_MD5SUM:=ada79c7328a8551bdf55c95e631e7dad
+PKG_MD5SUM:=e6ee52e47c768bf0ec42a232b5d18fb0
 
 PKG_BUILD_DEPENDS:=libopenssl
 
@@ -28,6 +27,7 @@ define Package/openssh-client
   CATEGORY:=Network
   DEPENDS:=+libopenssl +zlib
   TITLE:=OpenSSH client
+  MAINTAINER:=Peter Wagner <tripolar@gmx.at>
   URL:=http://www.openssh.com/
   SUBMENU:=SSH
 endef
@@ -43,7 +43,7 @@ endef
 define Package/openssh-client-utils
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=openssh-client
+  DEPENDS:=+openssh-client +openssh-keygen
   TITLE:=OpenSSH client utilities
   URL:=http://www.openssh.com/
   SUBMENU:=SSH
@@ -53,10 +53,23 @@ define Package/openssh-client-utils/description
 OpenSSH client utilities.
 endef
 
-define Package/openssh-server
+define Package/openssh-keygen
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=+libopenssl +zlib
+  TITLE:=OpenSSH keygen
+  URL:=http://www.openssh.com/
+  SUBMENU:=SSH
+endef
+
+define Package/openssh-keygen/description
+OpenSSH keygen.
+endef
+
+define Package/openssh-server
+  SECTION:=net
+  CATEGORY:=Network
+  DEPENDS:=+libopenssl +zlib +openssh-keygen
   TITLE:=OpenSSH server
   URL:=http://www.openssh.com/
   SUBMENU:=SSH
@@ -123,8 +136,6 @@ endif
 CONFIGURE_VARS += LD="$(TARGET_CC)"
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		LIBS="" \
@@ -149,14 +160,18 @@ define Package/openssh-client-utils/install
 	$(INSTALL_BIN) $(foreach bin,add agent keyscan keysign,$(PKG_BUILD_DIR)/ssh-$(bin)) $(1)/usr/bin/
 endef
 
+define Package/openssh-keygen/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/ssh-keygen $(1)/usr/bin/
+endef
+
+
 define Package/openssh-server/install
 	$(INSTALL_DIR) $(1)/etc/ssh
 	chmod 0700 $(1)/etc/ssh
 	$(CP) $(PKG_INSTALL_DIR)/etc/ssh/sshd_config $(1)/etc/ssh/
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/sshd.init $(1)/etc/init.d/sshd
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/ssh-keygen $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/sshd $(1)/usr/sbin/
 endef
@@ -165,7 +180,7 @@ define Package/openssh-server/postinst
 #!/bin/sh
 
 name=sshd
-id=99
+id=22
 
 # do not change below
 # check if we are on real system
@@ -185,12 +200,12 @@ if [ -z "$${IPKG_INSTROOT}" ]; then
 fi
 
 echo ""
-if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/group)" ]; then 
+if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/group)" ]; then
 	echo "adding group $$name to /etc/group"
-	echo "$${name}:x:$${id}:" >> $${IPKG_INSTROOT}/etc/group  
+	echo "$${name}:x:$${id}:" >> $${IPKG_INSTROOT}/etc/group
 fi
 
-if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/passwd)" ]; then 
+if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/passwd)" ]; then
 	echo "adding user $$name to /etc/passwd"
 	echo "$${name}:x:$${id}:$${id}:$${name}:/var/empty/.$${name}:/bin/false" >> $${IPKG_INSTROOT}/etc/passwd
 fi
@@ -215,6 +230,7 @@ endef
 
 $(eval $(call BuildPackage,openssh-client))
 $(eval $(call BuildPackage,openssh-client-utils))
+$(eval $(call BuildPackage,openssh-keygen))
 $(eval $(call BuildPackage,openssh-server))
 $(eval $(call BuildPackage,openssh-sftp-client))
 $(eval $(call BuildPackage,openssh-sftp-server))

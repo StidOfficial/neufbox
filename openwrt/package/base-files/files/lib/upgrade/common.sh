@@ -21,6 +21,9 @@ install_bin() { # <file> [ <symlink> ... ]
 	files=$1
 	[ -x "$src" ] && files="$src $(libs $src)"
 	install_file $files
+	[ -e /lib/ld-linux.so.3 ] && {
+		install_file /lib/ld-linux.so.3
+	}
 	shift
 	for link in "$@"; do {
 		dest="$RAM_ROOT/$link"
@@ -32,7 +35,7 @@ install_bin() { # <file> [ <symlink> ... ]
 
 pivot() { # <new_root> <old_root>
 	mount | grep "on $1 type" 2>&- 1>&- || mount -o bind $1 $1
-	mkdir -p $1$2 $1/proc $1/dev $1/tmp $1/jffs && \
+	mkdir -p $1$2 $1/proc $1/dev $1/tmp $1/overlay && \
 	mount -o move /proc $1/proc && \
 	pivot_root $1 $1$2 || {
         umount $1 $1
@@ -40,12 +43,12 @@ pivot() { # <new_root> <old_root>
 	}
 	mount -o move $2/dev /dev
 	mount -o move $2/tmp /tmp
-	mount -o move $2/jffs /jffs 2>&-
+	mount -o move $2/overlay /overlay 2>&-
 	return 0
 }
 
 run_ramfs() { # <command> [...]
-	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount /sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd /bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/[" /bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump /bin/sleep /bin/zcat
+	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount /sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd /bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/[" /bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump /bin/sleep /bin/zcat /usr/bin/bzcat
 	install_bin /sbin/mtd
 	for file in $RAMFS_COPY_BIN; do
 		install_bin $file
@@ -60,9 +63,9 @@ run_ramfs() { # <command> [...]
 	mount -o remount,ro /mnt
 	umount -l /mnt
 
-	grep /jffs /proc/mounts > /dev/null && {
-		mount -o remount,ro /jffs
-		umount -l /jffs
+	grep /overlay /proc/mounts > /dev/null && {
+		mount -o remount,ro /overlay
+		umount -l /overlay
 	}
 
 	# spawn a new shell from ramdisk to reduce the probability of cache issues
@@ -103,20 +106,28 @@ rootfs_type() {
 	mount | awk '($3 ~ /^\/$/) && ($5 !~ /rootfs/) { print $5 }'
 }
 
-get_image() {
+get_image() { # <source> [ <command> ]
 	local from="$1"
-	local conc="cat"
-
-	[ $GZIPED -eq 1 ] && conc="zcat"
+	local conc="$2"
+	local cmd
 
 	case "$from" in
-		http://*|ftp://*) wget -O- -q "$from" | "$conc";;
-		*) cat "$from" | "$conc";;
+		http://*|ftp://*) cmd="wget -O- -q";;
+		*) cmd="cat";;
 	esac
+	if [ -z "$conc" ]; then
+		local magic="$(eval $cmd $from | dd bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"')"
+		case "$magic" in
+			1f8b) conc="zcat";;
+			425a) conc="bzcat";;
+		esac
+	fi
+
+	eval "$cmd $from ${conc:+| $conc}"
 }
 
 get_magic_word() {
-	get_image "$1" | dd bs=2 count=1 2>/dev/null | hexdump -C | awk '$2 { print $2 $3 }'
+	get_image "$@" | dd bs=2 count=1 2>/dev/null | hexdump -v -n 2 -e '1/1 "%02x"'
 }
 
 refresh_mtd_partitions() {
@@ -134,12 +145,12 @@ jffs2_copy_config() {
 }
 
 default_do_upgrade() {
+	sync
 	if [ "$SAVE_CONFIG" -eq 1 -a -z "$USE_REFRESH" ]; then
 		get_image "$1" | mtd -j "$CONF_TAR" write - "${PART_NAME:-image}"
 	else
 		get_image "$1" | mtd write - "${PART_NAME:-image}"
 	fi
-	sync
 }
 
 do_upgrade() {
@@ -149,7 +160,7 @@ do_upgrade() {
 	else
 		default_do_upgrade "$ARGV"
 	fi
-	
+
 	[ "$SAVE_CONFIG" -eq 1 -a -n "$USE_REFRESH" ] && {
 		v "Refreshing partitions"
 		if type 'platform_refresh_partitions' >/dev/null 2>/dev/null; then
@@ -167,7 +178,8 @@ do_upgrade() {
 	[ -n "$DELAY" ] && sleep "$DELAY"
 	ask_bool 1 "Reboot" && {
 		v "Rebooting system..."
-		echo b 2>/dev/null >/proc/sysrq-trigger
 		reboot
+		sleep 5
+		echo b 2>/dev/null >/proc/sysrq-trigger
 	}
 }

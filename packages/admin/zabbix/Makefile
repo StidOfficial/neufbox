@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zabbix
 PKG_VERSION:=1.6
-PKG_RELEASE:=1
-PKG_MD5SUM:=39d4c871439b1b4f0429964b4abbfc45
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/zabbix
+PKG_MD5SUM:=39d4c871439b1b4f0429964b4abbfc45
 
 PKG_BUILD_DEPENDS:=libsqlite3
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -25,6 +26,7 @@ define Package/zabbix/Default
   TITLE:=Zabbix
   URL:=http://www.zabbix.com/
   SUBMENU:=zabbix
+  DEPENDS:=+libcurl
 endef
 
 define Package/zabbix-agent
@@ -40,7 +42,7 @@ endef
 define Package/zabbix-server
   $(call Package/zabbix/Default)
   TITLE+= server
-  DEPENDS:=+libsqlite3
+  DEPENDS += +libsqlite3
 endef
 
 
@@ -48,27 +50,17 @@ ifneq ($(SDK),)
 CONFIG_PACKAGE_zabbix-server:=m
 endif
 
-PKG_CONFIGURE_OPTIONS:= \
+CONFIGURE_ARGS+= \
 	--bindir="/usr/sbin" \
 	--enable-agent
 
 ifneq ($(CONFIG_PACKAGE_zabbix-server),)
-PKG_CONFIGURE_OPTIONS+= \
+  CONFIGURE_ARGS+= \
 	--enable-server \
 	--with-sqlite3="$(STAGING_DIR)/usr"
 endif
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		$(PKG_CONFIGURE_OPTIONS) \
-	)
-endef
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
+MAKE_FLAGS += ARCH="linux"
 
 define Package/zabbix-agent/conffiles
 /etc/zabbix/zabbix_agentd.conf
@@ -85,10 +77,10 @@ endef
 
 define Package/zabbix-agent/postinst
 #!/bin/sh
-  
+
 name=zabbix
 id=53
-  
+
 # do not change below
 # check if we are on real system
 if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -104,17 +96,19 @@ if [ -z "$${IPKG_INSTROOT}" ]; then
 			cp /rom/etc/passwd /etc/passwd
 		fi
 	fi
-fi
 
-echo ""
-if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/group)" ]; then 
-	echo "adding group $$name to /etc/group"
-	echo "$${name}:x:$${id}:" >> $${IPKG_INSTROOT}/etc/group  
-fi
+	echo ""
+	if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/group)" ]; then
+		echo "adding group $$name to /etc/group"
+		echo "$${name}:x:$${id}:" >> $${IPKG_INSTROOT}/etc/group
+	fi
 
-if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/passwd)" ]; then 
-	echo "adding user $$name to /etc/passwd"
-	echo "$${name}:x:$${id}:$${id}:$${name}:/tmp/.$${name}:/bin/false" >> $${IPKG_INSTROOT}/etc/passwd
+	if [ -z "$$(grep ^\\$${name}: $${IPKG_INSTROOT}/etc/passwd)" ]; then
+		echo "adding user $$name to /etc/passwd"
+		echo "$${name}:x:$${id}:$${id}:$${name}:/tmp/.$${name}:/bin/false" >> $${IPKG_INSTROOT}/etc/passwd
+	fi
+
+	chown $${name} $${IPKG_INSTROOT}/etc/zabbix/zabbix_agentd.conf
 fi
 
 endef

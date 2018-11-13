@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kismet
-PKG_VERSION:=2008-05-R1
-PKG_RELEASE:=2
+PKG_VERSION:=2010-07-R1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.kismetwireless.net/code
-PKG_MD5SUM:=6ee365d36354b4dee4945e67f8149294
+PKG_MD5SUM:=85e59186eb529889118b5635f35cf57d
 
-PKG_BUILD_DEPENDS:=libpcap libncurses uclibcxx
+PKG_BUILD_DEPENDS:=libpcap libncurses uclibcxx libpcre libnl-tiny
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,7 +23,7 @@ define Package/kismet/Default
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Kismet
-  DEPENDS:= +uclibcxx
+  DEPENDS:= +uclibcxx +libnl-tiny
   URL:=http://www.kismetwireless.net/
   SUBMENU:=wireless
 endef
@@ -40,10 +40,7 @@ $(call Package/kismet/Default)
 endef
 
 define Package/kismet-client/conffiles
-/etc/kismet/ap_manuf
-/etc/kismet/client_manuf
 /etc/kismet/kismet.conf
-/etc/kismet/kismet_ui.conf
 endef
 
 define Package/kismet-client/description
@@ -53,7 +50,7 @@ endef
 
 define Package/kismet-drone
 $(call Package/kismet/Default)
-  DEPENDS+= +libpcap +dbus
+  DEPENDS+= +libpcap +libpcre
   TITLE+= drone
 endef
 
@@ -68,13 +65,11 @@ endef
 
 define Package/kismet-server
 $(call Package/kismet/Default)
-  DEPENDS+= +libpcap +dbus
+  DEPENDS+= +libpcap +libpcre
   TITLE+= server
 endef
 
 define Package/kismet-server/conffiles
-/etc/kismet/ap_manuf
-/etc/kismet/client_manuf
 /etc/kismet/kismet.conf
 endef
 
@@ -85,21 +80,18 @@ endef
 
 CONFIGURE_ARGS += \
 	--sysconfdir=/etc/kismet \
-	--enable-syspcap=yes \
-	--disable-dbus \
-	--disable-setuid \
-	--disable-wsp100 \
-	--disable-gpsmap \
 
 CONFIGURE_VARS += \
 	CXXFLAGS="$$$$CXXFLAGS -fno-builtin -fno-rtti -nostdinc++"  \
-	CPPFLAGS="$$$$CPPFLAGS -I$(STAGING_DIR)/usr/include/uClibc++ -I$(LINUX_DIR)/include" \
+	CPPFLAGS="$$$$CPPFLAGS -I$(STAGING_DIR)/usr/include/uClibc++" \
 	LDFLAGS="$$$$LDFLAGS" \
-	LIBS="-nodefaultlibs -luClibc++ -lm -lgcc" \
+	LIBS="-nodefaultlibs -luClibc++ -lm $(LIBGCC_S)" \
+	CLIENTCLIBS="-nodefaultlibs -luClibc++ -lm $(LIBGCC_S)" \
+	libnl1_LIBS="-libnl-tiny"
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		LD="\$$$$(CC)" \
+		LD="$(TARGET_CXX)" \
 		all
 endef
 
@@ -111,26 +103,21 @@ endef
 
 define Package/kismet-client/install
 	$(INSTALL_DIR) $(1)/etc/kismet/
-	$(INSTALL_DATA) ./files/ap_manuf $(1)/etc/kismet/
-	$(INSTALL_DATA) ./files/client_manuf $(1)/etc/kismet/
-	$(INSTALL_DATA) ./files/kismet.conf $(1)/etc/kismet/
-	$(INSTALL_DATA) ./files/kismet_ui.conf $(1)/etc/kismet/
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/conf/kismet.conf $(1)/etc/kismet/
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/kismet_client $(1)/usr/bin/
 endef
 
 define Package/kismet-drone/install
 	$(INSTALL_DIR) $(1)/etc/kismet/
-	$(INSTALL_DATA) ./files/kismet_drone.conf $(1)/etc/kismet/
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/conf/kismet_drone.conf $(1)/etc/kismet/
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/kismet_drone $(1)/usr/bin/
 endef
 
 define Package/kismet-server/install
 	$(INSTALL_DIR) $(1)/etc/kismet/
-	$(INSTALL_DATA) ./files/ap_manuf $(1)/etc/kismet/
-	$(INSTALL_DATA) ./files/client_manuf $(1)/etc/kismet/
-	$(INSTALL_DATA) ./files/kismet.conf $(1)/etc/kismet/
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/conf/kismet.conf $(1)/etc/kismet/
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/kismet_server $(1)/usr/bin/
 endef

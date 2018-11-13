@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -28,13 +28,13 @@
 curdir:=toolchain
 
 # subdirectories to descend into
-$(curdir)/builddirs := kernel-headers $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_NATIVE_TOOLCHAIN),,binutils gcc $(LIBC) $(if $(CONFIG_GLIBC_PORTS),glibc-ports))
+$(curdir)/builddirs := $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_INSIGHT),insight) $(if $(CONFIG_EXTERNAL_TOOLCHAIN),,kernel-headers binutils gcc $(LIBC) $(if $(CONFIG_GLIBC_PORTS),glibc-ports))
 $(curdir)/builddirs-compile:=$($(curdir)/builddirs-prepare)
 $(curdir)/builddirs-install:=$($(curdir)/builddirs-compile)
 
 # builddir dependencies
-$(curdir)/$(LIBC)/prepare:=$(curdir)/kernel-headers/install
-ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
+ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
+  $(curdir)/$(LIBC)/prepare:=$(curdir)/kernel-headers/install
   $(curdir)/gcc/prepare:=$(curdir)/binutils/install
   $(curdir)/kernel-headers/install:=$(curdir)/gcc/prepare
   $(curdir)/gcc/compile:=$(curdir)/$(LIBC)/prepare
@@ -44,6 +44,11 @@ ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   ifneq ($(CONFIG_GLIBC_PORTS),)
     $(curdir)/glibc/prepare:=$(curdir)/glibc-ports/prepare
   endif
+endif
+
+ifdef CONFIG_GCC_VERSION_LLVM
+  $(curdir)/builddirs += llvm
+  $(curdir)/gcc/prepare += $(curdir)/llvm/install
 endif
 
 ifneq ($(ARCH),)
@@ -66,6 +71,6 @@ $(curdir)//install = $(1)/compile
 
 $(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed:
 
-$(eval $(call stampfile,$(curdir),toolchain,install,$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed))
+$(eval $(call stampfile,$(curdir),toolchain,install,$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed,,$(TOOLCHAIN_DIR)))
 $(eval $(call subdir,$(curdir)))
 

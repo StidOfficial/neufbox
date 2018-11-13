@@ -1,20 +1,21 @@
-# 
-# Copyright (C) 2007-2009 OpenWrt.org
+#
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
-#
-# This Makefile is a skeleton
 #
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nufw
-PKG_VERSION:=2.2.17
+PKG_VERSION:=2.2.21
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.nufw.org/download/nufw/
-PKG_MD5SUM:=f25ef486b0fc71cd03a3913a26515029
+PKG_MD5SUM:=7eb500e7ddb3db622dc6c5d43b495c9a
+
+PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -68,6 +69,11 @@ CONFIGURE_ARGS += \
 	--with-libgnutls-prefix="$(STAGING_DIR)/usr/" \
 	--with-libgcrypt-prefix="$(STAGING_DIR)/usr/" \
 	--with-libsasl-prefix="$(STAGING_DIR)/usr/"
+
+define Build/Configure
+	(cd $(PKG_BUILD_DIR) ; ./autogen.sh )
+	$(call Build/Configure/Default)
+endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \

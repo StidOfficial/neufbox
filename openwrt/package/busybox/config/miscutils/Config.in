@@ -19,6 +19,28 @@ config BUSYBOX_CONFIG_BBCONFIG
 	  The bbconfig applet will print the config file with which
 	  busybox was built.
 
+config BUSYBOX_CONFIG_BEEP
+	bool "beep"
+	default n
+	help
+	  The beep applets beeps in a given freq/Hz.
+
+config BUSYBOX_CONFIG_FEATURE_BEEP_FREQ
+	int "default frequency"
+	range 0 2147483647
+	default 4000
+	depends on BUSYBOX_CONFIG_BEEP
+	help
+	  Frequency for default beep.
+
+config BUSYBOX_CONFIG_FEATURE_BEEP_LENGTH_MS
+	int "default length"
+	range 0 2147483647
+	default 30
+	depends on BUSYBOX_CONFIG_BEEP
+	help
+	  Length in ms for default beep.
+
 config BUSYBOX_CONFIG_CHAT
 	bool "chat"
 	default n
@@ -101,13 +123,13 @@ config BUSYBOX_CONFIG_CROND
 	help
 	  Crond is a background daemon that parses individual crontab
 	  files and executes commands on behalf of the users in question.
-	  This is a port of dcron from slackware.  It uses files of the
+	  This is a port of dcron from slackware. It uses files of the
 	  format /var/spool/cron/crontabs/<username> files, for example:
 	      $ cat /var/spool/cron/crontabs/root
 	      # Run daily cron jobs at 4:40 every day:
 	      40 4 * * * /etc/cron/daily > /dev/null 2>&1
 
-config BUSYBOX_CONFIG_DEBUG_CROND_OPTION
+config BUSYBOX_CONFIG_FEATURE_CROND_D
 	bool "Support option -d to redirect output to stderr"
 	depends on BUSYBOX_CONFIG_CROND
 	default n
@@ -121,12 +143,19 @@ config BUSYBOX_CONFIG_FEATURE_CROND_CALL_SENDMAIL
 	help
 	  Support calling /usr/sbin/sendmail for send cmd outputs.
 
+config BUSYBOX_CONFIG_FEATURE_CROND_DIR
+	string "crond spool directory"
+	default "/var/spool/cron"
+	depends on BUSYBOX_CONFIG_CROND || BUSYBOX_CONFIG_CRONTAB
+	help
+	  Location of crond spool.
+
 config BUSYBOX_CONFIG_CRONTAB
 	bool "crontab"
 	default y
 	select BUSYBOX_CONFIG_FEATURE_SUID
 	help
-	  Crontab manipulates the crontab for a particular user.  Only
+	  Crontab manipulates the crontab for a particular user. Only
 	  the superuser may specify a different user and/or crontab directory.
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
@@ -138,12 +167,23 @@ config BUSYBOX_CONFIG_DC
 	  Dc is a reverse-polish desk calculator which supports unlimited
 	  precision arithmetic.
 
+config BUSYBOX_CONFIG_FEATURE_DC_LIBM
+	bool "Enable power and exp functions (requires libm)"
+	default n
+	depends on BUSYBOX_CONFIG_DC
+	help
+	  Enable power and exp functions.
+	  NOTE: This will require libm to be present for linking.
+
 config BUSYBOX_CONFIG_DEVFSD
 	bool "devfsd (obsolete)"
 	default n
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
-	  This is deprecated, and will be removed at the end of 2008.
+	  This is deprecated and should NOT be used anymore.
+	  Use linux >= 2.6 (optionally with hotplug) and mdev instead!
+	  See docs/mdev.txt for detailed instructions on how to use mdev
+	  instead.
 
 	  Provides compatibility with old device names on a devfs systems.
 	  You should set it to true if you have devfs enabled.
@@ -152,7 +192,7 @@ config BUSYBOX_CONFIG_DEVFSD
 	  "PERMISSIONS", "EXECUTE", "COPY", "IGNORE",
 	  "MKOLDCOMPAT", "MKNEWCOMPAT","RMOLDCOMPAT", "RMNEWCOMPAT".
 
-	   But only if they are written UPPERCASE!!!!!!!!
+	  But only if they are written UPPERCASE!!!!!!!!
 
 config BUSYBOX_CONFIG_DEVFSD_MODLOAD
 	bool "Adds support for MODLOAD keyword in devsfd.conf"
@@ -167,8 +207,9 @@ config BUSYBOX_CONFIG_DEVFSD_FG_NP
 	default n
 	depends on BUSYBOX_CONFIG_DEVFSD
 	help
-		-fg	Run the daemon in the foreground.
-		-np	Exit  after  parsing  the configuration file. Do not poll for events.
+	  -fg  Run the daemon in the foreground.
+	  -np  Exit after parsing the configuration file.
+	       Do not poll for events.
 
 config BUSYBOX_CONFIG_DEVFSD_VERBOSE
 	bool "Increases logging (and size)"
@@ -181,17 +222,26 @@ config BUSYBOX_CONFIG_FEATURE_DEVFS
 	bool "Use devfs names for all devices (obsolete)"
 	default n
 	help
-	  This is obsolete and will be going away at the end of 2008..
+	  This is obsolete and should NOT be used anymore.
+	  Use linux >= 2.6 (optionally with hotplug) and mdev instead!
 
-	  This tells busybox to look for names like /dev/loop/0 instead of
-	  /dev/loop0.  If your /dev directory has normal names instead of
+	  For legacy systems -- if there is no way around devfsd -- this
+	  tells busybox to look for names like /dev/loop/0 instead of
+	  /dev/loop0. If your /dev directory has normal names instead of
 	  devfs names, you don't want this.
+
+config BUSYBOX_CONFIG_DEVMEM
+	bool "devmem"
+	default n
+	help
+	  devmem is a small program that reads and writes from physical
+	  memory using /dev/mem.
 
 config BUSYBOX_CONFIG_EJECT
 	bool "eject"
 	default n
 	help
-	  Used to eject cdroms.  (defaults to /dev/cdrom)
+	  Used to eject cdroms. (defaults to /dev/cdrom)
 
 config BUSYBOX_CONFIG_FEATURE_EJECT_SCSI
 	bool "SCSI support"
@@ -222,11 +272,40 @@ config BUSYBOX_CONFIG_FBSPLASH
 	    "NN" (ASCII decimal number) - percentage to show on progress bar
 	    "exit" - well you guessed it
 
+config BUSYBOX_CONFIG_FLASH_LOCK
+	bool "flash_lock"
+	default n
+	help
+	  The flash_lock binary from mtd-utils as of git head 5ec0c10d0. This
+	  utility locks part or all of the flash device.
+
+config BUSYBOX_CONFIG_FLASH_UNLOCK
+	bool "flash_unlock"
+	default n
+	help
+	  The flash_unlock binary from mtd-utils as of git head 5ec0c10d0. This
+	  utility unlocks part or all of the flash device.
+
+config BUSYBOX_CONFIG_FLASH_ERASEALL
+	bool "flash_eraseall"
+	default n
+	help
+	  The flash_eraseall binary from mtd-utils as of git head c4c6a59eb.
+	  This utility is used to erase the whole MTD device.
+
+config BUSYBOX_CONFIG_IONICE
+	bool "ionice"
+	default n
+	help
+	  Set/set program io scheduling class and priority
+	  Requires kernel >= 2.6.13
+
 config BUSYBOX_CONFIG_INOTIFYD
 	bool "inotifyd"
 	default n
 	help
-	  Simple inotify daemon. Reports filesystem changes. Requires kernel >= 2.6.13
+	  Simple inotify daemon. Reports filesystem changes. Requires
+	  kernel >= 2.6.13
 
 config BUSYBOX_CONFIG_LAST
 	bool "last"
@@ -283,14 +362,6 @@ config BUSYBOX_CONFIG_FEATURE_LESS_FLAGS
 	  The -M flag enables a more sophisticated status line.
 	  The -m flag enables a simpler status line with a percentage.
 
-config BUSYBOX_CONFIG_FEATURE_LESS_FLAGCS
-	bool "Enable flag changes"
-	default n
-	depends on BUSYBOX_CONFIG_LESS
-	help
-	  This enables the ability to change command-line flags within
-	  less itself.
-
 config BUSYBOX_CONFIG_FEATURE_LESS_MARKS
 	bool "Enable marks"
 	default n
@@ -305,12 +376,34 @@ config BUSYBOX_CONFIG_FEATURE_LESS_REGEXP
 	help
 	  Enable regular expressions, allowing complex file searches.
 
+config BUSYBOX_CONFIG_FEATURE_LESS_WINCH
+	bool "Enable automatic resizing on window size changes"
+	default n
+	depends on BUSYBOX_CONFIG_LESS
+	help
+	  Makes less track window size changes.
+
+config BUSYBOX_CONFIG_FEATURE_LESS_DASHCMD
+	bool "Enable flag changes ('-' command)"
+	default n
+	depends on BUSYBOX_CONFIG_LESS
+	help
+	  This enables the ability to change command-line flags within
+	  less itself ('-' keyboard command).
+
+config BUSYBOX_CONFIG_FEATURE_LESS_LINENUMS
+	bool "Enable dynamic switching of line numbers"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_LESS_DASHCMD
+	help
+	  Enable "-N" command.
+
 config BUSYBOX_CONFIG_HDPARM
 	bool "hdparm"
 	default n
 	help
-	  Get/Set hard drive parameters.  Primarily intended for ATA
-	  drives.  Adds about 13k (or around 30k if you enable the
+	  Get/Set hard drive parameters. Primarily intended for ATA
+	  drives. Adds about 13k (or around 30k if you enable the
 	  FEATURE_HDPARM_GET_IDENTITY option)....
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_GET_IDENTITY
@@ -340,7 +433,7 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_UNREGISTER_HWIF
 	  This is dangerous stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_DRIVE_RESET
-	bool "perform device reset (DANGEROUS)"
+	bool "Perform device reset (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
@@ -348,21 +441,20 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_DRIVE_RESET
 	  This is dangerous stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_TRISTATE_HWIF
-	bool "tristate device for hotswap (DANGEROUS)"
+	bool "Tristate device for hotswap (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
 	  Enables the 'hdparm -x' option to tristate device for hotswap,
-	  and the '-b' option to get/set bus state.  This is dangerous
+	  and the '-b' option to get/set bus state. This is dangerous
 	  stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_GETSET_DMA
-	bool "get/set using_dma flag (DANGEROUS)"
+	bool "Get/set using_dma flag"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
 	  Enables the 'hdparm -d' option to get/set using_dma flag.
-	  This is dangerous stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_LOCK
 	bool "lock"
@@ -424,7 +516,7 @@ config BUSYBOX_CONFIG_MT
 	bool "mt"
 	default n
 	help
-	  mt is used to control tape devices.  You can use the mt utility
+	  mt is used to control tape devices. You can use the mt utility
 	  to advance or rewind a tape past a specified number of archive
 	  files on the tape.
 
@@ -445,7 +537,7 @@ config BUSYBOX_CONFIG_READAHEAD
 
 	  This applet just calls the readahead(2) system call on each file.
 	  It is mainly useful in system startup scripts to preload files
-	  or executables before they are used.  When used at the right time
+	  or executables before they are used. When used at the right time
 	  (in particular when a CPU bound process is running) it can
 	  significantly speed up system startup.
 
@@ -504,21 +596,35 @@ config BUSYBOX_CONFIG_TIME
 	  When the command finishes, time writes a message to standard output
 	  giving timing statistics about this program run.
 
+config BUSYBOX_CONFIG_TIMEOUT
+	bool "timeout"
+	default n
+	help
+	  Runs a program and watches it. If it does not terminate in
+	  specified number of seconds, it is sent a signal.
+
 config BUSYBOX_CONFIG_TTYSIZE
 	bool "ttysize"
 	default n
 	help
 	  A replacement for "stty size". Unlike stty, can report only width,
-	  only height, or both, in any order. It also does not complain on error,
-	  but returns default 80x24. Usage in shell scripts: width=`ttysize w`.
+	  only height, or both, in any order. It also does not complain on
+	  error, but returns default 80x24.
+	  Usage in shell scripts: width=`ttysize w`.
+
+config BUSYBOX_CONFIG_VOLNAME
+	bool "volname"
+	default n
+	help
+	  Prints a CD-ROM volume name.
 
 config BUSYBOX_CONFIG_WATCHDOG
 	bool "watchdog"
 	default y
 	help
 	  The watchdog utility is used with hardware or software watchdog
-	  device drivers.  It opens the specified watchdog device special file
-	  and periodically writes a magic character to the device.  If the
+	  device drivers. It opens the specified watchdog device special file
+	  and periodically writes a magic character to the device. If the
 	  watchdog applet ever fails to write the magic character within a
 	  certain amount of time, the watchdog device assumes the system has
 	  hung, and will cause the hardware to reboot.

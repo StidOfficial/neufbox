@@ -3,9 +3,10 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2008 Maxime Bizon <mbizon@freebox.fr>
+ * Copyright (C) 2010 Maxime Bizon <mbizon@freebox.fr>
  */
 
+#include <linux/version.h>
 #include <linux/init.h>
 #include <linux/clk.h>
 #include <linux/platform_device.h>
@@ -20,11 +21,17 @@ static int __devinit ohci_bcm63xx_start(struct usb_hcd *hcd)
 	struct ohci_hcd *ohci = hcd_to_ohci(hcd);
 	int ret;
 
+        /*
+         * port 2 can be shared with USB slave, but all boards seem to
+         * have only one host port populated, so we can hardcode it
+         */
+#if !(defined(CONFIG_BOARD_NEUFBOX4) || defined(CONFIG_BOARD_NEUFBOX6))
+	ohci->num_ports = 1;
+#endif
+
 	ret = ohci_init(ohci);
 	if (ret < 0)
 		return ret;
-
-	/* FIXME: autodetected port 2 is shared with USB slave */
 
 	ret = ohci_run(ohci);
 	if (ret < 0) {
@@ -56,15 +63,15 @@ static const struct hc_driver ohci_bcm63xx_hc_driver = {
 
 static int __devinit ohci_hcd_bcm63xx_drv_probe(struct platform_device *pdev)
 {
-	struct resource *res_mem, *res_irq;
+	struct resource *res_mem;
 	struct usb_hcd *hcd;
 	struct ohci_hcd *ohci;
 	u32 reg;
-	int ret;
+	int ret, irq;
 
 	res_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	res_irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-	if (!res_mem || !res_irq)
+	irq = platform_get_irq(pdev, 0);
+	if (!res_mem || irq < 0)
 		return -ENODEV;
 
 	if (BCMCPU_IS_6348()) {
@@ -80,12 +87,31 @@ static int __devinit ohci_hcd_bcm63xx_drv_probe(struct platform_device *pdev)
 
 	} else if (BCMCPU_IS_6358()) {
 		reg = bcm_rset_readl(RSET_USBH_PRIV, USBH_PRIV_SWAP_REG);
-		reg &= ~USBH_PRIV_SWAP_OHCI_ENDN_MASK;
-		reg |= USBH_PRIV_SWAP_OHCI_DATA_MASK;
+		reg &= ~USBH_PRIV_SWAP_OHCI_DATA_MASK;
+		reg |= USBH_PRIV_SWAP_OHCI_ENDN_MASK;
 		bcm_rset_writel(RSET_USBH_PRIV, reg, USBH_PRIV_SWAP_REG);
-		/* don't ask... */
+		/*
+		 * The magic value comes for the original vendor BSP
+		 * and is needed for USB to work. Datasheet does not
+		 * help, so the magic value is used as-is.
+		 */
 		bcm_rset_writel(RSET_USBH_PRIV, 0x1c0020, USBH_PRIV_TEST_REG);
-	} else
+	} else if (BCMCPU_IS_6362()) {
+		struct clk *clk;
+		/* enable USB host clock */
+		clk = clk_get(&pdev->dev, "usbh");
+		if (IS_ERR(clk))
+			return -ENODEV;
+
+		clk_enable(clk);
+		usb_host_clock = clk;
+		reg = bcm_rset_readl(RSET_USBH_PRIV, USBH_PRIV_6362_SWAP_REG);
+		reg &= ~USBH_PRIV_SWAP_OHCI_DATA_MASK;
+		reg |= USBH_PRIV_SWAP_OHCI_ENDN_MASK;
+		bcm_rset_writel(RSET_USBH_PRIV, reg, USBH_PRIV_6362_SWAP_REG);
+		bcm_rset_writel(RSET_USBH_PRIV, USBH_PRIV_6362_SETUP_IOC_MASK, USBH_PRIV_6362_SETUP_REG);
+	}
+	else
 		return 0;
 
 	hcd = usb_create_hcd(&ohci_bcm63xx_hc_driver, &pdev->dev, "bcm63xx");
@@ -108,11 +134,15 @@ static int __devinit ohci_hcd_bcm63xx_drv_probe(struct platform_device *pdev)
 	}
 
 	ohci = hcd_to_ohci(hcd);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
 	ohci->flags |= OHCI_QUIRK_BE_MMIO | OHCI_QUIRK_BE_DESC |
 		OHCI_QUIRK_FRAME_NO;
+#else
+	ohci->flags |= OHCI_QUIRK_BE_MMIO | OHCI_QUIRK_BE_DESC;
+#endif
 	ohci_hcd_init(ohci);
 
-	ret = usb_add_hcd(hcd, res_irq->start, IRQF_DISABLED);
+	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED);
 	if (ret)
 		goto out2;
 
@@ -152,7 +182,6 @@ static struct platform_driver ohci_hcd_bcm63xx_driver = {
 	.driver		= {
 		.name	= "bcm63xx_ohci",
 		.owner	= THIS_MODULE,
-		.bus	= &platform_bus_type
 	},
 };
 

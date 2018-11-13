@@ -8,13 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.11.3
-PKG_RELEASE:=6
+PKG_VERSION:=1.15.3
+PKG_RELEASE:=2
+PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
-PKG_MD5SUM:=4355ad8bb57ce3b39ad827566c1a6da3
+PKG_MD5SUM:=6059ac9456de6fb18dc8ee4cd0ec9240
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -41,11 +42,7 @@ define Package/busybox/description
 endef
 
 define Package/busybox/config
-	menu "Configuration"
-		depends on PACKAGE_busybox
-		source "$(SOURCE)/target-config.in"
-		source "$(SOURCE)/config/Config.in"
-	endmenu
+	source "$(SOURCE)/Config.in"
 endef
 
 define Build/Configure
@@ -59,6 +56,10 @@ define Build/Configure
 		oldconfig
 endef
 
+ifdef CONFIG_GCC_VERSION_LLVM
+  TARGET_CFLAGS += -fnested-functions
+endif
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
@@ -66,6 +67,7 @@ define Build/Compile
 		KBUILD_HAVE_NLS=no \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
+		SKIP_STRIP=y \
 		all
 	rm -rf $(PKG_INSTALL_DIR)
 	$(FIND) $(PKG_BUILD_DIR) -lname "*busybox" -exec rm \{\} \;
@@ -74,7 +76,6 @@ define Build/Compile
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
-		IPKG_ARCH="$(ARCH)" \
 		CONFIG_PREFIX="$(PKG_INSTALL_DIR)" \
 		install
 endef
@@ -85,7 +86,7 @@ define Package/busybox/install
 	for tmp in $(init-y); do \
 		$(INSTALL_BIN) ./files/$$$$tmp $(1)/etc/init.d/$$$$tmp; \
 	done
-	$(INSTALL_DATA) ./files/busybox.conf $(1)/etc/
+	$(INSTALL_CONF) ./files/busybox.conf $(1)/etc/
 	-rm -rf $(1)/lib64
 endef
 

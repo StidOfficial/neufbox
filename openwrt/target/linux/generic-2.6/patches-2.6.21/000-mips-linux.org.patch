@@ -1,6 +1,5 @@
-diff -pNur linux-2.6.21.7/arch/mips/configs/db1000_defconfig linux-2.6.21.7/arch/mips/configs/db1000_defconfig
---- linux-2.6.21.7/arch/mips/configs/db1000_defconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/configs/db1000_defconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/configs/db1000_defconfig
++++ b/arch/mips/configs/db1000_defconfig
 @@ -744,7 +744,6 @@ CONFIG_HW_CONSOLE=y
  CONFIG_VT_HW_CONSOLE_BINDING=y
  # CONFIG_SERIAL_NONSTANDARD is not set
@@ -9,9 +8,8 @@ diff -pNur linux-2.6.21.7/arch/mips/configs/db1000_defconfig linux-2.6.21.7/arch
  
  #
  # Serial drivers
-diff -pNur linux-2.6.21.7/arch/mips/configs/db1100_defconfig linux-2.6.21.7/arch/mips/configs/db1100_defconfig
---- linux-2.6.21.7/arch/mips/configs/db1100_defconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/configs/db1100_defconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/configs/db1100_defconfig
++++ b/arch/mips/configs/db1100_defconfig
 @@ -720,7 +720,6 @@ CONFIG_HW_CONSOLE=y
  CONFIG_VT_HW_CONSOLE_BINDING=y
  # CONFIG_SERIAL_NONSTANDARD is not set
@@ -20,9 +18,8 @@ diff -pNur linux-2.6.21.7/arch/mips/configs/db1100_defconfig linux-2.6.21.7/arch
  
  #
  # Serial drivers
-diff -pNur linux-2.6.21.7/arch/mips/configs/db1200_defconfig linux-2.6.21.7/arch/mips/configs/db1200_defconfig
---- linux-2.6.21.7/arch/mips/configs/db1200_defconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/configs/db1200_defconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/configs/db1200_defconfig
++++ b/arch/mips/configs/db1200_defconfig
 @@ -781,7 +781,6 @@ CONFIG_HW_CONSOLE=y
  CONFIG_VT_HW_CONSOLE_BINDING=y
  # CONFIG_SERIAL_NONSTANDARD is not set
@@ -31,9 +28,8 @@ diff -pNur linux-2.6.21.7/arch/mips/configs/db1200_defconfig linux-2.6.21.7/arch
  
  #
  # Serial drivers
-diff -pNur linux-2.6.21.7/arch/mips/configs/db1500_defconfig linux-2.6.21.7/arch/mips/configs/db1500_defconfig
---- linux-2.6.21.7/arch/mips/configs/db1500_defconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/configs/db1500_defconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/configs/db1500_defconfig
++++ b/arch/mips/configs/db1500_defconfig
 @@ -817,7 +817,6 @@ CONFIG_SERIO_RAW=m
  # CONFIG_VT is not set
  # CONFIG_SERIAL_NONSTANDARD is not set
@@ -42,9 +38,8 @@ diff -pNur linux-2.6.21.7/arch/mips/configs/db1500_defconfig linux-2.6.21.7/arch
  
  #
  # Serial drivers
-diff -pNur linux-2.6.21.7/arch/mips/configs/db1550_defconfig linux-2.6.21.7/arch/mips/configs/db1550_defconfig
---- linux-2.6.21.7/arch/mips/configs/db1550_defconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/configs/db1550_defconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/configs/db1550_defconfig
++++ b/arch/mips/configs/db1550_defconfig
 @@ -862,7 +862,6 @@ CONFIG_SERIO_RAW=m
  # CONFIG_VT is not set
  # CONFIG_SERIAL_NONSTANDARD is not set
@@ -53,9 +48,8 @@ diff -pNur linux-2.6.21.7/arch/mips/configs/db1550_defconfig linux-2.6.21.7/arch
  
  #
  # Serial drivers
-diff -pNur linux-2.6.21.7/arch/mips/configs/emma2rh_defconfig linux-2.6.21.7/arch/mips/configs/emma2rh_defconfig
---- linux-2.6.21.7/arch/mips/configs/emma2rh_defconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/configs/emma2rh_defconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/configs/emma2rh_defconfig
++++ b/arch/mips/configs/emma2rh_defconfig
 @@ -951,8 +951,7 @@ CONFIG_LEGACY_PTY_COUNT=256
  # CONFIG_WATCHDOG is not set
  # CONFIG_HW_RANDOM is not set
@@ -66,9 +60,8 @@ diff -pNur linux-2.6.21.7/arch/mips/configs/emma2rh_defconfig linux-2.6.21.7/arc
  # CONFIG_DTLK is not set
  # CONFIG_R3964 is not set
  # CONFIG_APPLICOM is not set
-diff -pNur linux-2.6.21.7/arch/mips/configs/pb1100_defconfig linux-2.6.21.7/arch/mips/configs/pb1100_defconfig
---- linux-2.6.21.7/arch/mips/configs/pb1100_defconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/configs/pb1100_defconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/configs/pb1100_defconfig
++++ b/arch/mips/configs/pb1100_defconfig
 @@ -737,7 +737,6 @@ CONFIG_HW_CONSOLE=y
  CONFIG_VT_HW_CONSOLE_BINDING=y
  # CONFIG_SERIAL_NONSTANDARD is not set
@@ -77,9 +70,8 @@ diff -pNur linux-2.6.21.7/arch/mips/configs/pb1100_defconfig linux-2.6.21.7/arch
  
  #
  # Serial drivers
-diff -pNur linux-2.6.21.7/arch/mips/configs/pb1500_defconfig linux-2.6.21.7/arch/mips/configs/pb1500_defconfig
---- linux-2.6.21.7/arch/mips/configs/pb1500_defconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/configs/pb1500_defconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/configs/pb1500_defconfig
++++ b/arch/mips/configs/pb1500_defconfig
 @@ -855,7 +855,6 @@ CONFIG_SERIO_RAW=m
  # CONFIG_VT is not set
  # CONFIG_SERIAL_NONSTANDARD is not set
@@ -88,9 +80,8 @@ diff -pNur linux-2.6.21.7/arch/mips/configs/pb1500_defconfig linux-2.6.21.7/arch
  
  #
  # Serial drivers
-diff -pNur linux-2.6.21.7/arch/mips/configs/pb1550_defconfig linux-2.6.21.7/arch/mips/configs/pb1550_defconfig
---- linux-2.6.21.7/arch/mips/configs/pb1550_defconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/configs/pb1550_defconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/configs/pb1550_defconfig
++++ b/arch/mips/configs/pb1550_defconfig
 @@ -848,7 +848,6 @@ CONFIG_SERIO_RAW=m
  # CONFIG_VT is not set
  # CONFIG_SERIAL_NONSTANDARD is not set
@@ -99,9 +90,8 @@ diff -pNur linux-2.6.21.7/arch/mips/configs/pb1550_defconfig linux-2.6.21.7/arch
  
  #
  # Serial drivers
-diff -pNur linux-2.6.21.7/arch/mips/jazz/setup.c linux-2.6.21.7/arch/mips/jazz/setup.c
---- linux-2.6.21.7/arch/mips/jazz/setup.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/jazz/setup.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/jazz/setup.c
++++ b/arch/mips/jazz/setup.c
 @@ -54,7 +54,7 @@ static struct resource jazz_io_resources
  		.start	= 0x40,
  		.end	= 0x5f,
@@ -111,9 +101,8 @@ diff -pNur linux-2.6.21.7/arch/mips/jazz/setup.c linux-2.6.21.7/arch/mips/jazz/s
  	}, {
  		.start	= 0x80,
  		.end	= 0x8f,
-diff -pNur linux-2.6.21.7/arch/mips/Kconfig linux-2.6.21.7/arch/mips/Kconfig
---- linux-2.6.21.7/arch/mips/Kconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/Kconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
 @@ -611,8 +611,7 @@ config SGI_IP27
  	  here.
  
@@ -154,9 +143,8 @@ diff -pNur linux-2.6.21.7/arch/mips/Kconfig linux-2.6.21.7/arch/mips/Kconfig
  config MIPS_VPE_LOADER_TOM
  	bool "Load VPE program into memory hidden from linux"
  	depends on MIPS_VPE_LOADER
-diff -pNur linux-2.6.21.7/arch/mips/Kconfig.debug linux-2.6.21.7/arch/mips/Kconfig.debug
---- linux-2.6.21.7/arch/mips/Kconfig.debug	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/Kconfig.debug	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/Kconfig.debug
++++ b/arch/mips/Kconfig.debug
 @@ -37,7 +37,7 @@ config DEBUG_STACK_USAGE
  
  	  This option will slow down process creation somewhat.
@@ -166,9 +154,8 @@ diff -pNur linux-2.6.21.7/arch/mips/Kconfig.debug linux-2.6.21.7/arch/mips/Kconf
  	bool "Enable additional debug checks before going into CPU idle loop"
  	depends on DEBUG_KERNEL && MIPS_MT_SMTC
  	help
-diff -pNur linux-2.6.21.7/arch/mips/kernel/cpu-probe.c linux-2.6.21.7/arch/mips/kernel/cpu-probe.c
---- linux-2.6.21.7/arch/mips/kernel/cpu-probe.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/cpu-probe.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
 @@ -75,6 +75,27 @@ static void r4k_wait_irqoff(void)
  	local_irq_enable();
  }
@@ -261,9 +248,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/cpu-probe.c linux-2.6.21.7/arch/mips/
  
  	return config3 & MIPS_CONF_M;
  }
-diff -pNur linux-2.6.21.7/arch/mips/kernel/entry.S linux-2.6.21.7/arch/mips/kernel/entry.S
---- linux-2.6.21.7/arch/mips/kernel/entry.S	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/entry.S	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/entry.S
++++ b/arch/mips/kernel/entry.S
 @@ -84,6 +84,7 @@ FEXPORT(restore_all)			# restore full fr
  	LONG_S	sp, TI_REGS($28)
  	jal	deferred_smtc_ipi
@@ -280,9 +266,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/entry.S linux-2.6.21.7/arch/mips/kern
  #endif /* CONFIG_MIPS_MT_SMTC */
  	.set	noat
  	RESTORE_TEMP
-diff -pNur linux-2.6.21.7/arch/mips/kernel/genex.S linux-2.6.21.7/arch/mips/kernel/genex.S
---- linux-2.6.21.7/arch/mips/kernel/genex.S	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/genex.S	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/genex.S
++++ b/arch/mips/kernel/genex.S
 @@ -243,9 +243,11 @@ NESTED(except_vec_vi_handler, 0, sp)
  	 */
  	mfc0	t1, CP0_STATUS
@@ -295,9 +280,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/genex.S linux-2.6.21.7/arch/mips/kern
  	xor	t1, t1, t0
  	mtc0	t1, CP0_STATUS
  	_ehb
-diff -pNur linux-2.6.21.7/arch/mips/kernel/irq.c linux-2.6.21.7/arch/mips/kernel/irq.c
---- linux-2.6.21.7/arch/mips/kernel/irq.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/irq.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/irq.c
++++ b/arch/mips/kernel/irq.c
 @@ -28,7 +28,7 @@
  
  static unsigned long irq_map[NR_IRQS / BITS_PER_LONG];
@@ -316,9 +300,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/irq.c linux-2.6.21.7/arch/mips/kernel
  {
  	smp_mb__before_clear_bit();
  	clear_bit(irq, irq_map);
-diff -pNur linux-2.6.21.7/arch/mips/kernel/kspd.c linux-2.6.21.7/arch/mips/kernel/kspd.c
---- linux-2.6.21.7/arch/mips/kernel/kspd.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/kspd.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/kspd.c
++++ b/arch/mips/kernel/kspd.c
 @@ -17,6 +17,7 @@
   */
  #include <linux/kernel.h>
@@ -352,9 +335,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/kspd.c linux-2.6.21.7/arch/mips/kerne
  		} else
   			printk(KERN_WARNING
  			       "KSPD: Unknown SP syscall number %d\n", sc.cmd);
-diff -pNur linux-2.6.21.7/arch/mips/kernel/linux32.c linux-2.6.21.7/arch/mips/kernel/linux32.c
---- linux-2.6.21.7/arch/mips/kernel/linux32.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/linux32.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/linux32.c
++++ b/arch/mips/kernel/linux32.c
 @@ -556,6 +556,16 @@ asmlinkage long sys32_sync_file_range(in
  			flags);
  }
@@ -372,9 +354,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/linux32.c linux-2.6.21.7/arch/mips/ke
  save_static_function(sys32_clone);
  __attribute_used__ noinline static int
  _sys32_clone(nabi_no_regargs struct pt_regs regs)
-diff -pNur linux-2.6.21.7/arch/mips/kernel/ptrace.c linux-2.6.21.7/arch/mips/kernel/ptrace.c
---- linux-2.6.21.7/arch/mips/kernel/ptrace.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/ptrace.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/ptrace.c
++++ b/arch/mips/kernel/ptrace.c
 @@ -20,12 +20,12 @@
  #include <linux/mm.h>
  #include <linux/errno.h>
@@ -407,7 +388,7 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/ptrace.c linux-2.6.21.7/arch/mips/ker
  	if (!test_thread_flag(TIF_SYSCALL_TRACE))
  		goto out;
  
-@@ -506,9 +510,14 @@ asmlinkage void do_syscall_trace(struct 
+@@ -506,9 +510,14 @@ asmlinkage void do_syscall_trace(struct
  		send_sig(current->exit_code, current, 1);
  		current->exit_code = 0;
  	}
@@ -426,9 +407,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/ptrace.c linux-2.6.21.7/arch/mips/ker
 +		                    regs->regs[4], regs->regs[5],
 +		                    regs->regs[6], regs->regs[7]);
  }
-diff -pNur linux-2.6.21.7/arch/mips/kernel/r4k_switch.S linux-2.6.21.7/arch/mips/kernel/r4k_switch.S
---- linux-2.6.21.7/arch/mips/kernel/r4k_switch.S	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/r4k_switch.S	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/r4k_switch.S
++++ b/arch/mips/kernel/r4k_switch.S
 @@ -85,12 +85,7 @@
  	move	$28, a2
  	cpu_restore_nonscratch a1
@@ -443,9 +423,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/r4k_switch.S linux-2.6.21.7/arch/mips
  	set_saved_sp	t0, t1, t2
  #ifdef CONFIG_MIPS_MT_SMTC
  	/* Read-modify-writes of Status must be atomic on a VPE */
-diff -pNur linux-2.6.21.7/arch/mips/kernel/rtlx.c linux-2.6.21.7/arch/mips/kernel/rtlx.c
---- linux-2.6.21.7/arch/mips/kernel/rtlx.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/rtlx.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/rtlx.c
++++ b/arch/mips/kernel/rtlx.c
 @@ -289,7 +289,7 @@ unsigned int rtlx_write_poll(int index)
  	return write_spacefree(chan->rt_read, chan->rt_write, chan->buffer_size);
  }
@@ -476,9 +455,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/rtlx.c linux-2.6.21.7/arch/mips/kerne
  
  	smp_wmb();
  	rt->rt_write = (rt->rt_write + count) % rt->buffer_size;
-diff -pNur linux-2.6.21.7/arch/mips/kernel/scall64-n32.S linux-2.6.21.7/arch/mips/kernel/scall64-n32.S
---- linux-2.6.21.7/arch/mips/kernel/scall64-n32.S	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/scall64-n32.S	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/scall64-n32.S
++++ b/arch/mips/kernel/scall64-n32.S
 @@ -299,7 +299,7 @@ EXPORT(sysn32_call_table)
  	PTR	sys_ni_syscall			/* res. for afs_syscall */
  	PTR	sys_ni_syscall			/* res. for security */
@@ -488,9 +466,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/scall64-n32.S linux-2.6.21.7/arch/mip
  	PTR	sys_setxattr			/* 6180 */
  	PTR	sys_lsetxattr
  	PTR	sys_fsetxattr
-diff -pNur linux-2.6.21.7/arch/mips/kernel/scall64-o32.S linux-2.6.21.7/arch/mips/kernel/scall64-o32.S
---- linux-2.6.21.7/arch/mips/kernel/scall64-o32.S	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/scall64-o32.S	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/scall64-o32.S
++++ b/arch/mips/kernel/scall64-o32.S
 @@ -459,7 +459,7 @@ sys_call_table:
  	PTR	sys_remap_file_pages
  	PTR	sys_set_tid_address
@@ -500,9 +477,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/scall64-o32.S linux-2.6.21.7/arch/mip
  	PTR	compat_sys_statfs64		/* 4255 */
  	PTR	compat_sys_fstatfs64
  	PTR	compat_sys_timer_create
-diff -pNur linux-2.6.21.7/arch/mips/kernel/signal32.c linux-2.6.21.7/arch/mips/kernel/signal32.c
---- linux-2.6.21.7/arch/mips/kernel/signal32.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/signal32.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/signal32.c
++++ b/arch/mips/kernel/signal32.c
 @@ -37,68 +37,6 @@
  
  #include "signal-common.h"
@@ -572,9 +548,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/signal32.c linux-2.6.21.7/arch/mips/k
  /*
   * Including <asm/unistd.h> would give use the 64-bit syscall numbers ...
   */
-diff -pNur linux-2.6.21.7/arch/mips/kernel/signal_n32.c linux-2.6.21.7/arch/mips/kernel/signal_n32.c
---- linux-2.6.21.7/arch/mips/kernel/signal_n32.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/signal_n32.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/signal_n32.c
++++ b/arch/mips/kernel/signal_n32.c
 @@ -73,7 +73,7 @@ struct ucontextn32 {
  struct rt_sigframe_n32 {
  	u32 rs_ass[4];			/* argument save space for o32 */
@@ -602,9 +577,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/signal_n32.c linux-2.6.21.7/arch/mips
  
  	/* Create the ucontext.  */
  	err |= __put_user(0, &frame->rs_uc.uc_flags);
-diff -pNur linux-2.6.21.7/arch/mips/kernel/smp.c linux-2.6.21.7/arch/mips/kernel/smp.c
---- linux-2.6.21.7/arch/mips/kernel/smp.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/smp.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/smp.c
++++ b/arch/mips/kernel/smp.c
 @@ -68,7 +68,7 @@ extern ATTRIB_NORET void cpu_idle(void);
   * First C code run on the secondary CPUs after being started up by
   * the master.
@@ -614,9 +588,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/smp.c linux-2.6.21.7/arch/mips/kernel
  {
  	unsigned int cpu;
  
-diff -pNur linux-2.6.21.7/arch/mips/kernel/smp-mt.c linux-2.6.21.7/arch/mips/kernel/smp-mt.c
---- linux-2.6.21.7/arch/mips/kernel/smp-mt.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/smp-mt.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/smp-mt.c
++++ b/arch/mips/kernel/smp-mt.c
 @@ -129,13 +129,13 @@ static irqreturn_t ipi_call_interrupt(in
  
  static struct irqaction irq_resched = {
@@ -675,9 +648,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/smp-mt.c linux-2.6.21.7/arch/mips/ker
  }
  
  void prom_smp_finish(void)
-diff -pNur linux-2.6.21.7/arch/mips/kernel/smtc-asm.S linux-2.6.21.7/arch/mips/kernel/smtc-asm.S
---- linux-2.6.21.7/arch/mips/kernel/smtc-asm.S	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/smtc-asm.S	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/smtc-asm.S
++++ b/arch/mips/kernel/smtc-asm.S
 @@ -121,10 +121,7 @@ LEAF(self_ipi)
  	subu	t1,sp,PT_SIZE
  	sw	ra,PT_EPC(t1)
@@ -689,9 +661,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/smtc-asm.S linux-2.6.21.7/arch/mips/k
  	sw	t2,PT_PADSLOT5(t1)
  	/* Save pre-disable value of TCStatus */
  	sw	t0,PT_TCSTATUS(t1)
-diff -pNur linux-2.6.21.7/arch/mips/kernel/smtc.c linux-2.6.21.7/arch/mips/kernel/smtc.c
---- linux-2.6.21.7/arch/mips/kernel/smtc.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/smtc.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/smtc.c
++++ b/arch/mips/kernel/smtc.c
 @@ -13,9 +13,9 @@
  #include <asm/system.h>
  #include <asm/hardirq.h>
@@ -728,9 +699,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/smtc.c linux-2.6.21.7/arch/mips/kerne
  		/* Invoke Clock "Interrupt" */
  		ipi_timer_latch[dest_copy] = 0;
  #ifdef CONFIG_SMTC_IDLE_HOOK_DEBUG
-diff -pNur linux-2.6.21.7/arch/mips/kernel/syscall.c linux-2.6.21.7/arch/mips/kernel/syscall.c
---- linux-2.6.21.7/arch/mips/kernel/syscall.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/syscall.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/syscall.c
++++ b/arch/mips/kernel/syscall.c
 @@ -273,9 +273,8 @@ asmlinkage int sys_set_thread_area(unsig
  	struct thread_info *ti = task_thread_info(current);
  
@@ -743,9 +713,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/syscall.c linux-2.6.21.7/arch/mips/ke
  
  	return 0;
  }
-diff -pNur linux-2.6.21.7/arch/mips/kernel/time.c linux-2.6.21.7/arch/mips/kernel/time.c
---- linux-2.6.21.7/arch/mips/kernel/time.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/time.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/time.c
++++ b/arch/mips/kernel/time.c
 @@ -199,6 +199,35 @@ int (*perf_irq)(void) = null_perf_irq;
  EXPORT_SYMBOL(null_perf_irq);
  EXPORT_SYMBOL(perf_irq);
@@ -817,9 +786,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/time.c linux-2.6.21.7/arch/mips/kerne
  	.name = "timer",
  };
  
-diff -pNur linux-2.6.21.7/arch/mips/kernel/traps.c linux-2.6.21.7/arch/mips/kernel/traps.c
---- linux-2.6.21.7/arch/mips/kernel/traps.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/traps.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
 @@ -11,6 +11,7 @@
   * Copyright (C) 2000, 01 MIPS Technologies, Inc.
   * Copyright (C) 2002, 2003, 2004, 2005  Maciej W. Rozycki
@@ -921,9 +889,8 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/traps.c linux-2.6.21.7/arch/mips/kern
  
  	if (cpu_has_vce)
  		/* Special exception: R4[04]00 uses also the divec space. */
-diff -pNur linux-2.6.21.7/arch/mips/kernel/vpe.c linux-2.6.21.7/arch/mips/kernel/vpe.c
---- linux-2.6.21.7/arch/mips/kernel/vpe.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/kernel/vpe.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/kernel/vpe.c
++++ b/arch/mips/kernel/vpe.c
 @@ -1436,10 +1436,6 @@ static int __init vpe_module_init(void)
  			write_vpe_c0_vpecontrol(read_vpe_c0_vpecontrol() & ~VPECONTROL_TE);
  
@@ -935,18 +902,16 @@ diff -pNur linux-2.6.21.7/arch/mips/kernel/vpe.c linux-2.6.21.7/arch/mips/kernel
  				/*
  				 * Set config to be the same as vpe0,
  				 * particularly kseg0 coherency alg
-diff -pNur linux-2.6.21.7/arch/mips/lib/Makefile linux-2.6.21.7/arch/mips/lib/Makefile
---- linux-2.6.21.7/arch/mips/lib/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/lib/Makefile	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/lib/Makefile
++++ b/arch/mips/lib/Makefile
 @@ -9,4 +9,4 @@ obj-y			+= iomap.o
  obj-$(CONFIG_PCI)	+= iomap-pci.o
  
  # libgcc-style stuff needed in the kernel
 -lib-y += ashldi3.o ashrdi3.o lshrdi3.o
 +obj-y += ashldi3.o ashrdi3.o lshrdi3.o
-diff -pNur linux-2.6.21.7/arch/mips/lib-32/dump_tlb.c linux-2.6.21.7/arch/mips/lib-32/dump_tlb.c
---- linux-2.6.21.7/arch/mips/lib-32/dump_tlb.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/lib-32/dump_tlb.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/lib-32/dump_tlb.c
++++ b/arch/mips/lib-32/dump_tlb.c
 @@ -40,8 +40,6 @@ static inline const char *msk2str(unsign
  		return "256Mb";
  #endif
@@ -956,9 +921,8 @@ diff -pNur linux-2.6.21.7/arch/mips/lib-32/dump_tlb.c linux-2.6.21.7/arch/mips/l
  }
  
  #define BARRIER()					\
-diff -pNur linux-2.6.21.7/arch/mips/lib-64/dump_tlb.c linux-2.6.21.7/arch/mips/lib-64/dump_tlb.c
---- linux-2.6.21.7/arch/mips/lib-64/dump_tlb.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/lib-64/dump_tlb.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/lib-64/dump_tlb.c
++++ b/arch/mips/lib-64/dump_tlb.c
 @@ -31,8 +31,6 @@ static inline const char *msk2str(unsign
  	case PM_256M:	return "256Mb";
  #endif
@@ -968,9 +932,8 @@ diff -pNur linux-2.6.21.7/arch/mips/lib-64/dump_tlb.c linux-2.6.21.7/arch/mips/l
  }
  
  #define BARRIER()					\
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_int.c linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_int.c
---- linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_int.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_int.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/atlas/atlas_int.c
++++ b/arch/mips/mips-boards/atlas/atlas_int.c
 @@ -189,7 +189,7 @@ asmlinkage void plat_irq_dispatch(void)
  	if (irq == MIPSCPU_INT_ATLAS)
  		atlas_hw0_irqdispatch();
@@ -1011,9 +974,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_int.c linux-2.6.21.7
 -		setup_irq(MIPSCPU_INT_BASE + MIPSCPU_INT_ATLAS, &atlasirq);
 +		setup_irq(MIPS_CPU_IRQ_BASE + MIPSCPU_INT_ATLAS, &atlasirq);
  }
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_setup.c linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_setup.c
---- linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_setup.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_setup.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/atlas/atlas_setup.c
++++ b/arch/mips/mips-boards/atlas/atlas_setup.c
 @@ -48,6 +48,8 @@ const char *get_system_type(void)
  	return "MIPS Atlas";
  }
@@ -1023,9 +985,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/atlas/atlas_setup.c linux-2.6.21
  void __init plat_mem_setup(void)
  {
  	mips_pcibios_init();
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/generic/display.c linux-2.6.21.7/arch/mips/mips-boards/generic/display.c
---- linux-2.6.21.7/arch/mips/mips-boards/generic/display.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/generic/display.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/generic/display.c
++++ b/arch/mips/mips-boards/generic/display.c
 @@ -19,9 +19,14 @@
   */
  
@@ -1064,9 +1025,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/generic/display.c linux-2.6.21.7
 +	max_display_count = strlen(display_string) + 1 - 8;
 +	mod_timer(&mips_scroll_timer, jiffies + 1);
 +}
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/generic/time.c linux-2.6.21.7/arch/mips/mips-boards/generic/time.c
---- linux-2.6.21.7/arch/mips/mips-boards/generic/time.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/generic/time.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/generic/time.c
++++ b/arch/mips/mips-boards/generic/time.c
 @@ -53,40 +53,18 @@
  
  unsigned long cpu_khz;
@@ -1291,9 +1251,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/generic/time.c linux-2.6.21.7/ar
 +
 +	plat_perf_setup(&perf_irqaction);
  }
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/malta/malta_int.c linux-2.6.21.7/arch/mips/mips-boards/malta/malta_int.c
---- linux-2.6.21.7/arch/mips/mips-boards/malta/malta_int.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/malta/malta_int.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/malta/malta_int.c
++++ b/arch/mips/mips-boards/malta/malta_int.c
 @@ -271,7 +271,7 @@ asmlinkage void plat_irq_dispatch(void)
  	if (irq == MIPSCPU_INT_I8259A)
  		malta_hw0_irqdispatch();
@@ -1327,9 +1286,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/malta/malta_int.c linux-2.6.21.7
 +		setup_irq (MIPS_CPU_IRQ_BASE+MIPSCPU_INT_COREHI, &corehi_irqaction);
  	}
  }
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/malta/malta_setup.c linux-2.6.21.7/arch/mips/mips-boards/malta/malta_setup.c
---- linux-2.6.21.7/arch/mips/mips-boards/malta/malta_setup.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/malta/malta_setup.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/malta/malta_setup.c
++++ b/arch/mips/mips-boards/malta/malta_setup.c
 @@ -56,6 +56,12 @@ const char *get_system_type(void)
  	return "MIPS Malta";
  }
@@ -1343,9 +1301,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/malta/malta_setup.c linux-2.6.21
  #ifdef CONFIG_BLK_DEV_FD
  void __init fd_activate(void)
  {
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/sead/sead_int.c linux-2.6.21.7/arch/mips/mips-boards/sead/sead_int.c
---- linux-2.6.21.7/arch/mips/mips-boards/sead/sead_int.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/sead/sead_int.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/sead/sead_int.c
++++ b/arch/mips/mips-boards/sead/sead_int.c
 @@ -106,7 +106,7 @@ asmlinkage void plat_irq_dispatch(void)
  	irq = irq_ffs(pending);
  
@@ -1355,9 +1312,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/sead/sead_int.c linux-2.6.21.7/a
  	else
  		spurious_interrupt();
  }
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/sead/sead_setup.c linux-2.6.21.7/arch/mips/mips-boards/sead/sead_setup.c
---- linux-2.6.21.7/arch/mips/mips-boards/sead/sead_setup.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/sead/sead_setup.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/sead/sead_setup.c
++++ b/arch/mips/mips-boards/sead/sead_setup.c
 @@ -43,6 +43,8 @@ const char *get_system_type(void)
  	return "MIPS SEAD";
  }
@@ -1376,9 +1332,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/sead/sead_setup.c linux-2.6.21.7
  	s.uartclk = SEAD_BASE_BAUD * 16;
  	s.flags = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_AUTO_IRQ;
  	s.iotype = UPIO_PORT;
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/sim/sim_int.c linux-2.6.21.7/arch/mips/mips-boards/sim/sim_int.c
---- linux-2.6.21.7/arch/mips/mips-boards/sim/sim_int.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/sim/sim_int.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/sim/sim_int.c
++++ b/arch/mips/mips-boards/sim/sim_int.c
 @@ -77,7 +77,7 @@ asmlinkage void plat_irq_dispatch(void)
  	irq = irq_ffs(pending);
  
@@ -1388,9 +1343,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/sim/sim_int.c linux-2.6.21.7/arc
  	else
  		spurious_interrupt();
  }
-diff -pNur linux-2.6.21.7/arch/mips/mips-boards/sim/sim_time.c linux-2.6.21.7/arch/mips/mips-boards/sim/sim_time.c
---- linux-2.6.21.7/arch/mips/mips-boards/sim/sim_time.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mips-boards/sim/sim_time.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mips-boards/sim/sim_time.c
++++ b/arch/mips/mips-boards/sim/sim_time.c
 @@ -71,8 +71,8 @@ irqreturn_t sim_timer_interrupt(int irq,
  
  	int vpflags = dvpe();
@@ -1413,9 +1367,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mips-boards/sim/sim_time.c linux-2.6.21.7/ar
  	}
  
  	/* we are using the cpu counter for timer interrupts */
-diff -pNur linux-2.6.21.7/arch/mips/mm/cache.c linux-2.6.21.7/arch/mips/mm/cache.c
---- linux-2.6.21.7/arch/mips/mm/cache.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mm/cache.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
 @@ -96,7 +96,7 @@ void __flush_anon_page(struct page *page
  
  		kaddr = kmap_coherent(page, vmaddr);
@@ -1425,9 +1378,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mm/cache.c linux-2.6.21.7/arch/mips/mm/cache
  	}
  }
  
-diff -pNur linux-2.6.21.7/arch/mips/mm/dma-default.c linux-2.6.21.7/arch/mips/mm/dma-default.c
---- linux-2.6.21.7/arch/mips/mm/dma-default.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/mm/dma-default.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/mm/dma-default.c
++++ b/arch/mips/mm/dma-default.c
 @@ -168,8 +168,9 @@ int dma_map_sg(struct device *dev, struc
  		addr = (unsigned long) page_address(sg->page);
  		if (!plat_device_is_coherent(dev) && addr)
@@ -1440,9 +1392,8 @@ diff -pNur linux-2.6.21.7/arch/mips/mm/dma-default.c linux-2.6.21.7/arch/mips/mm
  	}
  
  	return nents;
-diff -pNur linux-2.6.21.7/arch/mips/oprofile/op_model_mipsxx.c linux-2.6.21.7/arch/mips/oprofile/op_model_mipsxx.c
---- linux-2.6.21.7/arch/mips/oprofile/op_model_mipsxx.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/oprofile/op_model_mipsxx.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/oprofile/op_model_mipsxx.c
++++ b/arch/mips/oprofile/op_model_mipsxx.c
 @@ -177,7 +177,10 @@ static int mipsxx_perfcount_handler(void
  	unsigned int counters = op_model_mipsxx_ops.num_counters;
  	unsigned int control;
@@ -1464,9 +1415,8 @@ diff -pNur linux-2.6.21.7/arch/mips/oprofile/op_model_mipsxx.c linux-2.6.21.7/ar
  		}
  	HANDLE_COUNTER(3)
  	HANDLE_COUNTER(2)
-diff -pNur linux-2.6.21.7/arch/mips/pci/fixup-tb0219.c linux-2.6.21.7/arch/mips/pci/fixup-tb0219.c
---- linux-2.6.21.7/arch/mips/pci/fixup-tb0219.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/pci/fixup-tb0219.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/pci/fixup-tb0219.c
++++ b/arch/mips/pci/fixup-tb0219.c
 @@ -2,7 +2,7 @@
   *  fixup-tb0219.c, The TANBAC TB0219 specific PCI fixups.
   *
@@ -1476,9 +1426,8 @@ diff -pNur linux-2.6.21.7/arch/mips/pci/fixup-tb0219.c linux-2.6.21.7/arch/mips/
   *
   *  This program is free software; you can redistribute it and/or modify
   *  it under the terms of the GNU General Public License as published by
-diff -pNur linux-2.6.21.7/arch/mips/pci/pci.c linux-2.6.21.7/arch/mips/pci/pci.c
---- linux-2.6.21.7/arch/mips/pci/pci.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/pci/pci.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/pci/pci.c
++++ b/arch/mips/pci/pci.c
 @@ -111,10 +111,15 @@ static u8 __init common_swizzle(struct p
  	return PCI_SLOT(dev->devfn);
  }
@@ -1509,7 +1458,7 @@ diff -pNur linux-2.6.21.7/arch/mips/pci/pci.c linux-2.6.21.7/arch/mips/pci/pci.c
  	return 0;
  }
  
-@@ -270,7 +282,7 @@ void __devinit pcibios_fixup_bus(struct 
+@@ -270,7 +282,7 @@ void __devinit pcibios_fixup_bus(struct
  	}
  
  	for (ln = bus->devices.next; ln != &bus->devices; ln = ln->next) {
@@ -1518,9 +1467,8 @@ diff -pNur linux-2.6.21.7/arch/mips/pci/pci.c linux-2.6.21.7/arch/mips/pci/pci.c
  
  		if ((dev->class >> 8) != PCI_CLASS_BRIDGE_PCI)
  			pcibios_fixup_device_resources(dev, bus);
-diff -pNur linux-2.6.21.7/arch/mips/pci/pci-ocelot.c linux-2.6.21.7/arch/mips/pci/pci-ocelot.c
---- linux-2.6.21.7/arch/mips/pci/pci-ocelot.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/pci/pci-ocelot.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/pci/pci-ocelot.c
++++ b/arch/mips/pci/pci-ocelot.c
 @@ -71,19 +71,19 @@ static inline void pci0WriteConfigReg(un
  }
  
@@ -1548,18 +1496,16 @@ diff -pNur linux-2.6.21.7/arch/mips/pci/pci-ocelot.c linux-2.6.21.7/arch/mips/pc
  };
  
  static int __init ocelot_pcibios_init(void)
-diff -pNur linux-2.6.21.7/arch/mips/qemu/Makefile linux-2.6.21.7/arch/mips/qemu/Makefile
---- linux-2.6.21.7/arch/mips/qemu/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/qemu/Makefile	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/qemu/Makefile
++++ b/arch/mips/qemu/Makefile
 @@ -4,4 +4,5 @@
  
  obj-y		= q-firmware.o q-irq.o q-mem.o q-setup.o q-reset.o
  
 +obj-$(CONFIG_VT) += q-vga.o
  obj-$(CONFIG_SMP) += q-smp.o
-diff -pNur linux-2.6.21.7/arch/mips/qemu/q-setup.c linux-2.6.21.7/arch/mips/qemu/q-setup.c
---- linux-2.6.21.7/arch/mips/qemu/q-setup.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/arch/mips/qemu/q-setup.c	2007-08-06 11:43:36.000000000 +0200
+--- a/arch/mips/qemu/q-setup.c
++++ b/arch/mips/qemu/q-setup.c
 @@ -2,6 +2,7 @@
  #include <asm/io.h>
  #include <asm/time.h>
@@ -1578,9 +1524,8 @@ diff -pNur linux-2.6.21.7/arch/mips/qemu/q-setup.c linux-2.6.21.7/arch/mips/qemu
 +
  	qemu_reboot_setup();
  }
-diff -pNur linux-2.6.21.7/arch/mips/qemu/q-vga.c linux-2.6.21.7/arch/mips/qemu/q-vga.c
---- linux-2.6.21.7/arch/mips/qemu/q-vga.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/arch/mips/qemu/q-vga.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/arch/mips/qemu/q-vga.c
 @@ -0,0 +1,189 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -1771,9 +1716,8 @@ diff -pNur linux-2.6.21.7/arch/mips/qemu/q-vga.c linux-2.6.21.7/arch/mips/qemu/q
 +	while (1);
 +#endif
 +}
-diff -pNur linux-2.6.21.7/drivers/char/au1000_gpio.c linux-2.6.21.7/drivers/char/au1000_gpio.c
---- linux-2.6.21.7/drivers/char/au1000_gpio.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/char/au1000_gpio.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/char/au1000_gpio.c
 @@ -0,0 +1,262 @@
 +/*
 + * FILE NAME au1000_gpio.c
@@ -2037,9 +1981,8 @@ diff -pNur linux-2.6.21.7/drivers/char/au1000_gpio.c linux-2.6.21.7/drivers/char
 +
 +module_init(au1000gpio_init);
 +module_exit(au1000gpio_exit);
-diff -pNur linux-2.6.21.7/drivers/char/au1000_ts.c linux-2.6.21.7/drivers/char/au1000_ts.c
---- linux-2.6.21.7/drivers/char/au1000_ts.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/char/au1000_ts.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/char/au1000_ts.c
 @@ -0,0 +1,677 @@
 +/*
 + *      au1000_ts.c  --  Touch screen driver for the Alchemy Au1000's
@@ -2718,9 +2661,8 @@ diff -pNur linux-2.6.21.7/drivers/char/au1000_ts.c linux-2.6.21.7/drivers/char/a
 +
 +module_init(au1000ts_init_module);
 +module_exit(au1000ts_cleanup_module);
-diff -pNur linux-2.6.21.7/drivers/char/Kconfig linux-2.6.21.7/drivers/char/Kconfig
---- linux-2.6.21.7/drivers/char/Kconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/char/Kconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
 @@ -372,19 +372,17 @@ config ISTALLION
  	  To compile this driver as a module, choose M here: the
  	  module will be called istallion.
@@ -2731,17 +2673,16 @@ diff -pNur linux-2.6.21.7/drivers/char/Kconfig linux-2.6.21.7/drivers/char/Kconf
 -	help
 -	  If you have an Alchemy AU1000 processor (MIPS based) and you want
 -	  to use serial ports, say Y.  Otherwise, say N.
--
++config AU1X00_GPIO
++	tristate "Alchemy Au1000 GPIO device support"
++	depends on MIPS && SOC_AU1X00
+ 
 -config AU1000_SERIAL_CONSOLE
 -	bool "Enable Au1000 serial console"
 -	depends on AU1000_UART
 -	help
 -	  If you have an Alchemy AU1000 processor (MIPS based) and you want
 -	  to use a console on a serial port, say Y.  Otherwise, say N.
-+config AU1X00_GPIO
-+	tristate "Alchemy Au1000 GPIO device support"
-+	depends on MIPS && SOC_AU1X00
-+
 +config SIBYTE_SB1250_DUART
 +	bool "Support for BCM1xxx onchip DUART"
 +	depends on MIPS && SIBYTE_SB1xxx_SOC=y
@@ -2752,9 +2693,8 @@ diff -pNur linux-2.6.21.7/drivers/char/Kconfig linux-2.6.21.7/drivers/char/Kconf
  
  config SERIAL_DEC
  	bool "DECstation serial support"
-diff -pNur linux-2.6.21.7/drivers/char/Makefile linux-2.6.21.7/drivers/char/Makefile
---- linux-2.6.21.7/drivers/char/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/char/Makefile	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
 @@ -32,6 +32,7 @@ obj-$(CONFIG_A2232)		+= ser_a2232.o gene
  obj-$(CONFIG_ATARI_DSP56K)	+= dsp56k.o
  obj-$(CONFIG_MOXA_SMARTIO)	+= mxser.o
@@ -2779,9 +2719,8 @@ diff -pNur linux-2.6.21.7/drivers/char/Makefile linux-2.6.21.7/drivers/char/Make
  obj-$(CONFIG_PPDEV)		+= ppdev.o
  obj-$(CONFIG_NWBUTTON)		+= nwbutton.o
  obj-$(CONFIG_NWFLASH)		+= nwflash.o
-diff -pNur linux-2.6.21.7/drivers/char/sb1250_duart.c linux-2.6.21.7/drivers/char/sb1250_duart.c
---- linux-2.6.21.7/drivers/char/sb1250_duart.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/char/sb1250_duart.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/char/sb1250_duart.c
 @@ -0,0 +1,979 @@
 +/*
 + * Copyright (C) 2000,2001,2002,2003,2004 Broadcom Corporation
@@ -3762,18 +3701,16 @@ diff -pNur linux-2.6.21.7/drivers/char/sb1250_duart.c linux-2.6.21.7/drivers/cha
 +console_initcall(sb1250_serial_console_init);
 +
 +#endif /* CONFIG_SIBYTE_SB1250_DUART_CONSOLE */
-diff -pNur linux-2.6.21.7/drivers/ide/mips/Makefile linux-2.6.21.7/drivers/ide/mips/Makefile
---- linux-2.6.21.7/drivers/ide/mips/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/ide/mips/Makefile	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/ide/mips/Makefile
++++ b/drivers/ide/mips/Makefile
 @@ -1,4 +1,4 @@
  obj-$(CONFIG_BLK_DEV_IDE_SWARM)		+= swarm.o
  obj-$(CONFIG_BLK_DEV_IDE_AU1XXX)	+= au1xxx-ide.o
  
 -EXTRA_CFLAGS    := -Idrivers/ide
 +CFLAGS_au1xxx-ide.o := -Idrivers/ide
-diff -pNur linux-2.6.21.7/drivers/mtd/devices/docprobe.c linux-2.6.21.7/drivers/mtd/devices/docprobe.c
---- linux-2.6.21.7/drivers/mtd/devices/docprobe.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/mtd/devices/docprobe.c	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/mtd/devices/docprobe.c
++++ b/drivers/mtd/devices/docprobe.c
 @@ -83,10 +83,10 @@ static unsigned long __initdata doc_loca
  	0xe4000000,
  #elif defined(CONFIG_MOMENCO_OCELOT)
@@ -3788,9 +3725,8 @@ diff -pNur linux-2.6.21.7/drivers/mtd/devices/docprobe.c linux-2.6.21.7/drivers/
  #warning Unknown architecture for DiskOnChip. No default probe locations defined
  #endif
  	0xffffffff };
-diff -pNur linux-2.6.21.7/drivers/mtd/maps/lasat.c linux-2.6.21.7/drivers/mtd/maps/lasat.c
---- linux-2.6.21.7/drivers/mtd/maps/lasat.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/mtd/maps/lasat.c	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/mtd/maps/lasat.c
++++ b/drivers/mtd/maps/lasat.c
 @@ -7,7 +7,7 @@
   * modify it under the terms of the GNU General Public License version
   * 2 as published by the Free Software Foundation.
@@ -3809,9 +3745,8 @@ diff -pNur linux-2.6.21.7/drivers/mtd/maps/lasat.c linux-2.6.21.7/drivers/mtd/ma
  		        lasat_map.phys, lasat_board_info.li_flash_size);
  	lasat_map.size = lasat_board_info.li_flash_size;
  
-diff -pNur linux-2.6.21.7/drivers/net/big_sur_ge.c linux-2.6.21.7/drivers/net/big_sur_ge.c
---- linux-2.6.21.7/drivers/net/big_sur_ge.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/net/big_sur_ge.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/net/big_sur_ge.c
 @@ -0,0 +1,2004 @@
 +/*
 + * drivers/net/big_sur_ge.c - Driver for PMC-Sierra Big Sur ethernet ports
@@ -5817,9 +5752,8 @@ diff -pNur linux-2.6.21.7/drivers/net/big_sur_ge.c linux-2.6.21.7/drivers/net/bi
 +MODULE_AUTHOR("Manish Lachwani <lachwani@pmc-sierra.com>");
 +MODULE_DESCRIPTION("PMC-Sierra Big Sur Ethernet MAC Driver");
 +MODULE_LICENSE("GPL");
-diff -pNur linux-2.6.21.7/drivers/net/big_sur_ge.h linux-2.6.21.7/drivers/net/big_sur_ge.h
---- linux-2.6.21.7/drivers/net/big_sur_ge.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/net/big_sur_ge.h	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/net/big_sur_ge.h
 @@ -0,0 +1,713 @@
 +/*
 + * drivers/net/big_sur_ge.h - Driver for PMC-Sierra Big Sur
@@ -6534,9 +6468,8 @@ diff -pNur linux-2.6.21.7/drivers/net/big_sur_ge.h linux-2.6.21.7/drivers/net/bi
 +                                 BIG_SUR_GEIXR_SG_END_MASK)
 +
 +#endif
-diff -pNur linux-2.6.21.7/drivers/net/gt64240eth.c linux-2.6.21.7/drivers/net/gt64240eth.c
---- linux-2.6.21.7/drivers/net/gt64240eth.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/net/gt64240eth.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/net/gt64240eth.c
 @@ -0,0 +1,1671 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -8209,9 +8142,8 @@ diff -pNur linux-2.6.21.7/drivers/net/gt64240eth.c linux-2.6.21.7/drivers/net/gt
 +
 +	return &gp->stats;
 +}
-diff -pNur linux-2.6.21.7/drivers/net/gt64240eth.h linux-2.6.21.7/drivers/net/gt64240eth.h
---- linux-2.6.21.7/drivers/net/gt64240eth.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/net/gt64240eth.h	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/net/gt64240eth.h
 @@ -0,0 +1,403 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -8616,9 +8548,8 @@ diff -pNur linux-2.6.21.7/drivers/net/gt64240eth.h linux-2.6.21.7/drivers/net/gt
 +};
 +
 +#endif /* _GT64240ETH_H */
-diff -pNur linux-2.6.21.7/drivers/net/ioc3-eth.c linux-2.6.21.7/drivers/net/ioc3-eth.c
---- linux-2.6.21.7/drivers/net/ioc3-eth.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/net/ioc3-eth.c	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/net/ioc3-eth.c
++++ b/drivers/net/ioc3-eth.c
 @@ -5,7 +5,7 @@
   *
   * Driver for SGI's IOC3 based Ethernet cards as found in the PCI card.
@@ -8660,7 +8591,7 @@ diff -pNur linux-2.6.21.7/drivers/net/ioc3-eth.c linux-2.6.21.7/drivers/net/ioc3
  static void ioc3_tcpudp_checksum(struct sk_buff *skb, uint32_t hwsum, int len)
  {
  	struct ethhdr *eh = eth_hdr(skb);
-@@ -590,7 +586,6 @@ static void ioc3_tcpudp_checksum(struct 
+@@ -590,7 +586,6 @@ static void ioc3_tcpudp_checksum(struct
  	if (csum == 0xffff)
  		skb->ip_summed = CHECKSUM_UNNECESSARY;
  }
@@ -8745,9 +8676,8 @@ diff -pNur linux-2.6.21.7/drivers/net/ioc3-eth.c linux-2.6.21.7/drivers/net/ioc3
  };
  
  static int ioc3_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
-diff -pNur linux-2.6.21.7/drivers/net/Kconfig linux-2.6.21.7/drivers/net/Kconfig
---- linux-2.6.21.7/drivers/net/Kconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/net/Kconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
 @@ -442,6 +442,14 @@ config MIPS_JAZZ_SONIC
  	  This is the driver for the onboard card of MIPS Magnum 4000,
  	  Acer PICA, Olivetti M700-10 and a few other identical OEM systems.
@@ -8841,9 +8771,8 @@ diff -pNur linux-2.6.21.7/drivers/net/Kconfig linux-2.6.21.7/drivers/net/Kconfig
  
  config QLA3XXX
  	tristate "QLogic QLA3XXX Network Driver Support"
-diff -pNur linux-2.6.21.7/drivers/net/Makefile linux-2.6.21.7/drivers/net/Makefile
---- linux-2.6.21.7/drivers/net/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/net/Makefile	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
 @@ -112,6 +112,10 @@ obj-$(CONFIG_TSI108_ETH) += tsi108_eth.o
  obj-$(CONFIG_MV643XX_ETH) += mv643xx_eth.o
  obj-$(CONFIG_QLA3XXX) += qla3xxx.o
@@ -8855,9 +8784,8 @@ diff -pNur linux-2.6.21.7/drivers/net/Makefile linux-2.6.21.7/drivers/net/Makefi
  obj-$(CONFIG_PPP) += ppp_generic.o
  obj-$(CONFIG_PPP_ASYNC) += ppp_async.o
  obj-$(CONFIG_PPP_SYNC_TTY) += ppp_synctty.o
-diff -pNur linux-2.6.21.7/drivers/net/mipsnet.c linux-2.6.21.7/drivers/net/mipsnet.c
---- linux-2.6.21.7/drivers/net/mipsnet.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/net/mipsnet.c	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/net/mipsnet.c
++++ b/drivers/net/mipsnet.c
 @@ -243,7 +243,7 @@ static int __init mipsnet_probe(struct d
  	 * TODO: probe for these or load them from PARAM
  	 */
@@ -8867,9 +8795,8 @@ diff -pNur linux-2.6.21.7/drivers/net/mipsnet.c linux-2.6.21.7/drivers/net/mipsn
  	              inl(mipsnet_reg_address(netdev, interruptInfo));
  
  	// Get the io region now, get irq on open()
-diff -pNur linux-2.6.21.7/drivers/net/titan_ge.c linux-2.6.21.7/drivers/net/titan_ge.c
---- linux-2.6.21.7/drivers/net/titan_ge.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/net/titan_ge.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/net/titan_ge.c
 @@ -0,0 +1,2069 @@
 +/*
 + * drivers/net/titan_ge.c - Driver for Titan ethernet ports
@@ -10940,9 +10867,8 @@ diff -pNur linux-2.6.21.7/drivers/net/titan_ge.c linux-2.6.21.7/drivers/net/tita
 +
 +module_init(titan_ge_init_module);
 +module_exit(titan_ge_cleanup_module);
-diff -pNur linux-2.6.21.7/drivers/net/titan_ge.h linux-2.6.21.7/drivers/net/titan_ge.h
---- linux-2.6.21.7/drivers/net/titan_ge.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/net/titan_ge.h	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/net/titan_ge.h
 @@ -0,0 +1,415 @@
 +#ifndef _TITAN_GE_H_
 +#define _TITAN_GE_H_
@@ -11359,9 +11285,8 @@ diff -pNur linux-2.6.21.7/drivers/net/titan_ge.h linux-2.6.21.7/drivers/net/tita
 +
 +#endif 				/* _TITAN_GE_H_ */
 +
-diff -pNur linux-2.6.21.7/drivers/net/titan_mdio.c linux-2.6.21.7/drivers/net/titan_mdio.c
---- linux-2.6.21.7/drivers/net/titan_mdio.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/net/titan_mdio.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/net/titan_mdio.c
 @@ -0,0 +1,217 @@
 +/*
 + * drivers/net/titan_mdio.c - Driver for Titan ethernet ports
@@ -11580,9 +11505,8 @@ diff -pNur linux-2.6.21.7/drivers/net/titan_mdio.c linux-2.6.21.7/drivers/net/ti
 +	return TITAN_GE_MDIO_GOOD;
 +}
 +
-diff -pNur linux-2.6.21.7/drivers/net/titan_mdio.h linux-2.6.21.7/drivers/net/titan_mdio.h
---- linux-2.6.21.7/drivers/net/titan_mdio.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/net/titan_mdio.h	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/net/titan_mdio.h
 @@ -0,0 +1,56 @@
 +/*
 + * MDIO used to interact with the PHY when using GMII/MII
@@ -11640,9 +11564,8 @@ diff -pNur linux-2.6.21.7/drivers/net/titan_mdio.h linux-2.6.21.7/drivers/net/ti
 +int titan_ge_mdio_write(int, int, unsigned int);
 +
 +#endif /* _TITAN_MDIO_H */
-diff -pNur linux-2.6.21.7/drivers/scsi/NCR53C9x.h linux-2.6.21.7/drivers/scsi/NCR53C9x.h
---- linux-2.6.21.7/drivers/scsi/NCR53C9x.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/scsi/NCR53C9x.h	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/scsi/NCR53C9x.h
++++ b/drivers/scsi/NCR53C9x.h
 @@ -144,12 +144,7 @@
  
  #ifndef MULTIPLE_PAD_SIZES
@@ -11657,9 +11580,8 @@ diff -pNur linux-2.6.21.7/drivers/scsi/NCR53C9x.h linux-2.6.21.7/drivers/scsi/NC
  #define esp_read(__reg) (__reg)
  
  struct ESP_regs {
-diff -pNur linux-2.6.21.7/drivers/scsi/sgiwd93.c linux-2.6.21.7/drivers/scsi/sgiwd93.c
---- linux-2.6.21.7/drivers/scsi/sgiwd93.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/scsi/sgiwd93.c	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/scsi/sgiwd93.c
++++ b/drivers/scsi/sgiwd93.c
 @@ -14,6 +14,7 @@
  #include <linux/interrupt.h>
  #include <linux/types.h>
@@ -11676,9 +11598,8 @@ diff -pNur linux-2.6.21.7/drivers/scsi/sgiwd93.c linux-2.6.21.7/drivers/scsi/sgi
  
  static inline void init_hpc_chain(struct hpc_data *hd)
  {
-diff -pNur linux-2.6.21.7/drivers/serial/ip22zilog.c linux-2.6.21.7/drivers/serial/ip22zilog.c
---- linux-2.6.21.7/drivers/serial/ip22zilog.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/serial/ip22zilog.c	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/serial/ip22zilog.c
++++ b/drivers/serial/ip22zilog.c
 @@ -862,6 +862,7 @@ ip22zilog_set_termios(struct uart_port *
  	up->cflag = termios->c_cflag;
  
@@ -11696,10 +11617,9 @@ diff -pNur linux-2.6.21.7/drivers/serial/ip22zilog.c linux-2.6.21.7/drivers/seri
  }
  
  static int __init ip22zilog_console_setup(struct console *con, char *options)
-diff -pNur linux-2.6.21.7/drivers/tc/zs.c linux-2.6.21.7/drivers/tc/zs.c
---- linux-2.6.21.7/drivers/tc/zs.c	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/tc/zs.c	2007-08-06 11:43:36.000000000 +0200
-@@ -136,7 +136,7 @@ struct dec_serial *zs_chain;	/* list of 
+--- a/drivers/tc/zs.c
++++ b/drivers/tc/zs.c
+@@ -136,7 +136,7 @@ struct dec_serial *zs_chain;	/* list of
  struct tty_struct zs_ttys[NUM_CHANNELS];
  
  #ifdef CONFIG_SERIAL_DEC_CONSOLE
@@ -11757,9 +11677,8 @@ diff -pNur linux-2.6.21.7/drivers/tc/zs.c linux-2.6.21.7/drivers/tc/zs.c
  }
  #endif /* ifdef CONFIG_SERIAL_DEC_CONSOLE */
  
-diff -pNur linux-2.6.21.7/drivers/video/Kconfig linux-2.6.21.7/drivers/video/Kconfig
---- linux-2.6.21.7/drivers/video/Kconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/video/Kconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
 @@ -1252,6 +1252,17 @@ config FB_VOODOO1
  	  Please read the <file:Documentation/fb/README-sstfb.txt> for supported
  	  options and other important info  support.
@@ -11816,9 +11735,8 @@ diff -pNur linux-2.6.21.7/drivers/video/Kconfig linux-2.6.21.7/drivers/video/Kco
  
  config FB_MAXINE
  	bool "Maxine (Personal DECstation) onboard framebuffer support"
-diff -pNur linux-2.6.21.7/drivers/video/Makefile linux-2.6.21.7/drivers/video/Makefile
---- linux-2.6.21.7/drivers/video/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/drivers/video/Makefile	2007-08-06 11:43:36.000000000 +0200
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
 @@ -93,6 +93,7 @@ obj-$(CONFIG_FB_MAXINE)		  += maxinefb.o
  obj-$(CONFIG_FB_TX3912)		  += tx3912fb.o
  obj-$(CONFIG_FB_S1D13XXX)	  += s1d13xxxfb.o
@@ -11827,9 +11745,8 @@ diff -pNur linux-2.6.21.7/drivers/video/Makefile linux-2.6.21.7/drivers/video/Ma
  obj-$(CONFIG_FB_S3C2410)	  += s3c2410fb.o
  obj-$(CONFIG_FB_PNX4008_DUM)	  += pnx4008/
  obj-$(CONFIG_FB_PNX4008_DUM_RGB)  += pnx4008/
-diff -pNur linux-2.6.21.7/drivers/video/smivgxfb.c linux-2.6.21.7/drivers/video/smivgxfb.c
---- linux-2.6.21.7/drivers/video/smivgxfb.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/drivers/video/smivgxfb.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/drivers/video/smivgxfb.c
 @@ -0,0 +1,387 @@
 +/***************************************************************************
 + *  Silicon Motion VoyagerGX framebuffer driver
@@ -12218,9 +12135,8 @@ diff -pNur linux-2.6.21.7/drivers/video/smivgxfb.c linux-2.6.21.7/drivers/video/
 +MODULE_AUTHOR("");
 +MODULE_DESCRIPTION("Framebuffer driver for SMI Voyager");
 +MODULE_LICENSE("GPL");
-diff -pNur linux-2.6.21.7/include/asm-mips/addrspace.h linux-2.6.21.7/include/asm-mips/addrspace.h
---- linux-2.6.21.7/include/asm-mips/addrspace.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/addrspace.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/addrspace.h
++++ b/include/asm-mips/addrspace.h
 @@ -133,6 +133,7 @@
      || defined (CONFIG_CPU_R4X00)					\
      || defined (CONFIG_CPU_R5000)					\
@@ -12229,9 +12145,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/addrspace.h linux-2.6.21.7/include/as
      || defined (CONFIG_CPU_NEVADA)					\
      || defined (CONFIG_CPU_TX49XX)					\
      || defined (CONFIG_CPU_MIPS64)
-diff -pNur linux-2.6.21.7/include/asm-mips/bitops.h linux-2.6.21.7/include/asm-mips/bitops.h
---- linux-2.6.21.7/include/asm-mips/bitops.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/bitops.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/bitops.h
++++ b/include/asm-mips/bitops.h
 @@ -238,10 +238,11 @@ static inline int test_and_set_bit(unsig
  	volatile unsigned long *addr)
  {
@@ -12412,9 +12327,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/bitops.h linux-2.6.21.7/include/asm-m
  }
  
  #include <asm-generic/bitops/non-atomic.h>
-diff -pNur linux-2.6.21.7/include/asm-mips/compat-signal.h linux-2.6.21.7/include/asm-mips/compat-signal.h
---- linux-2.6.21.7/include/asm-mips/compat-signal.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/compat-signal.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/compat-signal.h
++++ b/include/asm-mips/compat-signal.h
 @@ -10,6 +10,68 @@
  
  #include <asm/uaccess.h>
@@ -12484,9 +12398,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/compat-signal.h linux-2.6.21.7/includ
  static inline int __copy_conv_sigset_to_user(compat_sigset_t __user *d,
  	const sigset_t *s)
  {
-diff -pNur linux-2.6.21.7/include/asm-mips/cpu-features.h linux-2.6.21.7/include/asm-mips/cpu-features.h
---- linux-2.6.21.7/include/asm-mips/cpu-features.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/cpu-features.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/cpu-features.h
++++ b/include/asm-mips/cpu-features.h
 @@ -150,6 +150,10 @@
  #define cpu_has_mipsmt		(cpu_data[0].ases & MIPS_ASE_MIPSMT)
  #endif
@@ -12498,9 +12411,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/cpu-features.h linux-2.6.21.7/include
  #ifdef CONFIG_32BIT
  # ifndef cpu_has_nofpuex
  # define cpu_has_nofpuex	(cpu_data[0].options & MIPS_CPU_NOFPUEX)
-diff -pNur linux-2.6.21.7/include/asm-mips/cpu.h linux-2.6.21.7/include/asm-mips/cpu.h
---- linux-2.6.21.7/include/asm-mips/cpu.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/cpu.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/cpu.h
++++ b/include/asm-mips/cpu.h
 @@ -125,6 +125,17 @@
  #define PRID_REV_VR4130		0x0080
  
@@ -12527,9 +12439,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/cpu.h linux-2.6.21.7/include/asm-mips
  
  /*
   * CPU ASE encodings
-diff -pNur linux-2.6.21.7/include/asm-mips/irq.h linux-2.6.21.7/include/asm-mips/irq.h
---- linux-2.6.21.7/include/asm-mips/irq.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/irq.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/irq.h
++++ b/include/asm-mips/irq.h
 @@ -24,7 +24,7 @@ static inline int irq_canonicalize(int i
  #define irq_canonicalize(irq) (irq)	/* Sane hardware, sane code ... */
  #endif
@@ -12553,9 +12464,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/irq.h linux-2.6.21.7/include/asm-mips
 +extern int cp0_perfcount_irq;
 +
  #endif /* _ASM_IRQ_H */
-diff -pNur linux-2.6.21.7/include/asm-mips/mach-generic/ide.h linux-2.6.21.7/include/asm-mips/mach-generic/ide.h
---- linux-2.6.21.7/include/asm-mips/mach-generic/ide.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/mach-generic/ide.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/mach-generic/ide.h
++++ b/include/asm-mips/mach-generic/ide.h
 @@ -29,17 +29,12 @@
  
  #define IDE_ARCH_OBSOLETE_DEFAULTS
@@ -12577,9 +12487,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/mach-generic/ide.h linux-2.6.21.7/inc
  #elif defined(CONFIG_EISA) || defined(CONFIG_ISA)
  	return 1;
  #else
-diff -pNur linux-2.6.21.7/include/asm-mips/mach-ip32/dma-coherence.h linux-2.6.21.7/include/asm-mips/mach-ip32/dma-coherence.h
---- linux-2.6.21.7/include/asm-mips/mach-ip32/dma-coherence.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/mach-ip32/dma-coherence.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/mach-ip32/dma-coherence.h
++++ b/include/asm-mips/mach-ip32/dma-coherence.h
 @@ -6,8 +6,8 @@
   * Copyright (C) 2006  Ralf Baechle <ralf@linux-mips.org>
   *
@@ -12597,9 +12506,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/mach-ip32/dma-coherence.h linux-2.6.2
  
 -#endif /* __ASM_MACH_IP35_DMA_COHERENCE_H */
 +#endif /* __ASM_MACH_IP32_DMA_COHERENCE_H */
-diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/atlasint.h linux-2.6.21.7/include/asm-mips/mips-boards/atlasint.h
---- linux-2.6.21.7/include/asm-mips/mips-boards/atlasint.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/mips-boards/atlasint.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/mips-boards/atlasint.h
++++ b/include/asm-mips/mips-boards/atlasint.h
 @@ -28,11 +28,6 @@
  
  #include <irq.h>
@@ -12620,9 +12528,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/atlasint.h linux-2.6.21.7
  
  /*
   * Interrupts 8..39 are used for Atlas interrupt controller interrupts
-diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/maltaint.h linux-2.6.21.7/include/asm-mips/mips-boards/maltaint.h
---- linux-2.6.21.7/include/asm-mips/mips-boards/maltaint.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/mips-boards/maltaint.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/mips-boards/maltaint.h
++++ b/include/asm-mips/mips-boards/maltaint.h
 @@ -32,11 +32,6 @@
   */
  #define MALTA_INT_BASE		0
@@ -12643,9 +12550,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/maltaint.h linux-2.6.21.7
  
  /*
   * Interrupts 64..127 are used for Soc-it Classic interrupts
-diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/prom.h linux-2.6.21.7/include/asm-mips/mips-boards/prom.h
---- linux-2.6.21.7/include/asm-mips/mips-boards/prom.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/mips-boards/prom.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/mips-boards/prom.h
++++ b/include/asm-mips/mips-boards/prom.h
 @@ -33,6 +33,7 @@ extern void prom_meminit(void);
  extern void prom_fixup_mem_map(unsigned long start_mem, unsigned long end_mem);
  extern void mips_display_message(const char *str);
@@ -12654,9 +12560,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/prom.h linux-2.6.21.7/inc
  extern int get_ethernet_addr(char *ethernet_addr);
  
  /* Memory descriptor management. */
-diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/seadint.h linux-2.6.21.7/include/asm-mips/mips-boards/seadint.h
---- linux-2.6.21.7/include/asm-mips/mips-boards/seadint.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/mips-boards/seadint.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/mips-boards/seadint.h
++++ b/include/asm-mips/mips-boards/seadint.h
 @@ -22,14 +22,7 @@
  
  #include <irq.h>
@@ -12672,9 +12577,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/seadint.h linux-2.6.21.7/
 -#define MIPSCPU_INT_CPUCTR	7
 -
  #endif /* !(_MIPS_SEADINT_H) */
-diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/simint.h linux-2.6.21.7/include/asm-mips/mips-boards/simint.h
---- linux-2.6.21.7/include/asm-mips/mips-boards/simint.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/mips-boards/simint.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/mips-boards/simint.h
++++ b/include/asm-mips/mips-boards/simint.h
 @@ -21,15 +21,11 @@
  
  #define SIM_INT_BASE		0
@@ -12691,9 +12595,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/mips-boards/simint.h linux-2.6.21.7/i
  #define MSC01E_INT_CPUCTR	11
  
  #endif
-diff -pNur linux-2.6.21.7/include/asm-mips/mipsregs.h linux-2.6.21.7/include/asm-mips/mipsregs.h
---- linux-2.6.21.7/include/asm-mips/mipsregs.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/mipsregs.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/mipsregs.h
++++ b/include/asm-mips/mipsregs.h
 @@ -7,7 +7,7 @@
   * Copyright (C) 2000 Silicon Graphics, Inc.
   * Modified for further R[236]000 support by Paul M. Antoine, 1996.
@@ -12723,9 +12626,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/mipsregs.h linux-2.6.21.7/include/asm
  #define read_c0_pagemask()	__read_32bit_c0_register($5, 0)
  #define write_c0_pagemask(val)	__write_32bit_c0_register($5, 0, val)
  
-diff -pNur linux-2.6.21.7/include/asm-mips/module.h linux-2.6.21.7/include/asm-mips/module.h
---- linux-2.6.21.7/include/asm-mips/module.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/module.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/module.h
++++ b/include/asm-mips/module.h
 @@ -122,6 +122,13 @@ search_module_dbetables(unsigned long ad
  #define MODULE_KERNEL_TYPE "64BIT "
  #endif
@@ -12741,9 +12643,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/module.h linux-2.6.21.7/include/asm-m
 +	MODULE_PROC_FAMILY MODULE_KERNEL_TYPE MODULE_KERNEL_SMTC
  
  #endif /* _ASM_MODULE_H */
-diff -pNur linux-2.6.21.7/include/asm-mips/processor.h linux-2.6.21.7/include/asm-mips/processor.h
---- linux-2.6.21.7/include/asm-mips/processor.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/processor.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/processor.h
++++ b/include/asm-mips/processor.h
 @@ -237,7 +237,7 @@ unsigned long get_wchan(struct task_stru
  
  #define ARCH_HAS_PREFETCH
@@ -12753,9 +12654,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/processor.h linux-2.6.21.7/include/as
  {
  	__asm__ __volatile__(
  	"	.set	mips4		\n"
-diff -pNur linux-2.6.21.7/include/asm-mips/smp.h linux-2.6.21.7/include/asm-mips/smp.h
---- linux-2.6.21.7/include/asm-mips/smp.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/smp.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/smp.h
++++ b/include/asm-mips/smp.h
 @@ -49,13 +49,6 @@ extern struct call_data_struct *call_dat
  extern cpumask_t phys_cpu_present_map;
  #define cpu_possible_map	phys_cpu_present_map
@@ -12770,9 +12670,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/smp.h linux-2.6.21.7/include/asm-mips
  /*
   * These are defined by the board-specific code.
   */
-diff -pNur linux-2.6.21.7/include/asm-mips/system.h linux-2.6.21.7/include/asm-mips/system.h
---- linux-2.6.21.7/include/asm-mips/system.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/system.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/system.h
++++ b/include/asm-mips/system.h
 @@ -58,6 +58,8 @@ do {									\
  	(last) = resume(prev, next, next->thread_info);			\
  	if (cpu_has_dsp)						\
@@ -12791,9 +12690,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/system.h linux-2.6.21.7/include/asm-m
  } while(0)
  #endif
  
-diff -pNur linux-2.6.21.7/include/asm-mips/war.h linux-2.6.21.7/include/asm-mips/war.h
---- linux-2.6.21.7/include/asm-mips/war.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/asm-mips/war.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/asm-mips/war.h
++++ b/include/asm-mips/war.h
 @@ -177,18 +177,22 @@
  #endif
  
@@ -12823,9 +12721,8 @@ diff -pNur linux-2.6.21.7/include/asm-mips/war.h linux-2.6.21.7/include/asm-mips
   * may cause ll / sc and lld / scd sequences to execute non-atomically.
   */
  #ifdef CONFIG_SGI_IP27
-diff -pNur linux-2.6.21.7/include/linux/pci_ids.h linux-2.6.21.7/include/linux/pci_ids.h
---- linux-2.6.21.7/include/linux/pci_ids.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/pci_ids.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/linux/pci_ids.h
++++ b/include/linux/pci_ids.h
 @@ -1624,6 +1624,9 @@
  #define PCI_VENDOR_ID_SATSAGEM		0x1267
  #define PCI_DEVICE_ID_SATSAGEM_NICCY	0x1016
@@ -12836,9 +12733,8 @@ diff -pNur linux-2.6.21.7/include/linux/pci_ids.h linux-2.6.21.7/include/linux/p
  
  #define PCI_VENDOR_ID_ENSONIQ		0x1274
  #define PCI_DEVICE_ID_ENSONIQ_CT5880	0x5880
-diff -pNur linux-2.6.21.7/include/linux/serial.h linux-2.6.21.7/include/linux/serial.h
---- linux-2.6.21.7/include/linux/serial.h	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/include/linux/serial.h	2007-08-06 11:43:36.000000000 +0200
+--- a/include/linux/serial.h
++++ b/include/linux/serial.h
 @@ -76,7 +76,8 @@ struct serial_struct {
  #define PORT_16654	11
  #define PORT_16850	12
@@ -12849,9 +12745,8 @@ diff -pNur linux-2.6.21.7/include/linux/serial.h linux-2.6.21.7/include/linux/se
  
  #define SERIAL_IO_PORT	0
  #define SERIAL_IO_HUB6	1
-diff -pNur linux-2.6.21.7/sound/oss/au1550_i2s.c linux-2.6.21.7/sound/oss/au1550_i2s.c
---- linux-2.6.21.7/sound/oss/au1550_i2s.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.7/sound/oss/au1550_i2s.c	2007-08-06 11:43:36.000000000 +0200
+--- /dev/null
++++ b/sound/oss/au1550_i2s.c
 @@ -0,0 +1,2029 @@
 +/*
 + *      au1550_i2s.c  --  Sound driver for Alchemy Au1550 MIPS
@@ -14882,9 +14777,8 @@ diff -pNur linux-2.6.21.7/sound/oss/au1550_i2s.c linux-2.6.21.7/sound/oss/au1550
 +
 +MODULE_AUTHOR("Advanced Micro Devices (AMD), dan@embeddededge.com");
 +MODULE_DESCRIPTION("Au1550 I2S Audio Driver");
-diff -pNur linux-2.6.21.7/sound/oss/Kconfig linux-2.6.21.7/sound/oss/Kconfig
---- linux-2.6.21.7/sound/oss/Kconfig	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/sound/oss/Kconfig	2007-08-06 11:43:36.000000000 +0200
+--- a/sound/oss/Kconfig
++++ b/sound/oss/Kconfig
 @@ -94,6 +94,13 @@ config SOUND_AU1550_AC97
  	select SND_AC97_CODEC
  	depends on SOUND_PRIME && (SOC_AU1550 || SOC_AU1200)
@@ -14899,9 +14793,8 @@ diff -pNur linux-2.6.21.7/sound/oss/Kconfig linux-2.6.21.7/sound/oss/Kconfig
  config SOUND_TRIDENT
  	tristate "Trident 4DWave DX/NX, SiS 7018 or ALi 5451 PCI Audio Core"
  	depends on SOUND_PRIME && PCI
-diff -pNur linux-2.6.21.7/sound/oss/Makefile linux-2.6.21.7/sound/oss/Makefile
---- linux-2.6.21.7/sound/oss/Makefile	2007-08-04 18:11:13.000000000 +0200
-+++ linux-2.6.21.7/sound/oss/Makefile	2007-08-06 11:43:36.000000000 +0200
+--- a/sound/oss/Makefile
++++ b/sound/oss/Makefile
 @@ -45,6 +45,7 @@ obj-$(CONFIG_SOUND_ICH)		+= i810_audio.o
  obj-$(CONFIG_SOUND_ES1371)	+= es1371.o ac97_codec.o
  obj-$(CONFIG_SOUND_VRC5477)	+= nec_vrc5477.o ac97_codec.o

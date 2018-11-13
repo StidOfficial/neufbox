@@ -19,14 +19,14 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/Twisted-$(PKG_VERSION)
 PKG_BUILD_DEPENDS:=python
 
 include $(INCLUDE_DIR)/package.mk
--include $(if $(DUMP),,$(STAGING_DIR)/mk/python-package.mk)
+$(call include_mk, python-package.mk)
 
 define Package/twisted/default
   SUBMENU:=Python
   SECTION:=lang
   CATEGORY:=Languages
   URL:=http://twistedmatrix.com/
-  DEPENDS:=+python-mini
+  DEPENDS:=+python-mini @BROKEN
 endef
 
 define Package/twisted/default/description
@@ -218,11 +218,17 @@ define Build/Compile
 	$(call Build/Compile/PyMod,., \
 		install --prefix="$(PKG_INSTALL_DIR)/usr" --no-compile, \
 		TWISTED_SUBPROJECTS="$(TWISTED_SUBPROJECTS)" \
+		PYTHONPATH="$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)" \
 	)
 	$(call Build/Compile/PyMod,zope.interface-$(ZOPE_IF_VER), \
 		install --prefix="$(PKG_INSTALL_DIR)/usr" --no-compile, \
+		PYTHONPATH="$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)" \
 	)
 	$(SED) 's,#!$(PYTHON),#!/usr/bin/python,' $(PKG_INSTALL_DIR)/usr/bin/*
+
+	$(CP) -a \
+		$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)/zope.interface-*.egg/zope \
+		$(PKG_INSTALL_DIR)$(PYTHON_PKG_DIR)/
 endef
 
 $(eval $(call PyPackage,twisted))

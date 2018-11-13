@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6scripts
 PKG_VERSION:=0.1
-PKG_RELEASE:=3
+PKG_RELEASE:=6
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -18,9 +18,10 @@ define Package/6scripts
   CATEGORY:=IPv6
   DEPENDS:=+kmod-ipv6
   TITLE:=IPv6 scripts
+  PKGARCH:=all
 endef
 
-define Package/6tunnel/description
+define Package/6scripts/description
 IPv6 scripts to setup ipv6 connectivy using 6to4 tunnels
 or bridged ipv6 connectivity.
 endef

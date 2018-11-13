@@ -1,6 +1,5 @@
-diff -pNur linux-2.6.21.7/include/asm-mips/futex.h linux-2.6.21.7/include/asm-mips/futex.h
---- linux-2.6.21.7/include/asm-mips/futex.h	2008-11-12 09:46:00.000000000 +0100
-+++ linux-2.6.21.7/include/asm-mips/futex.h	2008-12-17 17:08:15.768557192 +0100
+--- a/include/asm-mips/futex.h
++++ b/include/asm-mips/futex.h
 @@ -35,7 +35,7 @@
  		"	.set	mips0				\n"	\
  		"	.section .fixup,\"ax\"			\n"	\

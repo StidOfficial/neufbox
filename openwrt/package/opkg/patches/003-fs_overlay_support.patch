@@ -6,55 +6,59 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
 
 --- a/libopkg/opkg_conf.c
 +++ b/libopkg/opkg_conf.c
-@@ -64,6 +64,7 @@ int opkg_init_options_array(const opkg_c
- 	  { "offline_root", OPKG_OPT_TYPE_STRING, &conf->offline_root },
- 	  { "offline_root_post_script_cmd", OPKG_OPT_TYPE_STRING, &conf->offline_root_post_script_cmd },
- 	  { "offline_root_pre_script_cmd", OPKG_OPT_TYPE_STRING, &conf->offline_root_pre_script_cmd },
-+	  { "overlay_root", OPKG_OPT_TYPE_STRING, &conf->overlay_root },
- 	  { "proxy_passwd", OPKG_OPT_TYPE_STRING, &conf->proxy_passwd },
- 	  { "proxy_user", OPKG_OPT_TYPE_STRING, &conf->proxy_user },
- 	  { "query-all", OPKG_OPT_TYPE_BOOL, &conf->query_all },
+@@ -63,6 +63,7 @@ opkg_option_t options[] = {
+ 	  { "download_only", OPKG_OPT_TYPE_BOOL, &_conf.download_only },
+ 	  { "nodeps", OPKG_OPT_TYPE_BOOL, &_conf.nodeps },
+ 	  { "offline_root", OPKG_OPT_TYPE_STRING, &_conf.offline_root },
++	  { "overlay_root", OPKG_OPT_TYPE_STRING, &_conf.overlay_root },
+ 	  { "proxy_passwd", OPKG_OPT_TYPE_STRING, &_conf.proxy_passwd },
+ 	  { "proxy_user", OPKG_OPT_TYPE_STRING, &_conf.proxy_user },
+ 	  { "query-all", OPKG_OPT_TYPE_BOOL, &_conf.query_all },
 --- a/libopkg/opkg_conf.h
 +++ b/libopkg/opkg_conf.h
-@@ -67,6 +67,7 @@ struct opkg_conf
+@@ -78,6 +78,7 @@ struct opkg_conf
+      int check_signature;
+      int nodeps; /* do not follow dependencies */
       char *offline_root;
-      char *offline_root_pre_script_cmd;
-      char *offline_root_post_script_cmd;
 +     char *overlay_root;
       int query_all;
       int verbosity;
       int noaction;
 --- a/libopkg/opkg_install.c
 +++ b/libopkg/opkg_install.c
-@@ -524,10 +524,13 @@ static int verify_pkg_installable(opkg_c
-      *    my diddling with the .opk file size below isn't going to cut it.
-      * 3) return a proper error code instead of 1
-      */
--     int comp_size, blocks_available;
--    
-+     int comp_size, blocks_available = -1;
-+
-      if (!conf->force_space && pkg->installed_size != NULL) {
--	  blocks_available = get_available_blocks(conf->default_dest->root_dir);
-+          if (conf->overlay_root != NULL)
-+               blocks_available = get_available_blocks(conf->overlay_root);
-+          if (blocks_available < 0)
-+               blocks_available = get_available_blocks(conf->default_dest->root_dir);
+@@ -21,6 +21,7 @@
+ #include <time.h>
+ #include <signal.h>
+ #include <unistd.h>
++#include <sys/stat.h>
  
- 	  comp_size = strtoul(pkg->installed_size, NULL, 0);
- 	  /* round up a blocks count without doing fancy-but-slow casting jazz */ 
---- a/libopkg/opkg_utils.c
-+++ b/libopkg/opkg_utils.c
-@@ -30,10 +30,8 @@ int get_available_blocks(char * filesyst
+ #include "pkg.h"
+ #include "pkg_hash.h"
+@@ -192,13 +193,24 @@ static int
+ verify_pkg_installable(pkg_t *pkg)
  {
-      struct statfs sfs;
+ 	unsigned long kbs_available, pkg_size_kbs;
+-	char *root_dir;
++	char *root_dir = NULL;
++	struct stat s;
  
--     if(statfs(filesystem, &sfs)){
--	  fprintf(stderr, "bad statfs\n");
--	  return 0;
--     }
-+     if(statfs(filesystem, &sfs))
-+	  return -1;
-      /*    fprintf(stderr, "reported fs type %x\n", sfs.f_type); */
-      return ((sfs.f_bavail * sfs.f_bsize) / 1024);
- }
+ 	if (conf->force_space || pkg->installed_size == 0)
+ 		return 0;
+ 
+-	root_dir = pkg->dest ? pkg->dest->root_dir :
+-						conf->default_dest->root_dir;
++	if( pkg->dest )
++	{
++		if( !strcmp(pkg->dest->name, "root") && conf->overlay_root
++		    && !stat(conf->overlay_root, &s) && (s.st_mode & S_IFDIR) )
++			root_dir = conf->overlay_root;
++		else
++			root_dir = pkg->dest->root_dir;
++	}
++
++	if( !root_dir )
++		root_dir = conf->default_dest->root_dir;
++
+ 	kbs_available = get_available_kbytes(root_dir);
+ 
+ 	pkg_size_kbs = (pkg->installed_size + 1023)/1024;

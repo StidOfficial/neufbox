@@ -8,16 +8,20 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=avahi
-PKG_VERSION:=0.6.25
+PKG_VERSION:=0.6.28
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://avahi.org/download/
-PKG_MD5SUM:=a83155a6e29e3988f07e5eea3287b21e
+PKG_MD5SUM:=d0143a5aa3265019072e53ab497818d0
 
-PKG_BUILD_DEPENDS:=libexpat libdaemon libgdbm
+PKG_BUILD_DEPENDS:=libexpat libdaemon libgdbm intltool/host
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
+PKG_REMOVE_FILES:=autogen.sh
+
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -42,7 +46,7 @@ define Package/libavahi
   $(call Package/avahi/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libdaemon +libpthread
+  DEPENDS:=+libdaemon +libpthread +libgdbm
   TITLE+= (library)
 endef
 
@@ -110,6 +114,7 @@ CONFIGURE_ARGS+= \
 	--disable-qt3 \
 	--disable-qt4 \
 	--disable-gtk \
+	--disable-gtk3 \
 	--disable-dbus \
 	--with-xml=expat \
 	--disable-dbm \
@@ -143,26 +148,14 @@ CONFIGURE_ARGS+= \
 endif
 
 CONFIGURE_VARS+= \
-	CFLAGS="$$$$CFLAGS -DNDEBUG" \
-	$(if $(CONFIG_LINUX_2_4),ac_cv_header_sys_inotify_h=no)
-
-define Build/Configure
-	( cd $(PKG_BUILD_DIR); aclocal; libtoolize; autoreconf; );
-	$(call Build/Configure/Default)
-endef
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
+	CFLAGS="$$$$CFLAGS -DNDEBUG -DDISABLE_SYSTEMD" \
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/avahi-{common,core} $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libavahi-{common,core}.{a,so*} $(1)/usr/lib/
-	mkdir -p $(1)/usr/lib/pkgconfig
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/avahi-core.pc $(1)/usr/lib/pkgconfig/
 endef
 
@@ -197,12 +190,7 @@ define Package/avahi-dnsconfd/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/avahi-dnsconfd $(1)/usr/sbin/
 endef
 
-$(eval $(call RequireCommand,intltool-update, \
-	$(PKG_NAME) requires intltool >= 0.35.0 \
-))
-
 $(eval $(call BuildPackage,libavahi))
 $(eval $(call BuildPackage,avahi-autoipd))
 $(eval $(call BuildPackage,avahi-daemon))
 $(eval $(call BuildPackage,avahi-dnsconfd))
-

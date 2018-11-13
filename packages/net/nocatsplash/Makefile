@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nocatsplash
-PKG_VERSION:=0.92
-PKG_RELEASE:=1
+PKG_VERSION:=0.93pre2
+PKG_RELEASE:=2
 
 PKG_SOURCE:=NoCatSplash-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://wifi.rulez.org/~josephus/
-PKG_MD5SUM:=e0fcc0effe52e63bc31070d16d0b4a81
+PKG_SOURCE_URL:=http://nocat.net/downloads/NoCatSplash/
+PKG_MD5SUM:=b0aa5cc33a3bbdd8e65726ff3cfe3cd1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/NoCatSplash-$(PKG_VERSION)
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,7 +25,7 @@ define Package/nocatsplash
   SUBMENU:=Captive Portals
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+glib1
+  DEPENDS:=+glib1 +iptables-mod-ipopt +iptables-mod-nat-extra
   TITLE:=Open public network gateway daemon
   URL:=http://nocat.net
 endef
@@ -48,16 +50,9 @@ define Build/Configure
 	)
 endef
 
-define Build/Compile	
-	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
-
-define Package/nocatsplash/install	
+define Package/nocatsplash/install
 	$(INSTALL_DIR) $(1)
-	$(CP) $(PKG_INSTALL_DIR)/* $(1)/ 
+	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 endef
 
 $(eval $(call BuildPackage,nocatsplash))
