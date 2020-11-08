@@ -21,7 +21,7 @@ PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_efixo-libnbd \
 	CONFIG_PACKAGE_ezxml
 
 ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_efixo-wrapper-' $(TOPDIR)/.config | md5s)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell $(SH_FUNC) grep '^CONFIG_efixo-wrapper-' $(TOPDIR)/.config | md5s)
 endif
 
 define Package/efixo-wrapper

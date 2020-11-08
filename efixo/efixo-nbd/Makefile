@@ -24,7 +24,7 @@ PKG_CONFIG_DEPENDS+=CONFIG_neufbox_net_infra_bridge
 PKG_BUILD_DEPENDS+= PACKAGE_efixo-bcm53xx:efixo-bcm53xx
 
 ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_efixo-nbd-' $(TOPDIR)/.config | md5s)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell $(SH_FUNC) grep '^CONFIG_efixo-nbd-' $(TOPDIR)/.config | md5s)
 endif
 
 define Package/efixo-nbd

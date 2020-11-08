@@ -15,7 +15,7 @@ PKG_INSTALL:=1
 include $(INCLUDE_DIR)/package.mk
 
 ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_efixo-www-api-' $(TOPDIR)/.config | md5s)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell $(SH_FUNC) grep '^CONFIG_efixo-www-api-' $(TOPDIR)/.config | md5s)
 endif
 
 define Package/efixo-api/config

@@ -17,7 +17,7 @@ PKG_BUILD_DEPENDS:=efixo-www/host +libdmalloc
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/www_tools
 
 ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_efixo-www-page-' $(TOPDIR)/.config | md5s)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell $(SH_FUNC) grep '^CONFIG_efixo-www-page-' $(TOPDIR)/.config | md5s)
 endif
 
 include $(INCLUDE_DIR)/host-build.mk
